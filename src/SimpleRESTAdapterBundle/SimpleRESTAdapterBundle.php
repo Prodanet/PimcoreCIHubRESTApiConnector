@@ -15,10 +15,13 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
 use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
+use Pimcore\Extension\Bundle\PimcoreBundleAdminClassicInterface;
+use Pimcore\Extension\Bundle\Traits\BundleAdminClassicTrait;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
 
-class SimpleRESTAdapterBundle extends AbstractPimcoreBundle
+class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBundleAdminClassicInterface
 {
+    use BundleAdminClassicTrait;
     use PackageVersionTrait;
 
     public const PACKAGE_NAME = 'ci-hub/simple-rest-adapter-bundle';
