@@ -19,7 +19,7 @@ final class ConfigReader
     /**
      * @var array<string, array>
      */
-    private $config;
+    private array $config;
 
     /**
      * @param array<string, array> $config

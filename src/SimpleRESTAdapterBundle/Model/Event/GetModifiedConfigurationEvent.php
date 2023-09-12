@@ -19,7 +19,7 @@ class GetModifiedConfigurationEvent extends ConfigurationEvent
     /**
      * @var array<string, array>|null
      */
-    private $modifiedConfiguration;
+    private null $modifiedConfiguration;
 
     /**
      * @return array<string, array>|null

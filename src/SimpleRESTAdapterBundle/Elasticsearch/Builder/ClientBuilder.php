@@ -21,7 +21,7 @@ final class ClientBuilder implements ClientBuilderInterface
     /**
      * @var array<int, string>
      */
-    private $hosts;
+    private array $hosts;
 
     /**
      * @param array<int, string> $hosts

@@ -19,7 +19,7 @@ final class InitializeEndpointMessage
     /**
      * @var string
      */
-    private $endpointName;
+    private string $endpointName;
 
     /**
      * @param string $endpointName

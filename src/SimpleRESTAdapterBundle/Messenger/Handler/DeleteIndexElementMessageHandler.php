@@ -14,16 +14,16 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
 
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
+use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
 {
     /**
      * @var IndexPersistenceService
      */
-    private $indexService;
+    private IndexPersistenceService $indexService;
 
     /**
      * @param IndexPersistenceService $indexService

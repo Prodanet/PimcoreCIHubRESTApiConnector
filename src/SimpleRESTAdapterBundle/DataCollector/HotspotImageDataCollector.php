@@ -14,16 +14,17 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\Data\Hotspotimage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class HotspotImageDataCollector implements DataCollectorInterface
 {
     /**
      * @var ImageDataCollector
      */
-    private $imageDataCollector;
+    private ImageDataCollector $imageDataCollector;
 
     /**
      * @param ImageDataCollector $imageDataCollector
@@ -35,8 +36,9 @@ final class HotspotImageDataCollector implements DataCollectorInterface
 
     /**
      * {@inheritdoc}
+     * @throws Exception
      */
-    public function collect($value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $reader): array
     {
         $image = $value->getImage();
 
@@ -50,7 +52,7 @@ final class HotspotImageDataCollector implements DataCollectorInterface
     /**
      * {@inheritdoc}
      */
-    public function supports($value): bool
+    public function supports(mixed $value): bool
     {
         return $value instanceof Hotspotimage;
     }

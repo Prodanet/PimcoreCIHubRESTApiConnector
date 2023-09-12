@@ -14,26 +14,27 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
-use Elasticsearch\Common\Exceptions\Missing404Exception;
-use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
-use Pimcore\File;
-use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Image\Thumbnail;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use Elasticsearch\Common\Exceptions\Missing404Exception;
+use Exception;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
+use Pimcore\File;
+use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Image\Thumbnail;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class EndpointController extends BaseEndpointController
 {
     /**
-     * @return BinaryFileResponse|JsonResponse|Response
+     * @return Response
+     * @throws Exception
      */
-    public function downloadAssetAction()
+    public function downloadAssetAction(): Response
     {
         $crossOriginHeaders = [
             'Allow' => 'GET, OPTIONS',
@@ -265,6 +266,6 @@ class EndpointController extends BaseEndpointController
             File::getFileExtension($asset->getFilename())
         );
 
-        return false !== strpos($mimeTypeAndFileExtension, 'pdf');
+        return str_contains($mimeTypeAndFileExtension, 'pdf');
     }
 }

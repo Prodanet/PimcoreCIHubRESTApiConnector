@@ -14,15 +14,15 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Manager;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\DiffArray;
 use InvalidArgumentException;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use RuntimeException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\DiffArray;
 
 final class IndexManager
 {
@@ -33,12 +33,12 @@ final class IndexManager
     /**
      * @var string
      */
-    private $indexNamePrefix;
+    private string $indexNamePrefix;
 
     /**
      * @var IndexPersistenceService
      */
-    private $indexService;
+    private IndexPersistenceService $indexService;
 
     /**
      * @param string                  $indexNamePrefix
@@ -179,7 +179,7 @@ final class IndexManager
      *
      * @return string
      */
-    public function getIndexName($value, string $endpointName): string
+    public function getIndexName(mixed $value, string $endpointName): string
     {
         $indexName = $value;
 

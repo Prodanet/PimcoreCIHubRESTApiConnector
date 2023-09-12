@@ -14,18 +14,18 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
 
-use Doctrine\DBAL\Driver\PDO\Statement;
-use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\Driver\Exception as DBALDriverException;
-use Pimcore\Bundle\DataHubBundle\Configuration;
-use Pimcore\Db\ConnectionInterface;
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
+use Doctrine\DBAL\Driver\Exception as DBALDriverException;
+use Doctrine\DBAL\Driver\PDO\Statement;
+use Doctrine\DBAL\Exception as DBALException;
+use Pimcore\Bundle\DataHubBundle\Configuration;
+use Pimcore\Db\ConnectionInterface;
+use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class InitializeEndpointMessageHandler implements MessageHandlerInterface
 {
@@ -36,27 +36,27 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
     /**
      * @var array<string, array>
      */
-    private $conditions = [];
+    private array $conditions = [];
 
     /**
      * @var DataHubConfigurationRepository
      */
-    private $configRepository;
+    private DataHubConfigurationRepository $configRepository;
 
     /**
      * @var ConnectionInterface
      */
-    private $connection;
+    private ConnectionInterface $connection;
 
     /**
      * @var MessageBusInterface
      */
-    private $messageBus;
+    private MessageBusInterface $messageBus;
 
     /**
      * @var array<string, string>
      */
-    private $params = [];
+    private array $params = [];
 
     /**
      * @param DataHubConfigurationRepository $configRepository

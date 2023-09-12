@@ -14,20 +14,20 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Localization\LocaleService;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Tool;
 use Webmozart\Assert\Assert;
-use CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class DataObjectProvider implements ProviderInterface
 {
     /**
      * @var CompositeDataCollector
      */
-    private $dataCollector;
+    private CompositeDataCollector $dataCollector;
 
     /**
      * @param CompositeDataCollector $dataCollector

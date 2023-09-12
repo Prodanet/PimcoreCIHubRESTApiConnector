@@ -19,17 +19,17 @@ final class UpdateIndexElementMessage
     /**
      * @var int
      */
-    private $entityId;
+    private int $entityId;
 
     /**
      * @var string
      */
-    private $entityType;
+    private string $entityType;
 
     /**
      * @var string
      */
-    private $endpointName;
+    private string $endpointName;
 
     /**
      * @param int    $entityId

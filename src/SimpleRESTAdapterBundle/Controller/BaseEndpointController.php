@@ -14,6 +14,13 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ElementNotFoundException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
@@ -24,13 +31,6 @@ use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Controller\FrontendController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ElementNotFoundException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 
 abstract class BaseEndpointController extends FrontendController
 {
@@ -43,37 +43,37 @@ abstract class BaseEndpointController extends FrontendController
     /**
      * @var string
      */
-    protected $config;
+    protected string $config;
 
     /**
      * @var DataHubConfigurationRepository
      */
-    protected $configRepository;
+    protected DataHubConfigurationRepository $configRepository;
 
     /**
      * @var bool
      */
-    protected $includeAggregations = false;
+    protected bool $includeAggregations = false;
 
     /**
      * @var LabelExtractorInterface
      */
-    protected $labelExtractor;
+    protected LabelExtractorInterface $labelExtractor;
 
     /**
      * @var int
      */
-    protected $nextPageCursor = 200;
+    protected int $nextPageCursor = 200;
 
     /**
      * @var Request
      */
-    protected $request;
+    protected Request $request;
 
     /**
      * @var RequestStack
      */
-    protected $requestStack;
+    protected RequestStack $requestStack;
 
     /**
      * @param DataHubConfigurationRepository $configRepository
@@ -199,7 +199,7 @@ abstract class BaseEndpointController extends FrontendController
         if (isset($result['hits']['hits'])) {
             $hitIndices = $items = [];
 
-            foreach ($result['hits']['hits'] ?? [] as $hit) {
+            foreach ($result['hits']['hits'] as $hit) {
                 if (!in_array($hit['_index'], $hitIndices, true)) {
                     $hitIndices[] = $hit['_index'];
                 }
@@ -259,7 +259,7 @@ abstract class BaseEndpointController extends FrontendController
     {
         // look for header "Authorization: Bearer <token>"
         if (!$this->request->headers->has('Authorization')
-            || 0 !== strpos($this->request->headers->get('Authorization'), 'Bearer ')) {
+            || !str_starts_with($this->request->headers->get('Authorization'), 'Bearer ')) {
             throw new AccessDeniedException();
         }
 

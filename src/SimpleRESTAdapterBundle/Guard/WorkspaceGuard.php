@@ -14,9 +14,9 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Guard;
 
-use Pimcore\Model\Element\ElementInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
+use Pimcore\Model\Element\ElementInterface;
 
 final class WorkspaceGuard implements WorkspaceGuardInterface
 {
@@ -34,7 +34,7 @@ final class WorkspaceGuard implements WorkspaceGuardInterface
 
         foreach ($workspace as $config) {
             // Check if element is within folder
-            if (false === strpos($element->getFullPath(), $config['cpath'])) {
+            if (!str_contains($element->getFullPath(), $config['cpath'])) {
                 continue;
             }
 

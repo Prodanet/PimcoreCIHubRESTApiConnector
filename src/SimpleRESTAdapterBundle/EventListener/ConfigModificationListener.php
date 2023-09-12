@@ -14,9 +14,6 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use RuntimeException;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
@@ -26,33 +23,36 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
+use RuntimeException;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class ConfigModificationListener implements EventSubscriberInterface
 {
     /**
      * @var IndexManager
      */
-    private $indexManager;
+    private IndexManager $indexManager;
 
     /**
      * @var MessageBusInterface
      */
-    private $messageBus;
+    private MessageBusInterface $messageBus;
 
     /**
      * @var AssetMapping
      */
-    private $assetMapping;
+    private AssetMapping $assetMapping;
 
     /**
      * @var DataObjectMapping
      */
-    private $objectMapping;
+    private DataObjectMapping $objectMapping;
 
     /**
      * @var FolderMapping
      */
-    private $folderMapping;
+    private FolderMapping $folderMapping;
 
     /**
      * @param IndexManager        $indexManager

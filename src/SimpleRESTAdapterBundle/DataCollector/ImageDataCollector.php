@@ -14,18 +14,18 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use Pimcore\Model\Asset;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class ImageDataCollector implements DataCollectorInterface
 {
     /**
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
      * @param RouterInterface $router
@@ -39,7 +39,7 @@ final class ImageDataCollector implements DataCollectorInterface
      * {@inheritdoc}
      * @throws Exception
      */
-    public function collect($value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $reader): array
     {
         $id = $value->getId();
         $thumbnails = $reader->getAssetThumbnails();
@@ -84,20 +84,20 @@ final class ImageDataCollector implements DataCollectorInterface
     /**
      * {@inheritdoc}
      */
-    public function supports($value): bool
+    public function supports(mixed $value): bool
     {
         return $value instanceof Asset\Image;
     }
 
     /**
      * @param Asset     $asset
-     * @param string    $type
+     * @param string $type
      *
      * @return null|string
      *
      * @throws Exception
      */
-    private function getChecksum(Asset $asset, $type = 'md5'): ?string
+    private function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
         $file = $asset->getLocalFile();
         if (is_file($file)) {

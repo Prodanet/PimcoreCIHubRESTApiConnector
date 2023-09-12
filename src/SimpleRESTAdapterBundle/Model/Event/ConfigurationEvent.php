@@ -21,12 +21,12 @@ class ConfigurationEvent extends Event
     /**
      * @var array<string, array>
      */
-    private $configuration;
+    private array $configuration;
 
     /**
      * @var array<string, array>
      */
-    private $priorConfiguration;
+    private array $priorConfiguration;
 
     /**
      * @param array<string, array> $configuration

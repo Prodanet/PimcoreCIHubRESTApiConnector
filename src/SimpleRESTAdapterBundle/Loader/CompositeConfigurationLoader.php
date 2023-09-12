@@ -14,21 +14,21 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Loader;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Webmozart\Assert\Assert;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 
 final class CompositeConfigurationLoader
 {
     /**
      * @var DataHubConfigurationRepository
      */
-    private $configRepository;
+    private DataHubConfigurationRepository $configRepository;
 
     /**
      * @var iterable<ConfigurationLoaderInterface>
      */
-    private $loaders;
+    private iterable $loaders;
 
     /**
      * @param DataHubConfigurationRepository         $configRepository

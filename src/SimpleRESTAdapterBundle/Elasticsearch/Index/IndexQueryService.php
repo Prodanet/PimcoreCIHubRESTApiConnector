@@ -23,12 +23,12 @@ final class IndexQueryService
     /**
      * @var Client
      */
-    private $client;
+    private Client $client;
 
     /**
      * @var string
      */
-    private $indexNamePrefix;
+    private string $indexNamePrefix;
 
     /**
      * @param Client $client

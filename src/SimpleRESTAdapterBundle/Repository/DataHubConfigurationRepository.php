@@ -45,7 +45,7 @@ final class DataHubConfigurationRepository
     /**
      * @return bool|int
      */
-    public function getModificationDate()
+    public function getModificationDate(): bool|int
     {
         return Dao::getConfigModificationDate();
     }

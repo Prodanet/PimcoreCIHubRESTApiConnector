@@ -24,7 +24,7 @@ final class LabelExtractor implements LabelExtractorInterface
     /**
      * @var IndexManager
      */
-    private $indexManager;
+    private IndexManager $indexManager;
 
     /**
      * @param IndexManager $indexManager

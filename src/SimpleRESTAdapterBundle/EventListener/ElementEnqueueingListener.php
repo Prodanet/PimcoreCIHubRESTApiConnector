@@ -14,7 +14,12 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Guard\WorkspaceGuardInterface;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Event\AssetEvents;
 use Pimcore\Event\DataObjectEvents;
 use Pimcore\Event\Model\AssetEvent;
@@ -24,33 +29,28 @@ use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Guard\WorkspaceGuardInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 class ElementEnqueueingListener implements EventSubscriberInterface
 {
     /**
      * @var CompositeConfigurationLoader
      */
-    private $configLoader;
+    private CompositeConfigurationLoader $configLoader;
 
     /**
      * @var IndexManager
      */
-    private $indexManager;
+    private IndexManager $indexManager;
 
     /**
      * @var MessageBusInterface
      */
-    private $messageBus;
+    private MessageBusInterface $messageBus;
 
     /**
      * @var WorkspaceGuardInterface
      */
-    private $workspaceGuard;
+    private WorkspaceGuardInterface $workspaceGuard;
 
     /**
      * @param CompositeConfigurationLoader $configLoader

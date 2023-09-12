@@ -14,16 +14,16 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\DataObject\Concrete;
 use Webmozart\Assert\Assert;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class CompositeDataCollector
 {
     /**
      * @var iterable<DataCollectorInterface>
      */
-    private $collectors;
+    private iterable $collectors;
 
     /**
      * @param iterable<DataCollectorInterface> $collectors

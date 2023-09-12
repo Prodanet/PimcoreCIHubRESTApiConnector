@@ -14,6 +14,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Image\Thumbnail;
@@ -21,7 +22,6 @@ use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class AssetProvider implements ProviderInterface
 {
@@ -33,14 +33,15 @@ final class AssetProvider implements ProviderInterface
     /**
      * @var array
      */
-    private $defaultPreviewThumbnail;
+    private array $defaultPreviewThumbnail;
 
     /**
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
+     * @param array $defaultPreviewThumbnail
      * @param RouterInterface $router
      */
     public function __construct(array $defaultPreviewThumbnail, RouterInterface $router)
@@ -211,7 +212,7 @@ final class AssetProvider implements ProviderInterface
      *
      * @throws Exception
      */
-    public function getChecksum(Asset $asset, $type = 'md5'): ?string
+    public function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
         $file = $asset->getLocalFile();
         if (is_file($file)) {

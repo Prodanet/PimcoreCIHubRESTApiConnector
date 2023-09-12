@@ -26,7 +26,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
     /**
      * @var array
      */
-    private $ciHubConfig = [];
+    private array $ciHubConfig = [];
 
     /**
      * {@inheritdoc}

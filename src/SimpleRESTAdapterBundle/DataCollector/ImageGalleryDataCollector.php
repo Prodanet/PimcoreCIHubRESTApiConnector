@@ -14,15 +14,15 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
-use Pimcore\Model\DataObject\Data\ImageGallery;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use Pimcore\Model\DataObject\Data\ImageGallery;
 
 final class ImageGalleryDataCollector implements DataCollectorInterface
 {
     /**
      * @var HotspotImageDataCollector
      */
-    private $hotspotImageDataCollector;
+    private HotspotImageDataCollector $hotspotImageDataCollector;
 
     /**
      * @param HotspotImageDataCollector $hotspotImageDataCollector
@@ -35,7 +35,7 @@ final class ImageGalleryDataCollector implements DataCollectorInterface
     /**
      * {@inheritdoc}
      */
-    public function collect($value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $reader): array
     {
         $data = [];
         $items = $value->getItems() ?? [];
@@ -50,7 +50,7 @@ final class ImageGalleryDataCollector implements DataCollectorInterface
     /**
      * {@inheritdoc}
      */
-    public function supports($value): bool
+    public function supports(mixed $value): bool
     {
         return $value instanceof ImageGallery;
     }

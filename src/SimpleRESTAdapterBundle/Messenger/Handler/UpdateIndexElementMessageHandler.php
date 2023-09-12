@@ -14,25 +14,26 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
+use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 
 final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
 {
     /**
      * @var IndexManager
      */
-    private $indexManager;
+    private IndexManager $indexManager;
 
     /**
      * @var IndexPersistenceService
      */
-    private $indexService;
+    private IndexPersistenceService $indexService;
 
     /**
      * @param IndexManager            $indexManager
@@ -46,19 +47,15 @@ final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
 
     /**
      * @param UpdateIndexElementMessage $message
+     * @throws Exception
      */
     public function __invoke(UpdateIndexElementMessage $message): void
     {
-        switch ($message->getEntityType()) {
-            case 'asset':
-                $element = Asset::getById($message->getEntityId());
-                break;
-            case 'object':
-                $element = DataObject\AbstractObject::getById($message->getEntityId());
-                break;
-            default:
-                $element = null;
-        }
+        $element = match ($message->getEntityType()) {
+            'asset' => Asset::getById($message->getEntityId()),
+            'object' => DataObject\AbstractObject::getById($message->getEntityId()),
+            default => null,
+        };
 
         if (!$element instanceof ElementInterface) {
             return;

@@ -14,6 +14,10 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Elasticsearch\Client;
 use Exception;
 use InvalidArgumentException;
@@ -21,37 +25,33 @@ use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 
 final class IndexPersistenceService
 {
     /**
      * @var Client
      */
-    private $client;
+    private Client $client;
 
     /**
      * @var DataHubConfigurationRepository
      */
-    private $configRepository;
+    private DataHubConfigurationRepository $configRepository;
 
     /**
      * @var AssetProvider
      */
-    private $assetProvider;
+    private AssetProvider $assetProvider;
 
     /**
      * @var DataObjectProvider
      */
-    private $objectProvider;
+    private DataObjectProvider $objectProvider;
 
     /**
      * @var array<string, string|array>
      */
-    private $indexSettings;
+    private array $indexSettings;
 
     /**
      * @param Client                         $client
