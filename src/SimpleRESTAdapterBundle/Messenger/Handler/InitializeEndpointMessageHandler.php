@@ -19,11 +19,10 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
-use Doctrine\DBAL\Driver\Exception as DBALDriverException;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\PDO\Statement;
-use Doctrine\DBAL\Exception as DBALException;
+use Exception;
 use Pimcore\Bundle\DataHubBundle\Configuration;
-use Pimcore\Db\ConnectionInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -44,9 +43,9 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
     private DataHubConfigurationRepository $configRepository;
 
     /**
-     * @var ConnectionInterface
+     * @var Connection
      */
-    private ConnectionInterface $connection;
+    private Connection $connection;
 
     /**
      * @var MessageBusInterface
@@ -60,12 +59,12 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
 
     /**
      * @param DataHubConfigurationRepository $configRepository
-     * @param ConnectionInterface            $connection
+     * @param Connection $connection
      * @param MessageBusInterface            $messageBus
      */
     public function __construct(
         DataHubConfigurationRepository $configRepository,
-        ConnectionInterface $connection,
+        Connection $connection,
         MessageBusInterface $messageBus
     ) {
         $this->configRepository = $configRepository;
@@ -217,9 +216,8 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
 
         try {
             /** @var Statement $statement */
-            $statement = $qb->execute();
-            $ids = $statement->fetchFirstColumn();
-        } catch (DBALException | DBALDriverException $e) {
+            $ids = $qb->fetchFirstColumn();
+        } catch (Exception $e) {
             $ids = [];
         }
 

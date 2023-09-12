@@ -60,10 +60,6 @@ final class ImageDataCollector implements DataCollectorInterface
             ];
         }
 
-        // Explicitly disable WebP support, because Adobe's browser is Chromium based,
-        // but e.g. Adobe InDesign doesn't support WebP images.
-//        Asset\Image\Thumbnail\Processor::setHasWebpSupport(false);
-
         foreach ($thumbnails as $thumbnailName) {
             $thumbnail = $value->getThumbnail($thumbnailName);
 

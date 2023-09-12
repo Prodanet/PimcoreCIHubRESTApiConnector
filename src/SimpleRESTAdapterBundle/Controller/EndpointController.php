@@ -15,18 +15,17 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AssetNotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Exception;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
-use Pimcore\File;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EndpointController extends BaseEndpointController
 {
@@ -62,47 +61,37 @@ class EndpointController extends BaseEndpointController
         $asset = Asset::getById($id);
 
         if (!$asset instanceof Asset) {
-            throw $this->createElementNotFoundException($id);
+            throw new AssetNotFoundException(sprintf('Element with ID \'%s\' not found.', $id));
         }
 
         $thumbnail = $this->request->get('thumbnail');
         $defaultPreviewThumbnail = $this->getParameter('simple_rest_adapter.default_preview_thumbnail');
 
-        if (null !== $thumbnail && ($asset instanceof Asset\Image || $asset instanceof Asset\Document)) {
-            // Explicitly disable WebP support, because Adobe's browser is Chromium based,
-            // but e.g. Adobe InDesign doesn't support WebP images.
-            // Asset\Image\Thumbnail\Processor::setHasWebpSupport(false);
-
+        if (!empty($thumbnail) && ($asset instanceof Asset\Image || $asset instanceof Asset\Document)) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $reader->getType() &&
                 !Thumbnail\Config::getByName(AssetProvider::CIHUB_PREVIEW_THUMBNAIL) instanceof Thumbnail\Config) {
                 if ($asset instanceof Asset\Image) {
-                    $file = $asset->getThumbnail($defaultPreviewThumbnail)->getLocalFile();
+                    $assetFile = $asset->getThumbnail($defaultPreviewThumbnail);
                 } else {
-                    $file = $asset->getImageThumbnail($defaultPreviewThumbnail)->getLocalFile();
+                    $assetFile = $asset->getImageThumbnail($defaultPreviewThumbnail);
                 }
             } else if ($asset instanceof Asset\Image) {
-                $file = $asset->getThumbnail($thumbnail)->getLocalFile();
+                $assetFile = $asset->getThumbnail($thumbnail);
             } else {
-                $file = $asset->getImageThumbnail($thumbnail)->getLocalFile();
-
-            }
-
-
-            if ($asset instanceof Asset\Document && !$this->isPdfDocument($asset)) {
-                $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
-            } else {
-                $disposition = ResponseHeaderBag::DISPOSITION_INLINE;
+                $assetFile = $asset->getImageThumbnail($thumbnail);
             }
         } else {
-            $file = $asset->getLocalFile();
-            $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
+            $assetFile = $asset;
         }
 
+        $response = new StreamedResponse();
+        $response->headers->makeDisposition('Content-Disposition', basename($assetFile->getPath()));
+        $response->headers->set('Content-Type', $assetFile->getMimetype());
+        $response->headers->set('Content-Length', $assetFile->getFileSize());
 
-        $response = $this->file($file, pathinfo($asset, PATHINFO_BASENAME), $disposition);
-        $response->headers->add($crossOriginHeaders);
-
-        return $response;
+        return $response->setCallback(function () use ($assetFile) {
+            fpassthru($assetFile->getStream());
+        });
     }
 
     /**
@@ -144,7 +133,7 @@ class EndpointController extends BaseEndpointController
         foreach ($indices as $index) {
             try {
                 $result = $indexService->get($id, $index);
-            } catch (Missing404Exception $exception) {
+            } catch (Exception $ignore) {
                 $result = [];
             }
 
@@ -154,7 +143,7 @@ class EndpointController extends BaseEndpointController
         }
 
         if (empty($result) || false === $result['found']) {
-            throw $this->createElementNotFoundException($id, $type);
+            throw new AssetNotFoundException(sprintf('Element with type \'%s\' and ID \'%s\' not found.', $type, $id));
         }
 
         return $this->json($this->buildResponse($result, $reader));
@@ -249,23 +238,5 @@ class EndpointController extends BaseEndpointController
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
         return $this->json($this->buildResponse($result, $reader));
-    }
-
-    /**
-     * Checks whether the Asset\Document is a PDF file or not.
-     *
-     * @param Asset\Document $asset
-     *
-     * @return bool
-     */
-    private function isPdfDocument(Asset\Document $asset): bool
-    {
-        $mimeTypeAndFileExtension = sprintf(
-            '%s .%s',
-            $asset->getMimetype(),
-            File::getFileExtension($asset->getFilename())
-        );
-
-        return str_contains($mimeTypeAndFileExtension, 'pdf');
     }
 }

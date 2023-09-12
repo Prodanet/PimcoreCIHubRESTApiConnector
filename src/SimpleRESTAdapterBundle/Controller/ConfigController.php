@@ -14,19 +14,6 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
-use Exception;
-use InvalidArgumentException;
-use Pimcore\Bundle\AdminBundle\Controller\AdminController;
-use Pimcore\Bundle\DataHubBundle\Configuration;
-use Pimcore\Bundle\DataHubBundle\Controller\ConfigController as BaseConfigController;
-use Pimcore\Bundle\DataHubBundle\WorkspaceHelper;
-use Pimcore\Model\Asset\Image\Thumbnail;
-use RuntimeException;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
@@ -34,8 +21,19 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\GetModifiedConfigurationEve
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
+use Exception;
+use InvalidArgumentException;
+use Pimcore\Bundle\AdminBundle\Controller\AdminAbstractController;
+use Pimcore\Bundle\DataHubBundle\Configuration;
+use Pimcore\Bundle\DataHubBundle\Controller\ConfigController as BaseConfigController;
+use Pimcore\Bundle\DataHubBundle\WorkspaceHelper;
+use Pimcore\Model\Asset\Image\Thumbnail;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-class ConfigController extends AdminController
+class ConfigController extends AdminAbstractController
 {
     /**
      * @param DataHubConfigurationRepository $configRepository

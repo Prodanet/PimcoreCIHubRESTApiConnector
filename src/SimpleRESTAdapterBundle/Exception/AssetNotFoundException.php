@@ -12,16 +12,10 @@
  * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
-namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Builder;
+namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
-use Elastic\Elasticsearch\Client;
+use RuntimeException;
 
-interface ClientBuilderInterface
+final class AssetNotFoundException extends RuntimeException implements EndpointExceptionInterface
 {
-    /**
-     * Builds and returns an Elasticsearch client.
-     *
-     * @return Client
-     */
-    public function build(): Client;
 }

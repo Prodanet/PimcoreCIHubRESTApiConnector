@@ -14,8 +14,10 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index;
 
-use Elasticsearch\Client;
-use Elasticsearch\Common\Exceptions\Missing404Exception;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use ONGR\ElasticsearchDSL\Search;
 
 final class IndexQueryService
@@ -49,12 +51,14 @@ final class IndexQueryService
     }
 
     /**
-     * @param int    $id
+     * @param int $id
      * @param string $index
      *
      * @return array<string, mixed>
      *
-     * @throws Missing404Exception
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function get(int $id, string $index): array
     {
@@ -63,15 +67,17 @@ final class IndexQueryService
             'index' => $index,
         ];
 
-        return $this->client->get($params);
+        return $this->client->get($params)->asArray();
     }
 
     /**
-     * @param string               $index
-     * @param array<string, mixed> $query
-     * @param array<string, mixed> $params
+     * @param string $index
+     * @param array $query
+     * @param array $params
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function search(string $index, array $query, array $params = []): array
     {
@@ -88,6 +94,6 @@ final class IndexQueryService
             $requestParams = array_merge($requestParams, $params);
         }
 
-        return $this->client->search($requestParams);
+        return $this->client->search($requestParams)->asArray();
     }
 }

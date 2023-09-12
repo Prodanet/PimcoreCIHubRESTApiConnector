@@ -18,7 +18,10 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Exception;
 use InvalidArgumentException;
 use Pimcore\Bundle\DataHubBundle\Configuration;
@@ -80,6 +83,9 @@ final class IndexPersistenceService
      * @param string $name – A comma-separated list of alias names to return.
      *
      * @return bool
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function aliasExists(string $name): bool
     {
@@ -87,7 +93,7 @@ final class IndexPersistenceService
             'name' => $name,
         ];
 
-        return $this->client->indices()->existsAlias($params);
+        return $this->client->indices()->existsAlias($params)->asBool();
     }
 
     /**
@@ -95,9 +101,12 @@ final class IndexPersistenceService
      *
      * @param string $index – A comma-separated list of index names the alias should point to (supports wildcards);
      *                        use `_all` to perform the operation on all indices.
-     * @param string $name  – The name of the alias to be created or updated.
+     * @param string $name – The name of the alias to be created or updated.
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function createAlias(string $index, string $name): array
     {
@@ -106,16 +115,19 @@ final class IndexPersistenceService
             'name' => $name,
         ];
 
-        return $this->client->indices()->putAlias($params);
+        return $this->client->indices()->putAlias($params)->asArray();
     }
 
     /**
      * Creates a new index either with or without settings/mappings.
      *
-     * @param string               $name    – The name of the index.
-     * @param array<string, mixed> $mapping – The mapping for the index.
+     * @param string $name – The name of the index.
+     * @param array $mapping – The mapping for the index.
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function createIndex(string $name, array $mapping = []): array
     {
@@ -130,7 +142,7 @@ final class IndexPersistenceService
             ];
         }
 
-        return $this->client->indices()->create($params);
+        return $this->client->indices()->create($params)->asArray();
     }
 
     /**
@@ -140,6 +152,9 @@ final class IndexPersistenceService
      *                       use `_all` or `*` string to delete all indices
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function deleteIndex(string $name): array
     {
@@ -147,23 +162,26 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        return $this->client->indices()->delete($params);
+        return $this->client->indices()->delete($params)->asArray();
     }
 
     /**
      * Deletes an element from an index.
      *
-     * @param int    $elementId – The ID of a Pimcore element (asset or object).
+     * @param int $elementId – The ID of a Pimcore element (asset or object).
      * @param string $indexName – The name of the index to delete the item from.
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function delete(int $elementId, string $indexName): array
     {
         return $this->client->delete([
             'index' => $indexName,
             'id' => $elementId,
-        ]);
+        ])->asArray();
     }
 
     /**
@@ -173,6 +191,8 @@ final class IndexPersistenceService
      * @param string|null $indexName – A comma-separated list of index names to filter aliases
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function getAlias(string $aliasName = null, string $indexName = null): array
     {
@@ -186,7 +206,7 @@ final class IndexPersistenceService
             $params['index'] = $indexName;
         }
 
-        return $this->client->indices()->getAlias($params);
+        return $this->client->indices()->getAlias($params)->asArray();
     }
 
     /**
@@ -195,6 +215,8 @@ final class IndexPersistenceService
      * @param string $indexName – A comma-separated list of index names
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function getMapping(string $indexName): array
     {
@@ -202,7 +224,7 @@ final class IndexPersistenceService
             'index' => $indexName,
         ];
 
-        return $this->client->indices()->getMapping($params);
+        return $this->client->indices()->getMapping($params)->asArray();
     }
 
     /**
@@ -211,6 +233,9 @@ final class IndexPersistenceService
      * @param string $name – A comma-separated list of index names.
      *
      * @return bool
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     * @throws MissingParameterException
      */
     public function indexExists(string $name): bool
     {
@@ -218,7 +243,7 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        return $this->client->indices()->exists($params);
+        return $this->client->indices()->exists($params)->asBool();
     }
 
     /**
@@ -228,6 +253,8 @@ final class IndexPersistenceService
      *                       use `_all` or empty string to perform the operation on all indices
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function refreshIndex(string $name): array
     {
@@ -235,16 +262,18 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        return $this->client->indices()->refresh($params);
+        return $this->client->indices()->refresh($params)->asArray();
     }
 
     /**
      * Reindex data from a source index to a destination index.
      *
      * @param string $source – The name of the source index.
-     * @param string $dest   – The name of the destination index.
+     * @param string $dest – The name of the destination index.
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function reindex(string $source, string $dest): array
     {
@@ -259,7 +288,7 @@ final class IndexPersistenceService
             ],
         ];
 
-        return $this->client->reindex($params);
+        return $this->client->reindex($params)->asArray();
     }
 
     /**
@@ -299,6 +328,6 @@ final class IndexPersistenceService
             'body' => $body,
         ];
 
-        return $this->client->index($params);
+        return $this->client->index($params)->asArray();
     }
 }

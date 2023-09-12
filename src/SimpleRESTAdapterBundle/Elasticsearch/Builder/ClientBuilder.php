@@ -14,7 +14,9 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Builder;
 
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder as ElasticClientBuilder;
+use Elastic\Elasticsearch\Exception\AuthenticationException;
 
 final class ClientBuilder implements ClientBuilderInterface
 {
@@ -33,10 +35,11 @@ final class ClientBuilder implements ClientBuilderInterface
 
     /**
      * {@inheritdoc}
+     * @throws AuthenticationException
      */
     public function build(): Client
     {
-        $client = \Elasticsearch\ClientBuilder::create();
+        $client = ElasticClientBuilder::create();
         $client->setHosts($this->hosts);
 
         return $client->build();
