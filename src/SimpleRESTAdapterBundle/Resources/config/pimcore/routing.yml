@@ -1,11 +1,16 @@
 # Configuration
-ci_hub_simple_rest_admin:
+simple_rest_adapter_config:
     resource: 'routing/configuration.yml'
     prefix: /admin/simple-rest-adapter/config
     options:
         expose: true
 
-ci_hub_simple_rest:
-    resource: "@SimpleRESTAdapterBundle/Controller"
-    type: annotation
+# Endpoints
+simple_rest_adapter_endpoints:
+    resource: 'routing/endpoints.yml'
+    prefix: /pimcore-datahub-webservices/simplerest/{config}
+
+# Swagger
+simple_rest_adapter_swagger:
+    resource: 'routing/swagger.yml'
     prefix: /pimcore-datahub-webservices/simplerest

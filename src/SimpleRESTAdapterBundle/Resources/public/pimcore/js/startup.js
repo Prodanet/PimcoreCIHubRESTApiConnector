@@ -16,9 +16,9 @@ pimcore.plugin.simpleRestAdapterBundle = Class.create(pimcore.plugin.admin, {
     getClassName: function () {
         return 'pimcore.plugin.simpleRestAdapterBundle';
     },
-
     initialize: function () {
-        pimcore.plugin.broker.registerPlugin(this);
+        document.addEventListener(pimcore.events.pimcoreReady, this.onPimcoreReady.bind(this));
+        document.addEventListener(pimcore.events.onPerspectiveEditorLoadPermissions, this.onPerspectiveEditorLoadPermissions.bind(this));
     },
 });
 
