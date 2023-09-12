@@ -20,6 +20,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
       this.getWorkspaces(),
       this.getLabelSettings(),
       this.getDeliverySettings(),
+      this.getPermissions()
     ];
   },
 
@@ -95,10 +96,10 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
             this.labelListMightHaveChanged = false;
           } else {
             pimcore.helpers.showNotification(
-              t('error'),
-              t('plugin_pimcore_datahub_configpanel_update_labels_error'),
-              'error',
-              t(rdata.message)
+                t('error'),
+                t('plugin_pimcore_datahub_configpanel_update_labels_error'),
+                'error',
+                t(rdata.message)
             );
           }
         },
@@ -128,16 +129,16 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
           this.labelListMightHaveChanged = true;
           this.resetChanges();
           pimcore.helpers.showNotification(
-            t('success'),
-            t('plugin_pimcore_datahub_configpanel_item_save_success'),
-            'success'
+              t('success'),
+              t('plugin_pimcore_datahub_configpanel_item_save_success'),
+              'success'
           );
         } else {
           pimcore.helpers.showNotification(
-            t('error'),
-            t('plugin_pimcore_datahub_configpanel_item_saveerror'),
-            'error',
-            t(rdata.message)
+              t('error'),
+              t('plugin_pimcore_datahub_configpanel_item_saveerror'),
+              'error',
+              t(rdata.message)
           );
         }
       },
@@ -160,8 +161,8 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
           fieldLabel: t('active'),
           name: 'active',
           value: this.data.general && this.data.general.hasOwnProperty('active')
-            ? this.data.general.active
-            : true,
+              ? this.data.general.active
+              : true,
         },
         {
           xtype: 'textfield',
@@ -232,8 +233,8 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
               fieldLabel: t('plugin_pimcore_datahub_simple_rest_assets_enabled'),
               name: 'enabled',
               value: this.data.schema && this.data.schema.hasOwnProperty('assets')
-                ? this.data.schema.assets.enabled
-                : false,
+                  ? this.data.schema.assets.enabled
+                  : false,
             },
             {
               xtype: 'checkbox',
@@ -241,8 +242,8 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
               fieldLabel: t('plugin_pimcore_datahub_simple_rest_assets_allow_original_image'),
               name: 'allowOriginalImage',
               value: this.data.schema && this.data.schema.hasOwnProperty('assets')
-                ? this.data.schema.assets.allowOriginalImage
-                : false,
+                  ? this.data.schema.assets.allowOriginalImage
+                  : false,
             },
             {
               xtype: 'tagfield',
@@ -254,8 +255,8 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
               valueField: 'name',
               displayField: 'name',
               value: this.data.schema && this.data.schema.hasOwnProperty('assets')
-                ? this.data.schema.assets.thumbnails
-                : [],
+                  ? this.data.schema.assets.thumbnails
+                  : [],
             },
           ],
         },
@@ -404,35 +405,35 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
     };
 
     const gridConfigDialog = new pimcore.plugin.simpleRestAdapterBundle.configuration.gridConfigDialog(
-      dialogColumnConfig,
-      function (data, settings, save, context) {
-        const columns = {};
+        dialogColumnConfig,
+        function (data, settings, save, context) {
+          const columns = {};
 
-        // convert to data array as grid uses it
-        for (let i = 0; i < data.columns.length; i++) {
-          let curr = data.columns[i];
-          columns[curr.key] = {
-            name: curr.key,
-            position: (i + 1),
-            hidden: false,
-            fieldConfig: curr,
-            isOperator: curr.isOperator,
-          };
-        }
+          // convert to data array as grid uses it
+          for (let i = 0; i < data.columns.length; i++) {
+            let curr = data.columns[i];
+            columns[curr.key] = {
+              name: curr.key,
+              position: (i + 1),
+              hidden: false,
+              fieldConfig: curr,
+              isOperator: curr.isOperator,
+            };
+          }
 
-        record.set('columnConfig', columns);
-        record.set('language', data.language);
-      },
-      () => {
-        gridConfigDialog.window.close();
-      },
-      false,
-      settings,
-      {
-        allowPreview: true,
-        classId: classId,
-        objectId: objectId,
-      },
+          record.set('columnConfig', columns);
+          record.set('language', data.language);
+        },
+        () => {
+          gridConfigDialog.window.close();
+        },
+        false,
+        settings,
+        {
+          allowPreview: true,
+          classId: classId,
+          objectId: objectId,
+        },
     );
     gridConfigDialog.itemsPerPage.hide();
   },
@@ -489,7 +490,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
         renderer: (text) => {
           if (text) {
             return replace_html_event_attributes(
-              strip_tags(text, 'div,span,b,strong,em,i,small,sup,sub,p')
+                strip_tags(text, 'div,span,b,strong,em,i,small,sup,sub,p')
             );
           }
         },
@@ -673,6 +674,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
     saveData['workspaces'] = {};
     saveData['workspaces']['asset'] = this.filterIds(this.assetWorkspace.getValues());
     saveData['workspaces']['object'] = this.filterIds(this.objectWorkspace.getValues());
+    saveData["permissions"] = this.getPermissionsSaveData();
 
     const labelData = [];
     const labelRecords = this.labelStore.getData();
