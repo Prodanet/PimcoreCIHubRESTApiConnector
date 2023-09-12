@@ -94,7 +94,7 @@ final class AssetProvider implements ProviderInterface
      * @return array<string, array>
      * @throws Exception
      */
-    private function getBinaryDataValues(Asset $asset, ConfigReader $reader): array
+    public function getBinaryDataValues(Asset $asset, ConfigReader $reader): array
     {
         $data = [];
 

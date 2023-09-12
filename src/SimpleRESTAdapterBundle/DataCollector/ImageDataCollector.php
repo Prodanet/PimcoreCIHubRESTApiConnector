@@ -14,10 +14,10 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use Pimcore\Model\Asset;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 final class ImageDataCollector implements DataCollectorInterface
@@ -26,13 +26,18 @@ final class ImageDataCollector implements DataCollectorInterface
      * @var RouterInterface
      */
     private RouterInterface $router;
+    /**
+     * @var AssetProvider
+     */
+    private AssetProvider $assetProvider;
 
     /**
      * @param RouterInterface $router
      */
-    public function __construct(RouterInterface $router)
+    public function __construct(RouterInterface $router, AssetProvider $assetProvider)
     {
         $this->router = $router;
+        $this->assetProvider = $assetProvider;
     }
 
     /**
@@ -48,31 +53,7 @@ final class ImageDataCollector implements DataCollectorInterface
             'id' => $id,
             'type' => 'asset',
         ];
-
-        if ($reader->isOriginalImageAllowed()) {
-            $data['binaryData']['original'] = [
-                'checksum' => $this->getChecksum($value),
-                'path' => $this->router->generate('simple_rest_adapter_endpoints_download_asset', [
-                    'config' => $reader->getName(),
-                    'id' => $id,
-                ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                'filename' => $value->getFilename(),
-            ];
-        }
-
-        foreach ($thumbnails as $thumbnailName) {
-            $thumbnail = $value->getThumbnail($thumbnailName);
-
-            $data['binaryData'][$thumbnailName] = [
-                'checksum' => $this->getChecksum($thumbnail->getAsset()),
-                'path' => $this->router->generate('simple_rest_adapter_endpoints_download_asset', [
-                    'config' => $reader->getName(),
-                    'id' => $id,
-                    'thumbnail' => $thumbnailName,
-                ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                'filename' => pathinfo($thumbnail->getLocalFile(), PATHINFO_BASENAME),
-            ];
-        }
+        $data['binaryData'] = $this->assetProvider->getBinaryDataValues($value, $reader);
 
         return $data;
     }
