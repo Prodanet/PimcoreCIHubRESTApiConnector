@@ -104,7 +104,6 @@ class ConfigModificationListener implements EventSubscriberInterface
     public function onPostSave(ConfigurationEvent $event): void
     {
         $reader = new ConfigReader($event->getConfiguration());
-        $priorReader = new ConfigReader($event->getPriorConfiguration());
 
         // Handle asset indices
         if ($reader->isAssetIndexingEnabled()) {
@@ -116,10 +115,9 @@ class ConfigModificationListener implements EventSubscriberInterface
             $this->handleObjectIndices($reader);
         }
 
+
         // Initialize endpoint
-        if ($this->indexManager->hasWorkspaceChanged($reader, $priorReader)) {
-            $this->initializeEndpoint($reader);
-        }
+        $this->initializeEndpoint($reader);
     }
 
     /**

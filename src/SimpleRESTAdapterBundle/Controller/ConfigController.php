@@ -106,6 +106,10 @@ class ConfigController extends AdminAbstractController
         return $this->json([
             'name' => $configName,
             'configuration' => $reader->toArray(),
+            'userPermissions' => [
+                'update' => $configuration->isAllowed('update'),
+                'delete' => $configuration->isAllowed('delete')
+            ],
             'modificationDate' => $configRepository->getModificationDate(),
         ]);
     }
@@ -150,8 +154,8 @@ class ConfigController extends AdminAbstractController
 
     /**
      * @param DataHubConfigurationRepository $configRepository
-     * @param EventDispatcherInterface       $eventDispatcher
-     * @param Request                        $request
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param Request $request
      *
      * @return JsonResponse
      */
@@ -175,9 +179,11 @@ class ConfigController extends AdminAbstractController
                     sprintf('No DataHub configuration found for name "%s".', $name)
                 );
             }
-
             $reader = new ConfigReader($configuration->getConfiguration());
             $savedModificationDate = $reader->getModificationDate();
+            if ($modificationDate < $savedModificationDate) {
+                //throw new \Exception('The configuration has been changed during editing.');
+            }
 
             // ToDo Fix modifcationDate
 //            if ($modificationDate < $savedModificationDate) {
@@ -188,15 +194,15 @@ class ConfigController extends AdminAbstractController
             $newConfig = $newConfigReader->toArray();
             $newConfig['general']['modificationDate'] = time();
 
+
             $preSaveEvent = new GetModifiedConfigurationEvent($newConfig, $oldConfig);
 
             $eventDispatcher->dispatch($preSaveEvent, SimpleRESTAdapterEvents::CONFIGURATION_PRE_SAVE);
 
-            $newConfig = $preSaveEvent->getModifiedConfiguration() ?? $newConfig;
-
-            $configuration->setConfiguration($newConfig);
-            $configuration->save();
-
+            if ($configuration->isAllowed('read') && $configuration->isAllowed('update')) {
+                $configuration->setConfiguration($newConfig);
+                $configuration->save();
+            }
             $postSaveEvent = new ConfigurationEvent($newConfig, $oldConfig);
             $eventDispatcher->dispatch($postSaveEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_SAVE);
 

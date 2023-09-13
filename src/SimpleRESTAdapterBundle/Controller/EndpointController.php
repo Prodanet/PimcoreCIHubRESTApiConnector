@@ -22,9 +22,10 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EndpointController extends BaseEndpointController
@@ -68,8 +69,7 @@ class EndpointController extends BaseEndpointController
         $defaultPreviewThumbnail = $this->getParameter('simple_rest_adapter.default_preview_thumbnail');
 
         if (!empty($thumbnail) && ($asset instanceof Asset\Image || $asset instanceof Asset\Document)) {
-            if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $reader->getType() &&
-                !Thumbnail\Config::getByName(AssetProvider::CIHUB_PREVIEW_THUMBNAIL) instanceof Thumbnail\Config) {
+            if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $reader->getType()) {
                 if ($asset instanceof Asset\Image) {
                     $assetFile = $asset->getThumbnail($defaultPreviewThumbnail);
                 } else {
@@ -85,12 +85,13 @@ class EndpointController extends BaseEndpointController
         }
 
         $response = new StreamedResponse();
-        $response->headers->makeDisposition('Content-Disposition', basename($assetFile->getPath()));
+        $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($assetFile->getPath()));
         $response->headers->set('Content-Type', $assetFile->getMimetype());
         $response->headers->set('Content-Length', $assetFile->getFileSize());
 
-        return $response->setCallback(function () use ($assetFile) {
-            fpassthru($assetFile->getStream());
+        $stream = $assetFile->getStream();
+        return $response->setCallback(function () use ($stream) {
+            fpassthru($stream);
         });
     }
 
@@ -155,13 +156,15 @@ class EndpointController extends BaseEndpointController
      *
      * @return JsonResponse
      */
-    public function searchAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
+    public function searchAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         $configuration = $this->getDataHubConfiguration();
         $reader = new ConfigReader($configuration->getConfiguration());
-
         // Check if request is authenticated properly
         $this->checkAuthentication($reader->getApiKey());
+        $size = $this->request->get('size', 200);
+        $pageCursor = $this->request->get('page_cursor', null);
+        $pageCursor = $pageCursor ?: 0;
 
         $indices = [];
 
@@ -178,9 +181,12 @@ class EndpointController extends BaseEndpointController
             );
         }
 
-        $search = $indexService->createSearch();
+        $search = $indexService->createSearch($request);
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $reader);
+
+        $search->setSize($size);
+        $search->setFrom($pageCursor * $size);
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
@@ -188,10 +194,11 @@ class EndpointController extends BaseEndpointController
     }
 
     /**
-     * @param IndexManager      $indexManager
+     * @param IndexManager $indexManager
      * @param IndexQueryService $indexService
      *
      * @return JsonResponse
+     * @throws Exception
      */
     public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {

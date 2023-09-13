@@ -28,60 +28,63 @@ class Configuration implements ConfigurationInterface
         $treeBuilder->getRootNode()
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('index_name_prefix')
-                    ->info('Prefix for index names.')
-                    ->defaultValue('datahub_restindex')
-                    ->validate()
-                        ->ifString()
-                        ->then(static function ($value) {
-                            return rtrim(str_replace('-', '_', $value), '_');
-                        })
-                    ->end()
-                ->end()
-                ->arrayNode('es_hosts')
-                    ->info('List of Elasticsearch hosts.')
-                    ->prototype('scalar')->end()
-                    ->defaultValue(['localhost'])
-                ->end()
-                ->variableNode('index_settings')
-                    ->info('Global Elasticsearch index settings.')
-                    ->defaultValue([
-                        'number_of_shards' => 5,
-                        'number_of_replicas' => 0,
-                        'max_ngram_diff' => 20,
-                        'analysis' => [
-                            'analyzer' => [
-                                'datahub_ngram_analyzer' => [
-                                    'type' => 'custom',
-                                    'tokenizer' => 'datahub_ngram_tokenizer',
-                                    'filter' => ['lowercase'],
-                                ],
-                                'datahub_whitespace_analyzer' => [
-                                    'type' => 'custom',
-                                    'tokenizer' => 'datahub_whitespace_tokenizer',
-                                    'filter' => ['lowercase'],
-                                ],
-                            ],
-                            'normalizer' => [
-                                'lowercase' => [
-                                    'type' => 'custom',
-                                    'filter' => ['lowercase'],
-                                ],
-                            ],
-                            'tokenizer' => [
-                                'datahub_ngram_tokenizer' => [
-                                    'type' => 'nGram',
-                                    'min_gram' => 2,
-                                    'max_gram' => 20,
-                                    'token_chars' => ['letter', 'digit'],
-                                ],
-                                'datahub_whitespace_tokenizer' => [
-                                    'type' => 'whitespace',
-                                ],
-                            ],
+            ->scalarNode('index_name_prefix')
+            ->info('Prefix for index names.')
+            ->defaultValue('datahub_restindex')
+            ->validate()
+            ->ifString()
+            ->then(static function ($value) {
+                return rtrim(str_replace('-', '_', $value), '_');
+            })
+            ->end()
+            ->end()
+            ->scalarNode('es_client_name')
+            ->info('Name of elasticsearch client configuration to be used.')
+            ->defaultValue('default')
+            ->end()
+            ->scalarNode('max_result')
+            ->info('Maximum result for page')
+            ->defaultValue(100)
+            ->end()
+            ->variableNode('index_settings')
+            ->info('Global Elasticsearch index settings.')
+            ->defaultValue([
+                'number_of_shards' => 5,
+                'number_of_replicas' => 0,
+                'max_ngram_diff' => 20,
+                'analysis' => [
+                    'analyzer' => [
+                        'datahub_ngram_analyzer' => [
+                            'type' => 'custom',
+                            'tokenizer' => 'datahub_ngram_tokenizer',
+                            'filter' => ['lowercase'],
                         ],
-                    ])
-                ->end()
+                        'datahub_whitespace_analyzer' => [
+                            'type' => 'custom',
+                            'tokenizer' => 'datahub_whitespace_tokenizer',
+                            'filter' => ['lowercase'],
+                        ],
+                    ],
+                    'normalizer' => [
+                        'lowercase' => [
+                            'type' => 'custom',
+                            'filter' => ['lowercase'],
+                        ],
+                    ],
+                    'tokenizer' => [
+                        'datahub_ngram_tokenizer' => [
+                            'type' => 'ngram',
+                            'min_gram' => 2,
+                            'max_gram' => 20,
+                            'token_chars' => ['letter', 'digit'],
+                        ],
+                        'datahub_whitespace_tokenizer' => [
+                            'type' => 'whitespace',
+                        ],
+                    ],
+                ],
+            ])
+            ->end()
             ->end();
 
         return $treeBuilder;

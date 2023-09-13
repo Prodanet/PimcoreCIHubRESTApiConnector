@@ -14,11 +14,22 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Exception;
+use Pimcore\Bundle\ElasticsearchClientBundle\DependencyInjection\PimcoreElasticsearchClientExtension;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 class SimpleRESTAdapterExtension extends Extension implements PrependExtensionInterface
@@ -69,8 +80,30 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         }
 
         $container->setParameter('simple_rest_adapter.index_name_prefix', $config['index_name_prefix']);
-        $container->setParameter('simple_rest_adapter.es_hosts', $config['es_hosts']);
         $container->setParameter('simple_rest_adapter.index_settings', $config['index_settings']);
         $container->setParameter('simple_rest_adapter.default_preview_thumbnail', $config['default_preview_thumbnail'] ?? []);
+
+        $definition = new Definition(IndexPersistenceService::class);
+        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX . $config['es_client_name']));
+        $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
+        $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
+        $definition->setArgument('$assetProvider', new Reference(AssetProvider::class));
+        $definition->setArgument('$objectProvider', new Reference(DataObjectProvider::class));
+        $definition->setArgument('$indexSettings', $config['index_settings']);
+        $container->addDefinitions([IndexPersistenceService::class => $definition]);
+
+        $definition = new Definition(IndexQueryService::class);
+        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX . $config['es_client_name']));
+        $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
+        $definition->setArgument('$maxResult', $config['max_result']);
+        $container->addDefinitions([IndexQueryService::class => $definition]);
+
+        $definition = new Definition(AssetMapping::class);
+        $container->addDefinitions([AssetMapping::class => $definition]);
+        $definition = new Definition(DataObjectMapping::class);
+        $container->addDefinitions([DataObjectMapping::class => $definition]);
+        $definition = new Definition(FolderMapping::class);
+        $container->addDefinitions([FolderMapping::class => $definition]);
+
     }
 }

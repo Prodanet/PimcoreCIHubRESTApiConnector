@@ -11,15 +11,4 @@
  * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
-pimcore.registerNS('pimcore.plugin.simpleRestAdapterBundle');
-pimcore.plugin.simpleRestAdapterBundle = Class.create(pimcore.plugin.admin, {
-    getClassName: function () {
-        return 'pimcore.plugin.simpleRestAdapterBundle';
-    },
-    initialize: function () {
-        document.addEventListener(pimcore.events.pimcoreReady, this.onPimcoreReady.bind(this));
-        document.addEventListener(pimcore.events.onPerspectiveEditorLoadPermissions, this.onPerspectiveEditorLoadPermissions.bind(this));
-    },
-});
 
-const simpleRestAdapterBundle = new pimcore.plugin.simpleRestAdapterBundle();

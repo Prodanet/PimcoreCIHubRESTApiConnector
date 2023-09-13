@@ -17,14 +17,14 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event;
 class GetModifiedConfigurationEvent extends ConfigurationEvent
 {
     /**
-     * @var array<string, array>|null
+     * @var array<string, array>
      */
-    private null $modifiedConfiguration;
+    private array $modifiedConfiguration = [];
 
     /**
      * @return array<string, array>|null
      */
-    public function getModifiedConfiguration(): ?array
+    public function getModifiedConfiguration(): array
     {
         return $this->modifiedConfiguration;
     }

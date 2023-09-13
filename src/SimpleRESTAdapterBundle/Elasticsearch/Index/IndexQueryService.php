@@ -18,7 +18,9 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
+use Exception;
 use ONGR\ElasticsearchDSL\Search;
+use Symfony\Component\HttpFoundation\Request;
 
 final class IndexQueryService
 {
@@ -31,22 +33,26 @@ final class IndexQueryService
      * @var string
      */
     private string $indexNamePrefix;
+    private Request $request;
+    private int $maxResult;
 
     /**
      * @param Client $client
      * @param string $indexNamePrefix
      */
-    public function __construct(Client $client, string $indexNamePrefix)
+    public function __construct(Client $client, string $indexNamePrefix, int $maxResult = 100)
     {
         $this->client = $client;
         $this->indexNamePrefix = $indexNamePrefix;
+        $this->maxResult = $maxResult;
     }
 
     /**
      * @return Search
      */
-    public function createSearch(): Search
+    public function createSearch(Request $request): Search
     {
+        $this->request = $request;
         return new Search();
     }
 
@@ -78,6 +84,7 @@ final class IndexQueryService
      * @return array<string, mixed>
      * @throws ClientResponseException
      * @throws ServerResponseException
+     * @throws Exception
      */
     public function search(string $index, array $query, array $params = []): array
     {

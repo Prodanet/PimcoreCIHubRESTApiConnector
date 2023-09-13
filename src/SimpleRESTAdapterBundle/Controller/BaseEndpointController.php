@@ -116,6 +116,9 @@ abstract class BaseEndpointController extends FrontendController
      */
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $reader): void
     {
+        $parentId = intval($this->request->get('parent_id', 1));
+        $type = $this->request->get('type', 'object');
+        $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
         $filter = json_decode($this->request->get('filter'), true);
         $this->includeAggregations = filter_var(
@@ -143,6 +146,40 @@ abstract class BaseEndpointController extends FrontendController
                 $search->addAggregation(new TermsAggregation($field, $field));
             }
         }
+
+
+        $query['bool']['filter']['bool']['must'][] = [
+            'term' => [
+                'system.type' => $type
+            ]
+        ];
+        $query['bool']['filter']['bool']['must'][] = [
+            'term' => [
+                'system.parentId' => $parentId
+            ]
+        ];
+
+        $body['query'] = $query;
+
+        $sort = [];
+
+        if ($orderBy) {
+            foreach ($orderBy as $field => $order) {
+                $sort[] = [
+                    $field => [
+                        'order' => $order,
+                        'missing' => '_last',
+                        'unmapped_type' => 'keyword'
+                    ]
+                ];
+            }
+        }
+        $sort[] = [
+            'system.id' => [
+                'order' => 'asc'
+            ]
+        ];
+        $body['sort'] = $sort;
     }
 
     /**

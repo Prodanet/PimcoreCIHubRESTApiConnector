@@ -42,7 +42,6 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
     public function getJsPaths(): array
     {
         return [
-            '/bundles/simplerestadapter/pimcore/js/startup.js',
             '/bundles/simplerestadapter/pimcore/js/adapter.js',
             '/bundles/simplerestadapter/pimcore/js/config-item.js',
             '/bundles/simplerestadapter/pimcore/js/grid-config-dialog.js',
