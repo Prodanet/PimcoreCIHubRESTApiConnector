@@ -17,9 +17,19 @@
     {
       "name": "Brand Oriented",
       "email": "biuro@brandoriented.pl",
-      "homepage": "https://brandoriented.pl"
+      "homepage": "https://brandoriented.pl",
+      "role": "Developer"
+    },
+    {
+      "name": "Dominik Labudzinski",
+      "role": "Developer"
     }
   ],
+  ,
+  "support": {
+    "issues": "https://github.com/BrandOriented/SimpleRESTAdapterBundle/issues",
+    "docs": "https://github.com/BrandOriented/SimpleRESTAdapterBundle/blob/master/README.md"
+  },
   "prefer-stable": true,
   "minimum-stability": "dev",
   "require": {

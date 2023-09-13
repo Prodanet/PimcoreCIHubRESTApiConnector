@@ -200,7 +200,7 @@ class EndpointController extends BaseEndpointController
      * @return JsonResponse
      * @throws Exception
      */
-    public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
+    public function treeItemsAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         $configuration = $this->getDataHubConfiguration();
         $reader = new ConfigReader($configuration->getConfiguration());
@@ -237,7 +237,7 @@ class EndpointController extends BaseEndpointController
             }
         }
 
-        $search = $indexService->createSearch();
+        $search = $indexService->createSearch($request);
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $reader);
         $search->addQuery(new MatchQuery('system.parentId', $parentId));
