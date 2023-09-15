@@ -40,6 +40,11 @@ Therefore, it can be used to connect Pimcore to other systems or to connect Fron
 * [Indexing Details](docs/02-indexing.md)
 
 ## License
+
+**Brand Oriented**, Okopowa 33/26, 01-059 Warszawa, Polska  
+[brandoriented.pl](https://brandoriented.pl), biuro@brandoriented.pl  
+Copyright © 2023 Brand Oriented. All rights reserved.
+
 **CI HUB GmbH**, Benkertstrasse 4, 14467 Potsdam, Germany  
 [ci-hub.com](https://ci-hub.com), info@ci-hub.com  
 Copyright © 2021 CI HUB GmbH. All rights reserved.

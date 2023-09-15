@@ -14,7 +14,9 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
-final class ESClientException extends \RuntimeException
+use RuntimeException;
+
+final class ESClientException extends RuntimeException
 {
     /**
      * @param string $message

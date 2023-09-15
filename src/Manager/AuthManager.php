@@ -7,19 +7,15 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundExceptio
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
+use Pimcore;
 use Pimcore\Bundle\DataHubBundle\Configuration;
-use Pimcore\Config;
 use Pimcore\Db;
 use Pimcore\Event\ElementEvents;
 use Pimcore\Event\Model\ElementEvent;
 use Pimcore\Model\Asset;
 use Pimcore\Model\User;
-use Pimcore\Tool\Session;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBagInterface;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 
 final class AuthManager
 {
@@ -47,7 +43,7 @@ final class AuthManager
         }
 
         $event = new ElementEvent($asset, ['isAllowed' => $isAllowed, 'permissionType' => $type, 'user' => $user]);
-        \Pimcore::getEventDispatcher()->dispatch($event, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
+        Pimcore::getEventDispatcher()->dispatch($event, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
 
         return (bool) $event->getArgument('isAllowed');
     }

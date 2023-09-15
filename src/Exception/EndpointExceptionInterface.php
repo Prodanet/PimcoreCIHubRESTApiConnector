@@ -14,9 +14,11 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
+use Throwable;
+
 /**
  * Marker interface for all exceptions thrown by the endpoints of the SimpleRESTAdapter bundle.
  */
-interface EndpointExceptionInterface extends \Throwable
+interface EndpointExceptionInterface extends Throwable
 {
 }

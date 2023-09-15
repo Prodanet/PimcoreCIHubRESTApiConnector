@@ -14,8 +14,8 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Guard;
 
-use Pimcore\Model\Element\ElementInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use Pimcore\Model\Element\ElementInterface;
 
 interface WorkspaceGuardInterface
 {

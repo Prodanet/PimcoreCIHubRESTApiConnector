@@ -14,11 +14,11 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\EndpointExceptionInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\EndpointExceptionInterface;
 
 class ExceptionListener implements EventSubscriberInterface
 {

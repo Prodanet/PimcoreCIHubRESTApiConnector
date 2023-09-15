@@ -10,11 +10,11 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use Pimcore;
-use Pimcore\Model\Element;
 use Pimcore\Config;
 use Pimcore\Event\AssetEvents;
 use Pimcore\Event\Model\Asset\ResolveUploadTargetEvent;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Element;
 use Pimcore\Model\Element\Service;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -242,7 +242,7 @@ class AssetController extends BaseEndpointController
                 ]
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'message' => $e->getMessage(),

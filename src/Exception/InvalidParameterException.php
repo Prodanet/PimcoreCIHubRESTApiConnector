@@ -14,9 +14,10 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class InvalidParameterException extends \InvalidArgumentException implements EndpointExceptionInterface
+final class InvalidParameterException extends InvalidArgumentException implements EndpointExceptionInterface
 {
     /**
      * @param array<int, string> $requiredParams

@@ -14,7 +14,6 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;

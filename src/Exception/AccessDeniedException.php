@@ -14,9 +14,10 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
+use LogicException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AccessDeniedException extends \LogicException implements EndpointExceptionInterface
+final class AccessDeniedException extends LogicException implements EndpointExceptionInterface
 {
     /**
      * @param string $message

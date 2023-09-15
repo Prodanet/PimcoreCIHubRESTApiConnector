@@ -54,7 +54,7 @@
   },
   "autoload": {
     "psr-4": {
-      "CIHub\\Bundle\\SimpleRESTAdapterBundle\\": "src/SimpleRESTAdapterBundle/"
+      "CIHub\\Bundle\\SimpleRESTAdapterBundle\\": "src/"
     },
     "exclude-from-classmap": [
       "vendor/phpunit"

@@ -16,13 +16,9 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Controller\FrontendController;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Serializer;
 
 #[Route("/pimcore-datahub-webservices/simplerest")]
 class SwaggerController extends FrontendController

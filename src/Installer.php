@@ -1,6 +1,7 @@
 <?php
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
+use Exception;
 use Pimcore\Db;
 use Pimcore\Extension\Bundle\Installer\Exception\InstallationException;
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
@@ -19,7 +20,7 @@ class Installer extends SettingsStoreAwareInstaller
                  primary key (id),
                  foreign key (userId) references users (id)
             );");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Logger::warn($e);
             throw new InstallationException($e->getMessage());
         }
