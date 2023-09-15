@@ -23,6 +23,10 @@ final class DataHubConfigurationRepository
     {
         return Dao::getByName($name);
     }
+    public function all(): array
+    {
+        return Dao::getList();
+    }
 
     /**
      * @param array<int, string> $allowedConfigTypes

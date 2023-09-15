@@ -27,6 +27,8 @@ Therefore, it can be used to connect Pimcore to other systems or to connect Fron
     * ordering
     * aggregations – provide possible values for fields to create filters
   * **get-element**: Method to get one single element by type and ID.
+  * **create asset**: Method to create new asset
+  * **update asset**: Method to replace existing asset
 * Endpoint security via bearer token that has to be sent as header with every request.
 
 ![Schema Configuration](docs/images/schema.png "Schema Configuration")

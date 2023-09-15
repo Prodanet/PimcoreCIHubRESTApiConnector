@@ -15,6 +15,7 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
 use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
+use Pimcore\Extension\Bundle\Installer\InstallerInterface;
 use Pimcore\Extension\Bundle\PimcoreBundleAdminClassicInterface;
 use Pimcore\Extension\Bundle\Traits\BundleAdminClassicTrait;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
@@ -25,7 +26,10 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
     use PackageVersionTrait;
 
     public const PACKAGE_NAME = 'ci-hub/simple-rest-adapter-bundle';
-
+    public function getInstaller(): ?InstallerInterface
+    {
+        return $this->container->get(Installer::class);
+    }
     /**
      * {@inheritdoc}
      */
@@ -45,6 +49,8 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
             '/bundles/simplerestadapter/pimcore/js/adapter.js',
             '/bundles/simplerestadapter/pimcore/js/config-item.js',
             '/bundles/simplerestadapter/pimcore/js/grid-config-dialog.js',
+            '/bundles/simplerestadapter/pimcore/js/userTab.js',
+            '/bundles/simplerestadapter/pimcore/js/user/ciHub.js',
         ];
     }
 

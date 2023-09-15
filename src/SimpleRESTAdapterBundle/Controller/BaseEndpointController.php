@@ -18,6 +18,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
@@ -45,19 +46,9 @@ abstract class BaseEndpointController extends FrontendController
     protected string $config;
 
     /**
-     * @var DataHubConfigurationRepository
-     */
-    protected DataHubConfigurationRepository $configRepository;
-
-    /**
      * @var bool
      */
     protected bool $includeAggregations = false;
-
-    /**
-     * @var LabelExtractorInterface
-     */
-    protected LabelExtractorInterface $labelExtractor;
 
     /**
      * @var int
@@ -70,23 +61,16 @@ abstract class BaseEndpointController extends FrontendController
     protected Request $request;
 
     /**
-     * @var RequestStack
-     */
-    protected RequestStack $requestStack;
-
-    /**
      * @param DataHubConfigurationRepository $configRepository
      * @param LabelExtractorInterface        $labelExtractor
      * @param RequestStack                   $requestStack
      */
     public function __construct(
-        DataHubConfigurationRepository $configRepository,
-        LabelExtractorInterface $labelExtractor,
-        RequestStack $requestStack
+        private readonly DataHubConfigurationRepository $configRepository,
+        private readonly LabelExtractorInterface        $labelExtractor,
+        private readonly RequestStack $requestStack,
+        protected readonly AuthManager $authManager
     ) {
-        $this->configRepository = $configRepository;
-        $this->labelExtractor = $labelExtractor;
-        $this->requestStack = $requestStack;
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
     }
@@ -286,25 +270,6 @@ abstract class BaseEndpointController extends FrontendController
         }
 
         return $response;
-    }
-
-    /**
-     * @param string $apiKey
-     */
-    protected function checkAuthentication(string $apiKey): void
-    {
-        // look for header "Authorization: Bearer <token>"
-        if (!$this->request->headers->has('Authorization')
-            || !str_starts_with($this->request->headers->get('Authorization'), 'Bearer ')) {
-            throw new AccessDeniedException();
-        }
-
-        // skip beyond "Bearer "
-        $authorizationHeader = substr($this->request->headers->get('Authorization'), 7);
-
-        if ($authorizationHeader !== $apiKey) {
-            throw new AccessDeniedException();
-        }
     }
 
     /**

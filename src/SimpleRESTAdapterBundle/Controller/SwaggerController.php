@@ -14,16 +14,23 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Controller\FrontendController;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Serializer;
 
+#[Route("/pimcore-datahub-webservices/simplerest")]
 class SwaggerController extends FrontendController
 {
     /**
      * @return Response
      */
+    #[Route("/swagger", name: "simple_rest_adapter_swagger_ui", methods: ['GET'])]
     public function userInterfaceAction(): Response
     {
         return $this->renderTemplate('@SimpleRESTAdapter/Swagger/index.html.twig', [
@@ -34,29 +41,9 @@ class SwaggerController extends FrontendController
     /**
      * @return Response
      */
-    public function configAction(): Response
+    #[Route("/swagger-config", name: "simple_rest_adapter_swagger_config", methods: ["GET"])]
+    public function configAction(Request $request, RenderOpenApi $renderOpenApi): Response
     {
-        $finder = new Finder();
-        $finder
-            ->files()
-            ->in(__DIR__ . '/../Resources/config')
-            ->depth('== 0')
-            ->name('swagger.yml');
-
-        if (!$finder->hasResults()) {
-            throw new NotFoundHttpException('Swagger config not found.');
-        }
-
-        $config = '';
-
-        foreach ($finder as $file) {
-            $config = $file->getContents();
-
-            if (!empty($config)) {
-                break;
-            }
-        }
-
-        return new Response($config);
+        return new Response($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'));
     }
 }

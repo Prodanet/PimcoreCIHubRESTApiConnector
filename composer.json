@@ -22,6 +22,7 @@
     },
     {
       "name": "Dominik Labudzinski",
+      "email": "dominik@labudzinski.com",
       "role": "Developer"
     }
   ],
@@ -30,7 +31,7 @@
     "docs": "https://github.com/BrandOriented/SimpleRESTAdapterBundle/blob/master/README.md"
   },
   "prefer-stable": true,
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "require": {
     "php": "~8.0.0 || ~8.1.0 || ~8.2.0",
     "elasticsearch/elasticsearch": "^7.0 || ^8.9",
@@ -38,7 +39,6 @@
     "pimcore/admin-ui-classic-bundle": "^1.1",
     "pimcore/compatibility-bridge-v10": "^1.0",
     "pimcore/data-hub": "^1.0",
-    "pimcore/pimcore": "^10.6 || ^11.0",
     "symfony/messenger": "^5.0 || ^6.0",
     "webmozart/assert": "^1.11",
     "zircote/swagger-php": "^3.0 || ^4.7"

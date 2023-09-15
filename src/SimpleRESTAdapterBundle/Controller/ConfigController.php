@@ -31,8 +31,10 @@ use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+#[Route("/admin/simple-rest-adapter/config", options: ["expose" => true])]
 class ConfigController extends AdminAbstractController
 {
     /**
@@ -42,6 +44,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
+    #[Route("/delete", name: "simple_rest_adapter_config_delete", methods: ['GET'])]
     public function deleteAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -81,6 +84,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
+    #[Route("/get", name: "simple_rest_adapter_config_get", methods: ['GET'])]
     public function getAction(DataHubConfigurationRepository $configRepository, Request $request): JsonResponse
     {
         $this->checkPermission(BaseConfigController::CONFIG_NAME);
@@ -122,6 +126,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
+    #[Route("/label-list", name: "simple_rest_adapter_config_label_list", methods: ["GET"])]
     public function labelListAction(
         DataHubConfigurationRepository $configRepository,
         IndexManager $indexManager,
@@ -159,6 +164,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
+    #[Route("/save", name: "simple_rest_adapter_config_save", methods: ['POST'])]
     public function saveAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -215,6 +221,7 @@ class ConfigController extends AdminAbstractController
     /**
      * @return JsonResponse
      */
+    #[Route("/thumbnails", name: "simple_rest_adapter_config_thumbnails", methods: ["GET"])]
     public function thumbnailsAction(): JsonResponse
     {
         $this->checkPermission('thumbnails');

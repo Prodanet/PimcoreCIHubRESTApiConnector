@@ -193,6 +193,17 @@ final class ConfigReader
     {
         return $this->config['workspaces'][$type] ?? [];
     }
+    /**
+     * Returns a permission for user.
+     *
+     * @param string $type
+     *
+     * @return array<int, array>
+     */
+    public function getPermissions(): array
+    {
+        return $this->config['permissions']['user'] ?? [];
+    }
 
     /**
      * Checks if asset indexing is enabled.
