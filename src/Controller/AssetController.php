@@ -9,6 +9,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
+use OpenApi\Attributes as OA;
 use Pimcore;
 use Pimcore\Config;
 use Pimcore\Event\AssetEvents;
@@ -25,10 +26,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-
-/**
- * @Route("/pimcore-datahub-webservices/simplerest/{config}")
- */
+#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
+#[Security(name: "Bearer")]
 class AssetController extends BaseEndpointController
 {
     /**
@@ -39,6 +38,85 @@ class AssetController extends BaseEndpointController
      * @throws \Doctrine\DBAL\Exception
      */
     #[Route("/get-element", name: "simple_rest_adapter_endpoints_get_element", methods: ["GET"])]
+    #[OA\Get(
+        description: 'Method to get one single element by type and ID.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                in: 'header',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                in: 'path',
+                description: 'Name of the config.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                in: 'query',
+                description: 'Type of elements – asset or object.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ["asset", "object"]
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                in: 'query',
+                description: 'ID of element.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items()
+                        ),
+                        new OA\Property(
+                            property: 'page_cursor',
+                            type: 'string',
+                            description: 'Page cursor for next page.'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+        security: [
+            'Bearer'
+        ]
+    )]
     public function getElementAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         $configuration = $this->getDataHubConfiguration();
@@ -97,6 +175,85 @@ class AssetController extends BaseEndpointController
      * @Route("/lock-asset", name="lock_asset", methods={"POST", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[OA\Post(
+        description: 'Method to lock single element by type and ID.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                in: 'header',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                in: 'path',
+                description: 'Name of the config.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                in: 'query',
+                description: 'Type of elements – asset or object.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ["asset", "object"]
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                in: 'query',
+                description: 'ID of element.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items()
+                        ),
+                        new OA\Property(
+                            property: 'page_cursor',
+                            type: 'string',
+                            description: 'Page cursor for next page.'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+        security: [
+            'Bearer'
+        ]
+    )]
     public function lock(): Response {
         $user = $this->authManager->authenticate();
         $assetId = $this->request->query->getInt('id');
@@ -128,6 +285,85 @@ class AssetController extends BaseEndpointController
      * @Route("/unlock-asset", name="unlock_asset", methods={"POST", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[OA\Post(
+        description: 'Method to unlock single element by type and ID.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                in: 'header',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                in: 'path',
+                description: 'Name of the config.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                in: 'query',
+                description: 'Type of elements – asset or object.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ["asset", "object"]
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                in: 'query',
+                description: 'ID of element.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items()
+                        ),
+                        new OA\Property(
+                            property: 'page_cursor',
+                            type: 'string',
+                            description: 'Page cursor for next page.'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+        security: [
+            'Bearer'
+        ]
+    )]
     public function unlock(): Response {
         $user = $this->authManager->authenticate();
         $assetId = $this->request->query->getInt('id');
@@ -161,6 +397,91 @@ class AssetController extends BaseEndpointController
      * @throws \Doctrine\DBAL\Exception
      * @Route("/add-asset", name="upload_asset", methods={"POST", "OPTIONS"})
      */
+    #[OA\Post(
+        description: 'SImple method to create and upload asset',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                in: 'header',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                in: 'path',
+                description: 'Name of the config.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                in: 'query',
+                description: 'Type of elements – asset or object.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ["asset", "object"]
+                )
+            ),
+            new OA\RequestBody(
+                content: new OA\MediaType(
+                    mediaType: 'multipart/form-data',
+                    schema: new OA\Schema(
+                        type: 'file',
+                        properties: [
+                            new OA\Property(
+                                property: 'file',
+                                format: 'binary',
+                                type: 'string'
+                            )
+                        ]
+                    )
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'id',
+                            description: 'Asset ID',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'path',
+                            type: 'string',
+                            description: 'Asset path'
+                        ),
+                        new OA\Property(
+                            property: 'success',
+                            type: 'boolean',
+                            description: 'Succes response'
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+        security: [
+            'Bearer'
+        ]
+    )]
     public function add(Config              $pimcoreConfig,
                         TranslatorInterface $translator,
                         AssetHelper $assetHelper): Response
@@ -255,6 +576,65 @@ class AssetController extends BaseEndpointController
      * @Route("/download-asset", name="download_asset", methods={"GET", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[OA\Post(
+        description: 'Method to download binary file by asset ID.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                in: 'header',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                in: 'path',
+                description: 'Name of the config.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                in: 'query',
+                description: 'ID of element.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            ),
+            new OA\Parameter(
+                name: 'thumbnail',
+                in: 'query',
+                description: 'Thumbnail config nae',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\MediaType()
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+        security: [
+            'Bearer'
+        ]
+    )]
     public function download(): Response
     {
         $crossOriginHeaders = [

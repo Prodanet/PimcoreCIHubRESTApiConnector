@@ -1,43 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>DataHub Simple REST Adapter Endpoints – Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="{{ asset('bundles/simplerestadapter/swagger/css/swagger-ui.css') }}" >
-    <link rel="icon" type="image/png" href="{{ asset('bundles/simplerestadapter/swagger/ico/favicon-32x32.png') }}" sizes="32x32" />
-    <link rel="icon" type="image/png" href="{{ asset('bundles/simplerestadapter/swagger/ico/favicon-16x16.png') }}" sizes="16x16" />
-    <style>
-      html {
-        box-sizing: border-box;
-        overflow: -moz-scrollbars-vertical;
-        overflow-y: scroll;
-      }
+<html>
+<head>
+    {% block meta %}
+        <meta charset="UTF-8">
+    {% endblock meta %}
+    <title>{% block title %}DataHub REST Adapter – Swagger UI{% endblock title %}</title>
 
-      *,
-      *:before,
-      *:after {
-        box-sizing: inherit;
-      }
+    {% block stylesheets %}
+        {{ nelmioAsset(assets_mode, 'swagger-ui/swagger-ui.css') }}
+        {{ nelmioAsset(assets_mode, 'style.css') }}
+    {% endblock stylesheets %}
 
-      body {
-        margin:0;
-        background: #fafafa;
-      }
-    </style>
-  </head>
+    {% block swagger_data %}
+        {# json_encode(65) is for JSON_UNESCAPED_SLASHES|JSON_HEX_TAG to avoid JS XSS #}
+        <script id="swagger-data" type="application/json">{{ swagger_data|json_encode(65)|raw }}</script>
+    {% endblock swagger_data %}
+</head>
+<body>
+{% block header_block %}
 
-  <body>
-    <div id="swagger-ui"></div>
+{% endblock header_block %}
 
-    <script src="{{ asset('bundles/simplerestadapter/swagger/js/swagger-ui-bundle.js') }}" charset="UTF-8"></script>
-    <script src="{{ asset('bundles/simplerestadapter/swagger/js/swagger-ui-standalone-preset.js') }}" charset="UTF-8"></script>
+{% block swagger_ui %}
+    <div id="swagger-ui" class="api-platform"></div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ nelmioAsset(assets_mode, 'swagger-ui/swagger-ui-bundle.js') }}
+    {{ nelmioAsset(assets_mode, 'swagger-ui/swagger-ui-standalone-preset.js') }}
+{% endblock javascripts %}
+
+{{ nelmioAsset(assets_mode, 'init-swagger-ui.js') }}
+
+{% block swagger_initialization %}
     <script>
-    window.onload = function() {
-      window.ui = SwaggerUIBundle({
-        url: '{{ configUrl }}',
-        dom_id: '#swagger-ui',
-      });
-    }
-  </script>
-  </body>
+        window.onload = function () {
+            var swaggerUI = {{ swagger_data|json_encode(65)|raw }};
+            window.onload = loadSwaggerUI(swaggerUI);
+        }
+    </script>
+{% endblock swagger_initialization %}
+</body>
 </html>
+Z
