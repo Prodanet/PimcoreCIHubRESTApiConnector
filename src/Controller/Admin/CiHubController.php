@@ -5,12 +5,11 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller\Admin;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
 use Pimcore\Bundle\AdminBundle\Controller\AdminAbstractController;
-use Pimcore\Controller\FrontendController;
 use Pimcore\Db;
 use Pimcore\Model\User;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
