@@ -2,7 +2,7 @@
   "name": "ci-hub/rest-adapter-bundle",
   "type": "pimcore-bundle",
   "license": "GPL-3.0-or-later",
-  "description": "Simple REST Adapter for Pimcore DataHub",
+  "description": "REST Adapter for Pimcore DataHub",
   "keywords": [
     "pimcore",
     "pimcore-bundle"
