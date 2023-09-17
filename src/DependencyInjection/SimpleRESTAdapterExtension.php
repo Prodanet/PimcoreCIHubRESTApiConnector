@@ -56,6 +56,11 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         if (isset($bundles['PimcoreCIHubAdapterBundle'])) {
             $this->ciHubConfig = $container->getExtensionConfig('ci_hub_adapter');
         }
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load(('config.php'));
+        if ($container->hasExtension('doctrine_migrations')) {
+            $loader->load('doctrine_migrations.php');
+        }
     }
 
     /**

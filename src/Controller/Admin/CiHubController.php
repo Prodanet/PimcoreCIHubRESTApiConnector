@@ -12,17 +12,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @Route("/admin/ci-hub")
- */
+#[Route("/admin/ci-hub")]
 class CiHubController extends AdminAbstractController
 {
     /**
-     * @param Request $request
+     * @param DataHubConfigurationRepository $configRepository
      * @return Response
-     * @Route("/config/list", name="admin_ci_hub_user_config_list", options={"expose":true})
-     * @throws Exception
      */
+    #[Route("/config/list", name: "admin_ci_hub_user_config_list", options: ["expose" => true])]
     public function list(DataHubConfigurationRepository $configRepository): Response {
         $list = $configRepository->all();
         return new JsonResponse([
@@ -33,9 +30,9 @@ class CiHubController extends AdminAbstractController
     /**
      * @param Request $request
      * @return Response
-     * @Route("/config/update", name="admin_ci_hub_user_config_update", options={"expose":true})
      * @throws Exception
      */
+    #[Route("/config/update", name: "admin_ci_hub_user_config_update", options: ["expose" => true])]
     public function update(Request $request): Response {
         /** @var User|User\Role|null $user */
         $user = User\UserRole::getById($request->request->getInt('id'));
@@ -72,8 +69,8 @@ class CiHubController extends AdminAbstractController
      * @param Request $request
      * @return Response
      * @throws Exception
-     * @Route("/config", name="admin_ci_hub_user_config", options={"expose":true})
      */
+    #[Route("/config", name: "admin_ci_hub_user_config", options: ["expose" => true])]
     public function get(Request $request): Response {
         $userId = (int)$request->get('id');
         if ($userId < 1) {

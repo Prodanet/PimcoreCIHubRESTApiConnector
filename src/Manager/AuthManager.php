@@ -16,6 +16,7 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 final class AuthManager
 {

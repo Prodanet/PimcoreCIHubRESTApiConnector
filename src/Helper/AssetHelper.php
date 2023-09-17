@@ -8,6 +8,7 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\ClassDefinition\Data\ManyToManyRelation;
 use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element;
+use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -49,6 +50,9 @@ final class AssetHelper
         return false;
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function validateManyToManyRelationAssetType(array $context, string $filename, string $sourcePath): void
     {
         if (isset($context['containerType'], $context['objectId'], $context['fieldname'])
