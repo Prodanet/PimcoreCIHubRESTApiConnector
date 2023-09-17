@@ -21,6 +21,6 @@ final class SimpleRESTConfigurationLoader implements ConfigurationLoaderInterfac
      */
     public function configType(): string
     {
-        return 'simpleRest';
+        return 'rest';
     }
 }

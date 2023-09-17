@@ -28,6 +28,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route("/datahub/rest/{config}")]
+#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
 #[Security(name: "Bearer")]
 class AssetController extends BaseEndpointController
 {
@@ -38,7 +39,7 @@ class AssetController extends BaseEndpointController
      * @return JsonResponse
      * @throws \Doctrine\DBAL\Exception
      */
-    #[Route("/get-element", name: "simple_rest_adapter_endpoints_get_element", methods: ["GET"])]
+    #[Route("/get-element", name: "datahub_rest_adapter_endpoints_get_element", methods: ["GET"])]
     #[OA\Get(
         description: 'Method to get one single element by type and ID.',
         parameters: [

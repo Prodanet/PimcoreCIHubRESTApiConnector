@@ -8,7 +8,7 @@ pimcore.helpers.showUser = function (specificUser) {
             panel.activate();
         }
         catch (e) {
-            panel = new pimcore.plugin.simpleRestAdapterBundle.user.panel();
+            panel = new pimcore.plugin.restAdapterBundle.user.panel();
             pimcore.globalmanager.add("users", panel);
         }
 
@@ -17,15 +17,15 @@ pimcore.helpers.showUser = function (specificUser) {
         }
     }
 };
-pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.panel");
-pimcore.plugin.simpleRestAdapterBundle.user.panel = Class.create(pimcore.settings.user.panel, {
+pimcore.registerNS("pimcore.plugin.restAdapterBundle.user.panel");
+pimcore.plugin.restAdapterBundle.user.panel = Class.create(pimcore.settings.user.panel, {
     openUser: function(userId) {
         try {
             var userPanelKey = "user_" + userId;
             if (this.panels[userPanelKey]) {
                 this.panels[userPanelKey].activate();
             } else {
-                var userPanel = new pimcore.plugin.simpleRestAdapterBundle.user.usertab(this, userId);
+                var userPanel = new pimcore.plugin.restAdapterBundle.user.usertab(this, userId);
                 this.panels[userPanelKey] = userPanel;
             }
         } catch (e) {
@@ -34,8 +34,8 @@ pimcore.plugin.simpleRestAdapterBundle.user.panel = Class.create(pimcore.setting
     },
 
 });
-pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.panel");
-pimcore.plugin.simpleRestAdapterBundle.user.usertab = Class.create(pimcore.settings.user.usertab, {
+pimcore.registerNS("pimcore.plugin.restAdapterBundle.user.panel");
+pimcore.plugin.restAdapterBundle.user.usertab = Class.create(pimcore.settings.user.usertab, {
     initialize: function (parentPanel, id) {
         this.parentPanel = parentPanel;
         this.id = id;
@@ -90,7 +90,7 @@ pimcore.plugin.simpleRestAdapterBundle.user.usertab = Class.create(pimcore.setti
         this.workspaces = new pimcore.settings.user.workspaces(this);
         this.objectrelations = new pimcore.settings.user.user.objectrelations(this);
         this.keyBindings = new pimcore.settings.user.user.keyBindings(this);
-        this.ciHub = new pimcore.plugin.simpleRestAdapterBundle.user.ciHub(this);
+        this.ciHub = new pimcore.plugin.restAdapterBundle.user.ciHub(this);
 
         this.panel.add(this.settings.getPanel());
         this.panel.add(this.workspaces.getPanel());

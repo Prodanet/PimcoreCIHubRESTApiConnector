@@ -1,5 +1,5 @@
-pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.ciHub");
-pimcore.plugin.simpleRestAdapterBundle.user.ciHub = Class.create({
+pimcore.registerNS("pimcore.plugin.restAdapterBundle.user.ciHub");
+pimcore.plugin.restAdapterBundle.user.ciHub = Class.create({
     initialize: function (userPanel) {
         this.userPanel = userPanel;
         this.data = this.userPanel.data;

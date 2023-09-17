@@ -13,7 +13,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AssetProvider::class)
         ->args([
-            '%simple_rest_adapter.default_preview_thumbnail%',
+            '%datahub_rest_adapter.default_preview_thumbnail%',
             service('router.default'),
         ]);
 

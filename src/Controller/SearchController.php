@@ -30,6 +30,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route("/datahub/rest/{config}")]
+#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
 #[Security(name: "Bearer")]
 class SearchController extends BaseEndpointController
 {
@@ -41,7 +42,7 @@ class SearchController extends BaseEndpointController
      * @return JsonResponse
      * @throws Exception
      */
-    #[Route("/search", name: "simple_rest_adapter_endpoints_search", methods: ["GET"])]
+    #[Route("/search", name: "datahub_rest_adapter_endpoints_search", methods: ["GET"])]
     #[OA\Get(
         description: 'Method to search for elements, returns elements of all types. For paging use link provided in link header of response.',
         parameters: [
@@ -202,7 +203,7 @@ class SearchController extends BaseEndpointController
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
-    #[Route("/tree-items", name: "simple_rest_adapter_endpoints_tree_items", methods: ["GET"])]
+    #[Route("/tree-items", name: "datahub_rest_adapter_endpoints_tree_items", methods: ["GET"])]
     #[OA\Get(
         description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
         parameters: [

@@ -21,26 +21,26 @@ final class SimpleRESTAdapterEvents
      *
      * @Event("CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent")
      */
-    public const CONFIGURATION_PRE_DELETE = 'datahub.simple_rest.configuration.pre_delete';
+    public const CONFIGURATION_PRE_DELETE = 'datahub.rest.configuration.pre_delete';
 
     /**
      * The CONFIGURATION_POST_DELETE event occurs after the configuration was deleted.
      *
      * @Event("CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent")
      */
-    public const CONFIGURATION_POST_DELETE = 'datahub.simple_rest.configuration.post_delete';
+    public const CONFIGURATION_POST_DELETE = 'datahub.rest.configuration.post_delete';
 
     /**
      * The CONFIGURATION_PRE_SAVE event occurs before the configuration gets saved.
      *
      * @Event("CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\GetModifiedConfigurationEvent")
      */
-    public const CONFIGURATION_PRE_SAVE = 'datahub.simple_rest.configuration.pre_save';
+    public const CONFIGURATION_PRE_SAVE = 'datahub.rest.configuration.pre_save';
 
     /**
      * The CONFIGURATION_POST_SAVE event occurs after the configuration was saved.
      *
      * @Event("CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent")
      */
-    public const CONFIGURATION_POST_SAVE = 'datahub.simple_rest.configuration.post_save';
+    public const CONFIGURATION_POST_SAVE = 'datahub.rest.configuration.post_save';
 }

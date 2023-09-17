@@ -29,7 +29,7 @@ class SwaggerController extends FrontendController
     /**
      * @return Response
      */
-    #[Route("/swagger", name: "simple_rest_adapter_swagger_ui", methods: ['GET'])]
+    #[Route("/swagger", name: "datahub_rest_adapter_swagger_ui", methods: ['GET'])]
     public function userInterfaceAction(Request $request, RenderOpenApi $renderOpenApi, array $options = []): Response
     {
         $options += [
@@ -38,7 +38,7 @@ class SwaggerController extends FrontendController
         ];
 
         return $this->renderTemplate('@SimpleRESTAdapter/Swagger/index.html.twig', [
-            'configUrl' => $this->generateUrl('simple_rest_adapter_swagger_config'),
+            'configUrl' => $this->generateUrl('datahub_rest_adapter_swagger_config'),
             'swagger_data' => ['spec' => json_decode($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'), true)],
             'assets_mode' => $options['assets_mode'],
             'swagger_ui_config' => $options['swagger_ui_config'],
@@ -48,7 +48,7 @@ class SwaggerController extends FrontendController
     /**
      * @return Response
      */
-    #[Route("/swagger-config", name: "simple_rest_adapter_swagger_config", methods: ["GET"])]
+    #[Route("/swagger-config", name: "datahub_rest_adapter_swagger_config", methods: ["GET"])]
     public function configAction(Request $request, RenderOpenApi $renderOpenApi): Response
     {
         return new Response($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'));

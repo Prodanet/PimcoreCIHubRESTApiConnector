@@ -12,7 +12,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(IndexManager::class)
         ->args([
-            '%simple_rest_adapter.index_name_prefix%',
+            '%datahub_rest_adapter.index_name_prefix%',
             service(IndexPersistenceService::class),
         ]);
 };

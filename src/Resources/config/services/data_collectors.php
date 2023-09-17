@@ -16,14 +16,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CompositeDataCollector::class)
         ->args([
-            tagged_iterator('simple_rest_adapter.data_collector'),
+            tagged_iterator('datahub_rest_adapter.data_collector'),
         ]);
 
     $services->set(HotspotImageDataCollector::class)
         ->args([
             service(ImageDataCollector::class),
         ])
-        ->tag('simple_rest_adapter.data_collector', [
+        ->tag('datahub_rest_adapter.data_collector', [
             'priority' => 20,
         ]);
 
@@ -32,7 +32,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('router.default'),
             service(AssetProvider::class),
         ])
-        ->tag('simple_rest_adapter.data_collector', [
+        ->tag('datahub_rest_adapter.data_collector', [
             'priority' => 30,
         ]);
 
@@ -40,7 +40,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(HotspotImageDataCollector::class),
         ])
-        ->tag('simple_rest_adapter.data_collector', [
+        ->tag('datahub_rest_adapter.data_collector', [
             'priority' => 10,
         ]);
 };

@@ -4,17 +4,19 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller\Admin;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
-use Pimcore\Bundle\AdminBundle\Controller\AdminAbstractController;
+use Pimcore\Controller\Traits\JsonHelperTrait;
+use Pimcore\Controller\UserAwareController;
 use Pimcore\Db;
 use Pimcore\Model\User;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route("/admin/ci-hub")]
-class CiHubController extends AdminAbstractController
+class CiHubController extends UserAwareController
 {
+    use JsonHelperTrait;
+
     /**
      * @param DataHubConfigurationRepository $configRepository
      * @return Response
@@ -22,7 +24,7 @@ class CiHubController extends AdminAbstractController
     #[Route("/config/list", name: "admin_ci_hub_user_config_list", options: ["expose" => true])]
     public function list(DataHubConfigurationRepository $configRepository): Response {
         $list = $configRepository->all();
-        return new JsonResponse([
+        return $this->jsonResponse([
             'data' => array_keys($list),
             'success' => count($list) > 0
         ]);
@@ -36,7 +38,7 @@ class CiHubController extends AdminAbstractController
     public function update(Request $request): Response {
         /** @var User|User\Role|null $user */
         $user = User\UserRole::getById($request->request->getInt('id'));
-        $currentUserIsAdmin = $this->getAdminUser()->isAdmin();
+        $currentUserIsAdmin = $this->getPimcoreUser()->isAdmin();
 
         if (!$user) {
             throw $this->createNotFoundException();
@@ -62,7 +64,7 @@ class CiHubController extends AdminAbstractController
             }
         }
 
-        return $this->adminJson(['success' => true]);
+        return $this->jsonResponse(['success' => true]);
     }
 
     /**
@@ -83,17 +85,16 @@ class CiHubController extends AdminAbstractController
             throw $this->createNotFoundException();
         }
 
-        if ($user->isAdmin() && !$this->getAdminUser()->isAdmin()) {
+        if ($user->isAdmin() && !$this->getPimcoreUser()->isAdmin()) {
             throw $this->createAccessDeniedHttpException('Only admin users are allowed to modify admin users');
         }
 
-        $db = Db::get();
-        $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = ' . $user->getId());
+        $data = Db::get()->fetchOne('SELECT data FROM users_datahub_config WHERE userId = ' . $user->getId());
 
         if(!$data) {
             $data = '{}';
         }
 
-        return new JsonResponse(json_decode($data));
+        return $this->jsonResponse(json_decode($data));
     }
 }

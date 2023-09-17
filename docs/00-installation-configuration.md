@@ -26,7 +26,7 @@ Configure Elasticsearch hosts and index name prefix with Symfony configuration:
 
 ```yaml
 # Default configuration for "SimpleRESTAdapterBundle"
-simple_rest_adapter:
+datahub_rest_adapter:
 
     # Prefix for index names.
     index_name_prefix:    datahub_restindex
@@ -75,7 +75,8 @@ simple_rest_adapter:
 
 > Supported Elasticsearch version: ^7.0
 
-**Notice:** If you are using Elasticsearch version 8.0 and above, you should set `simple_rest_adapter.index_settings.analysis.tokenizer.datahub_ngram_tokenizer.type` as `ngram`, not `nGram`.
+**Notice:** If you are using Elasticsearch version 8.0 and above, you should
+set `rest_adapter.index_settings.analysis.tokenizer.datahub_ngram_tokenizer.type` as `ngram`, not `nGram`.
 
 To make sure the indexing queue is processed and index is filled, following command has to be executed on
 a regular basis, e.g. every 5 minutes.

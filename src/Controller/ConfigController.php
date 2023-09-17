@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-#[Route("/admin/simple-rest-adapter/config", options: ["expose" => true])]
+#[Route("/admin/rest/config", options: ["expose" => true])]
 class ConfigController extends AdminAbstractController
 {
     /**
@@ -44,7 +44,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
-    #[Route("/delete", name: "simple_rest_adapter_config_delete", methods: ['GET'])]
+    #[Route("/delete", name: "datahub_rest_adapter_config_delete", methods: ['GET'])]
     public function deleteAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -84,7 +84,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
-    #[Route("/get", name: "simple_rest_adapter_config_get", methods: ['GET'])]
+    #[Route("/get", name: "datahub_rest_adapter_config_get", methods: ['GET'])]
     public function getAction(DataHubConfigurationRepository $configRepository, Request $request): JsonResponse
     {
         $this->checkPermission(BaseConfigController::CONFIG_NAME);
@@ -101,10 +101,10 @@ class ConfigController extends AdminAbstractController
         // Add endpoint routes to current config
         $reader = new ConfigReader($configuration->getConfiguration());
         $reader->add([
-            'swaggerUrl' => $this->getEndpoint('simple_rest_adapter_swagger_ui'),
-            'treeItemsUrl' => $this->getEndpoint('simple_rest_adapter_endpoints_tree_items', ['config' => $configName]),
-            'searchUrl' => $this->getEndpoint('simple_rest_adapter_endpoints_get_element', ['config' => $configName]),
-            'getElementByIdUrl' => $this->getEndpoint('simple_rest_adapter_endpoints_get_element', ['config' => $configName]),
+            'swaggerUrl' => $this->getEndpoint('datahub_rest_adapter_swagger_ui'),
+            'treeItemsUrl' => $this->getEndpoint('datahub_rest_adapter_endpoints_tree_items', ['config' => $configName]),
+            'searchUrl' => $this->getEndpoint('datahub_rest_adapter_endpoints_get_element', ['config' => $configName]),
+            'getElementByIdUrl' => $this->getEndpoint('datahub_rest_adapter_endpoints_get_element', ['config' => $configName]),
         ]);
 
         return $this->json([
@@ -126,7 +126,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
-    #[Route("/label-list", name: "simple_rest_adapter_config_label_list", methods: ["GET"])]
+    #[Route("/label-list", name: "datahub_rest_adapter_config_label_list", methods: ["GET"])]
     public function labelListAction(
         DataHubConfigurationRepository $configRepository,
         IndexManager $indexManager,
@@ -164,7 +164,7 @@ class ConfigController extends AdminAbstractController
      *
      * @return JsonResponse
      */
-    #[Route("/save", name: "simple_rest_adapter_config_save", methods: ['POST'])]
+    #[Route("/save", name: "datahub_rest_adapter_config_save", methods: ['POST'])]
     public function saveAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -221,7 +221,7 @@ class ConfigController extends AdminAbstractController
     /**
      * @return JsonResponse
      */
-    #[Route("/thumbnails", name: "simple_rest_adapter_config_thumbnails", methods: ["GET"])]
+    #[Route("/thumbnails", name: "datahub_rest_adapter_config_thumbnails", methods: ["GET"])]
     public function thumbnailsAction(): JsonResponse
     {
         $this->checkPermission('thumbnails');
