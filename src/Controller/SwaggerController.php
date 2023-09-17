@@ -23,7 +23,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_PIMCORE_USER')]
-#[Route("/admin/pimcore-datahub-webservices/simplerest", defaults: ["area" => 'cihub'])]
+#[Route("/admin/datahub/rest", defaults: ["area" => 'cihub'])]
 class SwaggerController extends FrontendController
 {
     /**

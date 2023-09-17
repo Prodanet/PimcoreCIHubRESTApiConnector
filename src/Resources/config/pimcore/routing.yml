@@ -1,5 +1,0 @@
-_simple_rest:
-    resource:
-        path: ../../../Controller/
-        namespace: CIHub\Bundle\SimpleRESTAdapterBundle\Controller
-    type: annotation

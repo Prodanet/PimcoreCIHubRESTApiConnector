@@ -70,8 +70,8 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
 
         $this->registerConfiguration($container, $config);
 
-        $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        $loader->load('services.yml');
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('services.php');
 
         $definition = new Definition(IndexManager::class);
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);

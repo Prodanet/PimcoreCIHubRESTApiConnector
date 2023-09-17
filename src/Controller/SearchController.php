@@ -20,6 +20,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Exception;
+use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Element\Service;
@@ -28,7 +29,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
+#[Route("/datahub/rest/{config}")]
 #[Security(name: "Bearer")]
 class SearchController extends BaseEndpointController
 {
@@ -153,9 +154,6 @@ class SearchController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function searchAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
@@ -345,9 +343,6 @@ class SearchController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function treeItemsAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {

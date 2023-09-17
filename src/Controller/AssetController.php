@@ -9,6 +9,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
+use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore;
 use Pimcore\Config;
@@ -26,7 +27,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
+#[Route("/datahub/rest/{config}")]
 #[Security(name: "Bearer")]
 class AssetController extends BaseEndpointController
 {
@@ -113,9 +114,6 @@ class AssetController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function getElementAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
@@ -172,9 +170,9 @@ class AssetController extends BaseEndpointController
 
     /**
      * @return Response
-     * @Route("/lock-asset", name="lock_asset", methods={"POST", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[Route("/lock-asset", name: "lock_asset", methods: ["POST"])]
     #[OA\Post(
         description: 'Method to lock single element by type and ID.',
         parameters: [
@@ -250,9 +248,6 @@ class AssetController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function lock(): Response {
         $user = $this->authManager->authenticate();
@@ -282,9 +277,9 @@ class AssetController extends BaseEndpointController
 
     /**
      * @return Response
-     * @Route("/unlock-asset", name="unlock_asset", methods={"POST", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[Route("/unlock-asset", name: "unlock_asset", methods: ["POST"])]
     #[OA\Post(
         description: 'Method to unlock single element by type and ID.',
         parameters: [
@@ -360,9 +355,6 @@ class AssetController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function unlock(): Response {
         $user = $this->authManager->authenticate();
@@ -395,8 +387,9 @@ class AssetController extends BaseEndpointController
 
     /**
      * @throws \Doctrine\DBAL\Exception
-     * @Route("/add-asset", name="upload_asset", methods={"POST", "OPTIONS"})
+     *
      */
+    #[Route("/add-asset", name: "upload_asset", methods: ["POST"])]
     #[OA\Post(
         description: 'SImple method to create and upload asset',
         parameters: [
@@ -478,9 +471,6 @@ class AssetController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function add(Config              $pimcoreConfig,
                         TranslatorInterface $translator,
@@ -573,9 +563,9 @@ class AssetController extends BaseEndpointController
 
     /**
      * @return Response
-     * @Route("/download-asset", name="download_asset", methods={"GET", "OPTIONS"})
      * @throws \Doctrine\DBAL\Exception
      */
+    #[Route("/download-asset", name: "download_asset", methods: ["GET"])]
     #[OA\Post(
         description: 'Method to download binary file by asset ID.',
         parameters: [
@@ -631,9 +621,6 @@ class AssetController extends BaseEndpointController
                 description: 'Server error'
             )
         ],
-        security: [
-            'Bearer'
-        ]
     )]
     public function download(): Response
     {

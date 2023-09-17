@@ -74,5 +74,5 @@ To make sure the installation is correct, you can do the following checks.
 * Be sure to have some Assets/DataObjects in your system, otherwise no data will be in the index.
 * Check your DataHub endpoint configuration (see [here](01-endpoint-configuration.md) for details).
 * Check your Elasticsearch indices here: `http://localhost:9200/_cat/indices`. If none are present, something went wrong.
-* Now you can some API calls, for example from the Swagger page: `http://localhost/pimcore-datahub-webservices/simplerest/swagger`.
+* Now you can some API calls, for example from the Swagger page: `http://localhost/admin/datahub/rest/swagger`.
 * If you can retrieve the data through those API calls, everything works as expected, and you are done!
