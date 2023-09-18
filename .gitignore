@@ -37,3 +37,4 @@ Thumbs.db
 /auth.json
 /config.json
 /.phpunit*
+**.DS_Store
