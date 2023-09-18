@@ -11,8 +11,8 @@
  * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
-pimcore.registerNS('pimcore.plugin.simpleRestAdapterBundle.configuration.gridConfigDialog');
-pimcore.plugin.simpleRestAdapterBundle.configuration.gridConfigDialog = Class.create(pimcore.object.helpers.gridConfigDialog, {
+pimcore.registerNS('pimcore.plugin.restAdapterBundle.configuration.gridConfigDialog');
+pimcore.plugin.restAdapterBundle.configuration.gridConfigDialog = Class.create(pimcore.object.helpers.gridConfigDialog, {
     availableOperators: [
         'assetmetadatagetter',
         'fieldcollectiongetter',

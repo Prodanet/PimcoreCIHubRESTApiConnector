@@ -36,7 +36,7 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
     public function getCssPaths(): array
     {
         return [
-            '/bundles/simplerestadapter/pimcore/css/icons.css',
+            '/bundles/restadapter/pimcore/css/icons.css',
         ];
     }
 
@@ -46,11 +46,11 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
     public function getJsPaths(): array
     {
         return [
-            '/bundles/simplerestadapter/pimcore/js/adapter.js',
-            '/bundles/simplerestadapter/pimcore/js/config-item.js',
-            '/bundles/simplerestadapter/pimcore/js/grid-config-dialog.js',
-            '/bundles/simplerestadapter/pimcore/js/userTab.js',
-            '/bundles/simplerestadapter/pimcore/js/user/ciHub.js',
+            '/bundles/restadapter/pimcore/js/adapter.js',
+            '/bundles/restadapter/pimcore/js/config-item.js',
+            '/bundles/restadapter/pimcore/js/grid-config-dialog.js',
+            '/bundles/restadapter/pimcore/js/userTab.js',
+            '/bundles/restadapter/pimcore/js/user/ciHub.js',
         ];
     }
 

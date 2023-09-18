@@ -11,8 +11,8 @@
  * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
-pimcore.registerNS('pimcore.plugin.simpleRestAdapterBundle.configuration.configItem');
-pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(pimcore.plugin.datahub.configuration.graphql.configItem, {
+pimcore.registerNS('pimcore.plugin.restAdapterBundle.configuration.configItem');
+pimcore.plugin.restAdapterBundle.configuration.configItem = Class.create(pimcore.plugin.datahub.configuration.graphql.configItem, {
     getPanels: function () {
         return [
             this.getGeneral(),
