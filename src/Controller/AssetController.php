@@ -16,8 +16,9 @@ use Pimcore\Config;
 use Pimcore\Event\AssetEvents;
 use Pimcore\Event\Model\Asset\ResolveUploadTargetEvent;
 use Pimcore\Model\Asset;
-use Pimcore\Model\Element;
 use Pimcore\Model\Element\Service;
+use Pimcore\Model\Version;
+use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +37,6 @@ class AssetController extends BaseEndpointController
      * @param IndexQueryService $indexService
      *
      * @return JsonResponse
-     * @throws \Doctrine\DBAL\Exception
      */
     #[Route("/get-element", name: "get_element", methods: ["GET"])]
     #[OA\Get(
@@ -127,7 +127,7 @@ class AssetController extends BaseEndpointController
         $this->checkRequiredParameters(['id' => $id, 'type' => $type]);
 
         $root = Service::getElementById($type, $id);
-        if (!$root->isAllowed('view')) {
+        if (!$root->isAllowed('view', $this->user)) {
             throw new AccessDeniedHttpException(
                 'Missing the permission to list in the folder: ' . $root->getRealFullPath()
             );
@@ -153,6 +153,7 @@ class AssetController extends BaseEndpointController
             try {
                 $result = $indexService->get($id, $index);
             } catch (Exception $ignore) {
+                throw $ignore;
                 $result = [];
             }
 
@@ -166,6 +167,90 @@ class AssetController extends BaseEndpointController
         }
 
         return $this->json($this->buildResponse($result, $reader));
+    }
+
+    #[Route("/version", name: "version", methods: ["GET"])]
+    public function getElementVersion(): Response
+    {
+        $id = $this->request->query->getInt('id');
+        $type = $this->request->query->get('type', 'asset');
+
+        $version = Version::getById($id);
+        $asset = $version?->loadData();
+        if (!$asset instanceof Asset) {
+            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
+        }
+        $response = [];
+
+        if ($asset->isAllowed('versions', $this->user)) {
+            $loader = Pimcore::getContainer()->get('pimcore.implementation_loader.asset.metadata.data');
+
+            if ($version instanceof Version) {
+                $response = [
+                    'assetId' => $asset->getId(),
+                    'metadata' => $asset->getMetadata()
+                ];
+            }
+
+        }
+
+        return new JsonResponse(['success' => true, 'data' => $response]);
+    }
+
+    /**
+     * @return Response
+     */
+    #[Route("/versions", name: "versions", methods: ["GET"])]
+    public function getVersions(): Response
+    {
+        $assetId = $this->request->query->getInt('id');
+        $type = $this->request->query->get('type', 'asset');
+
+        $asset = Asset::getById($assetId);
+        if (!$asset instanceof Asset) {
+            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
+        }
+
+        if ($asset->isAllowed('versions', $this->user)) {
+            $schedule = $asset->getScheduledTasks();
+            $schedules = [];
+            foreach ($schedule as $task) {
+                if ($task->getActive()) {
+                    $schedules[$task->getVersion()] = $task->getDate();
+                }
+            }
+
+            //only load auto-save versions from current user
+            $list = new Listing();
+            $list->setLoadAutoSave(true);
+            $list->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
+                $asset->getId(),
+                Service::getElementType($asset),
+                $this->user->getId(),
+            ])
+                ->setOrderKey('date')
+                ->setOrder('ASC');
+
+            $versions = $list->load();
+            $versions = Service::getSafeVersionInfo($versions);
+            $versions = array_reverse($versions); //reverse array to sort by ID DESC
+            foreach ($versions as &$version) {
+                if ($version['index'] === 0 &&
+                    $version['date'] == $asset->getModificationDate() &&
+                    $version['versionCount'] == $asset->getVersionCount()
+                ) {
+                    $version['public'] = true;
+                }
+                $version['scheduled'] = null;
+                if (array_key_exists($version['id'], $schedules)) {
+                    $version['scheduled'] = $schedules[$version['id']];
+                }
+            }
+
+            return $this->json($versions);
+        } else {
+            throw $this->createAccessDeniedException('Permission denied, ' . $type . ' id [' . $assetId . ']');
+        }
     }
 
     /**
@@ -485,7 +570,7 @@ class AssetController extends BaseEndpointController
             $uploadedFile = $this->request->files->get('file');
             $sourcePath = $uploadedFile->getRealPath();
             $filename = $uploadedFile->getClientOriginalName();
-            $filename = Element\Service::getValidKey($filename, 'asset');
+            $filename = Service::getValidKey($filename, 'asset');
 
             if (empty($filename)) {
                 throw new Exception('The filename of the asset is empty');
@@ -511,7 +596,7 @@ class AssetController extends BaseEndpointController
 
                 $event = new ResolveUploadTargetEvent($parentId, $filename, $context);
                 Pimcore::getEventDispatcher()->dispatch($event, AssetEvents::RESOLVE_UPLOAD_TARGET);
-                $filename = Element\Service::getValidKey($event->getFilename(), 'asset');
+                $filename = Service::getValidKey($event->getFilename(), 'asset');
                 $parentId = $event->getParentId();
                 $parentAsset = Asset::getById($parentId);
             }

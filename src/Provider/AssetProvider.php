@@ -112,7 +112,7 @@ class AssetProvider implements ProviderInterface
             if ($reader->isOriginalImageAllowed()) {
                 $data['original'] = [
                     'checksum' => $checksum,
-                    'path' => $this->router->generate('datahub_rest_adapter_endpoints_download_asset', [
+                    'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
                         'config' => $reader->getName(),
                         'id' => $id,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
@@ -132,7 +132,7 @@ class AssetProvider implements ProviderInterface
 
                 $data[$thumbnailName] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_adapter_endpoints_download_asset', [
+                    'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
                         'config' => $reader->getName(),
                         'id' => $id,
                         'thumbnail' => $thumbnailName,
@@ -157,7 +157,7 @@ class AssetProvider implements ProviderInterface
 
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_adapter_endpoints_download_asset', [
+                    'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
                         'config' => $reader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
@@ -168,7 +168,7 @@ class AssetProvider implements ProviderInterface
         } else {
             $data['original'] = [
                 'checksum' => $checksum,
-                'path' => $this->router->generate('datahub_rest_adapter_endpoints_download_asset', [
+                'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
                     'config' => $reader->getName(),
                     'id' => $id,
                 ], UrlGeneratorInterface::ABSOLUTE_PATH),
@@ -191,7 +191,7 @@ class AssetProvider implements ProviderInterface
 
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_adapter_endpoints_download_asset', [
+                    'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
                         'config' => $reader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
