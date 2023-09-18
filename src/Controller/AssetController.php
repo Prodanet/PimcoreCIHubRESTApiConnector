@@ -153,7 +153,6 @@ class AssetController extends BaseEndpointController
             try {
                 $result = $indexService->get($id, $index);
             } catch (Exception $ignore) {
-                throw $ignore;
                 $result = [];
             }
 
@@ -183,7 +182,6 @@ class AssetController extends BaseEndpointController
         $response = [];
 
         if ($asset->isAllowed('versions', $this->user)) {
-            $loader = Pimcore::getContainer()->get('pimcore.implementation_loader.asset.metadata.data');
 
             if ($version instanceof Version) {
                 $response = [

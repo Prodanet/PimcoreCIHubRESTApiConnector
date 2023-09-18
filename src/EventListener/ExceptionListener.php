@@ -43,7 +43,7 @@ class ExceptionListener implements EventSubscriberInterface
             $response = new JsonResponse([
                 'status' => $throwable->getCode(),
                 'message' => $throwable->getMessage(),
-            ], $throwable->getCode());
+            ], 400);
 
             $event->setResponse($response);
         }
