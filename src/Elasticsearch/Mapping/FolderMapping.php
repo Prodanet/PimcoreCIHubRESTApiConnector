@@ -14,7 +14,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
-final class FolderMapping extends DefaultMapping
+class FolderMapping extends DefaultMapping
 {
     /**
      * {@inheritdoc}

@@ -56,6 +56,11 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         if (isset($bundles['PimcoreCIHubAdapterBundle'])) {
             $this->ciHubConfig = $container->getExtensionConfig('ci_hub_adapter');
         }
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load(('config.php'));
+        if ($container->hasExtension('doctrine_migrations')) {
+            $loader->load('doctrine_migrations.php');
+        }
     }
 
     /**
@@ -70,8 +75,8 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
 
         $this->registerConfiguration($container, $config);
 
-        $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        $loader->load('services.yml');
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('services.php');
 
         $definition = new Definition(IndexManager::class);
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
@@ -133,8 +138,8 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
             $config = array_merge($config, ...$this->ciHubConfig);
         }
 
-        $container->setParameter('simple_rest_adapter.index_name_prefix', $config['index_name_prefix']);
-        $container->setParameter('simple_rest_adapter.index_settings', $config['index_settings']);
-        $container->setParameter('simple_rest_adapter.default_preview_thumbnail', $config['default_preview_thumbnail'] ?? []);
+        $container->setParameter('datahub_rest_adapter.index_name_prefix', $config['index_name_prefix']);
+        $container->setParameter('datahub_rest_adapter.index_settings', $config['index_settings']);
+        $container->setParameter('datahub_rest_adapter.default_preview_thumbnail', $config['default_preview_thumbnail'] ?? []);
     }
 }

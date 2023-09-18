@@ -19,7 +19,7 @@ use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\Data\Hotspotimage;
 
-final class HotspotImageDataCollector implements DataCollectorInterface
+class HotspotImageDataCollector implements DataCollectorInterface
 {
     /**
      * @var ImageDataCollector

@@ -262,7 +262,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
     updateLabelList: function (doCleanup) {
         if (this.labelListMightHaveChanged || doCleanup) {
             Ext.Ajax.request({
-                url: Routing.generate('simple_rest_adapter_config_label_list'),
+                url: Routing.generate('datahub_rest_adapter_config_label_list'),
                 params: {
                     name: this.data.general.name,
                 },
@@ -319,7 +319,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
         const saveData = this.getSaveData();
 
         Ext.Ajax.request({
-            url: Routing.generate('simple_rest_adapter_config_save'),
+            url: Routing.generate('datahub_rest_adapter_config_save'),
             params: {
                 data: saveData,
                 modificationDate: this.modificationDate,
@@ -403,7 +403,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: Routing.generate('simple_rest_adapter_config_thumbnails'),
+                url: Routing.generate('datahub_rest_adapter_config_thumbnails'),
                 reader: {
                     rootProperty: 'data',
                     idProperty: 'name',
@@ -424,17 +424,17 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
             items: [
                 {
                     xtype: 'fieldset',
-                    title: t('plugin_pimcore_datahub_simple_rest_data_object_classes'),
+                    title: t('plugin_pimcore_datahub_rest_data_object_classes'),
                     items: [schemaGrid],
                 },
                 {
                     xtype: 'fieldset',
-                    title: t('plugin_pimcore_datahub_simple_rest_assets'),
+                    title: t('plugin_pimcore_datahub_rest_assets'),
                     items: [
                         {
                             xtype: 'checkbox',
                             labelWidth: 200,
-                            fieldLabel: t('plugin_pimcore_datahub_simple_rest_assets_enabled'),
+                            fieldLabel: t('plugin_pimcore_datahub_rest_assets_enabled'),
                             name: 'enabled',
                             value: this.data.schema && this.data.schema.hasOwnProperty('assets')
                                 ? this.data.schema.assets.enabled
@@ -443,7 +443,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
                         {
                             xtype: 'checkbox',
                             labelWidth: 200,
-                            fieldLabel: t('plugin_pimcore_datahub_simple_rest_assets_allow_original_image'),
+                            fieldLabel: t('plugin_pimcore_datahub_rest_assets_allow_original_image'),
                             name: 'allowOriginalImage',
                             value: this.data.schema && this.data.schema.hasOwnProperty('assets')
                                 ? this.data.schema.assets.allowOriginalImage
@@ -452,7 +452,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
                         {
                             xtype: 'tagfield',
                             labelWidth: 200,
-                            fieldLabel: t('plugin_pimcore_datahub_simple_rest_assets_thumbnails'),
+                            fieldLabel: t('plugin_pimcore_datahub_rest_assets_thumbnails'),
                             name: 'thumbnails',
                             width: 768,
                             store: thumbnailStore,
@@ -648,7 +648,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
         const languages = pimcore.settings.websiteLanguages;
         const columns = [
             {
-                text: t('plugin_pimcore_datahub_simple_rest_configpanel_key'),
+                text: t('plugin_pimcore_datahub_rest_configpanel_key'),
                 flex: 200,
                 sortable: true,
                 dataIndex: 'id',
@@ -675,7 +675,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
             storeFields.push(language);
         });
         columns.push(new Ext.grid.column.Check({
-            text: t('plugin_pimcore_datahub_simple_rest_configpanel_useInAggs'),
+            text: t('plugin_pimcore_datahub_rest_configpanel_useInAggs'),
             dataIndex: 'useInAggs',
             width: 50,
         }));
@@ -707,7 +707,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
                     '->',
                     {
                         xtype: 'button',
-                        text: t('plugin_pimcore_datahub_simple_rest_configpanel_label_cleanup'),
+                        text: t('plugin_pimcore_datahub_rest_configpanel_label_cleanup'),
                         handler: this.updateLabelList.bind(this, true),
                     },
                 ],
@@ -729,17 +729,17 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
                 labelWidth: 200,
             },
             border: false,
-            title: t('plugin_pimcore_datahub_simple_rest_configpanel_label_settings'),
+            title: t('plugin_pimcore_datahub_rest_configpanel_label_settings'),
             items: [
                 {
                     xtype: 'fieldset',
                     width: '100%',
-                    title: t('plugin_pimcore_datahub_simple_rest_configpanel_labels'),
+                    title: t('plugin_pimcore_datahub_rest_configpanel_labels'),
                     items: [
                         {
                             xtype: 'displayfield',
                             hideLabel: false,
-                            value: t('plugin_pimcore_datahub_simple_rest_configpanel_label_settings_description'),
+                            value: t('plugin_pimcore_datahub_rest_configpanel_label_settings_description'),
                             readOnly: true,
                             disabled: true,
                         },

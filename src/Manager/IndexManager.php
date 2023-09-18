@@ -18,13 +18,16 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceSer
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\DiffArray;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use InvalidArgumentException;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use RuntimeException;
 
-final class IndexManager
+class IndexManager
 {
     public const INDEX_ASSET = 'asset';
     public const INDEX_ASSET_FOLDER = 'assetfolder';
@@ -55,8 +58,9 @@ final class IndexManager
      *
      * @param string $indexName
      *
-     * @throws RuntimeException
-     * @throws ESClientException
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function clearIndexData(string $indexName): void
     {
@@ -74,8 +78,11 @@ final class IndexManager
     /**
      * Creates or updates an index by its name and mapping.
      *
-     * @param string                $indexName – The index to create or update.
-     * @param array<string, mixed>  $mapping   – The mapping to check against.
+     * @param string $indexName – The index to create or update.
+     * @param array $mapping – The mapping to check against.
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function createOrUpdateIndex(string $indexName, array $mapping): void
     {
@@ -92,6 +99,9 @@ final class IndexManager
      * Deletes all indices of a certain endpoint configuration.
      *
      * @param string $endpointName
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function deleteAllIndices(string $endpointName): void
     {
@@ -105,6 +115,8 @@ final class IndexManager
      * @param string $aliasName – The name of the alias of an index.
      *
      * @return string
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public function findIndexNameByAlias(string $aliasName): string
     {
@@ -153,6 +165,9 @@ final class IndexManager
      * @param string $indexName – A comma-separated list of index names
      *
      * @return array<string, mixed>
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function getIndexMapping(string $indexName): array
     {
@@ -261,12 +276,14 @@ final class IndexManager
      * Creates a new target index with mappings and re-indexes the data from the source index.
      * Then a new alias pointing to the new index is created and the old index is removed.
      *
-     * @param string                $indexName
-     * @param array<string, mixed>  $mapping
-     * @param bool                  $reindexData
-     * @param bool                  $force
+     * @param string $indexName
+     * @param array $mapping
+     * @param bool $reindexData
+     * @param bool $force
      *
-     * @throws ESClientException
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function updateMapping(string $indexName, array $mapping, bool $reindexData = true, bool $force = false): void
     {

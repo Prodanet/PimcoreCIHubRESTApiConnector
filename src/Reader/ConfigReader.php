@@ -14,7 +14,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Reader;
 
-final class ConfigReader
+class ConfigReader
 {
     /**
      * @var array<string, array>

@@ -20,7 +20,7 @@ use Exception;
 use Pimcore\Model\Asset;
 use Symfony\Component\Routing\RouterInterface;
 
-final class ImageDataCollector implements DataCollectorInterface
+class ImageDataCollector implements DataCollectorInterface
 {
     /**
      * @var RouterInterface

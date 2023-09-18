@@ -3,28 +3,48 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
 use Exception;
 use Pimcore\Db;
-use Pimcore\Extension\Bundle\Installer\Exception\InstallationException;
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
-use Pimcore\Logger;
+use Pimcore\Model\User\Permission\Definition;
 
+/**
+ * Class Installer
+ * @package CIHub\Bundle\SimpleRESTAdapterBundle
+ */
 class Installer extends SettingsStoreAwareInstaller
 {
+    const PERMISSION_KEY = 'plugin_datahub_adapter';
+    const TABLE = 'users_datahub_config';
+
+    /**
+     * @throws Exception
+     */
     public function install(): void
     {
-        try {
-            $db = Db::get();
-            $db->executeQuery("CREATE TABLE IF NOT EXISTS users_datahub_config (
-                 id     int(11) unsigned auto_increment,
-                 data   text null,
-                 userId int(11) unsigned not null,
-                 primary key (id),
-                 foreign key (userId) references users (id)
-            );");
-        } catch (Exception $e) {
-            Logger::warn($e);
-            throw new InstallationException($e->getMessage());
+        parent::install();
+        // create backend permission
+        Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
+        $db = Db::get();
+
+        if (method_exists($db, 'getSchemaManager')) {
+            $schema = $db->getSchemaManager()->createSchema();
+        } else {
+            $schema = $db->createSchemaManager()->introspectSchema();
         }
 
-        parent::install();
+
+        // create table
+        if ($schema->hasTable(self::TABLE)) {
+            $table = $schema->getTable(self::TABLE);
+            $table->addColumn('id', 'int', ['length' => 1, 'autoincrement' => true, 'notnull' => true]);
+            $table->addColumn('data', 'text', ['notnull' => false]);
+            $table->addColumn('userId', 'int', ['length' => 1, 'notnull' => true]);
+            $table->setPrimaryKey(['id']);
+            $table->addForeignKeyConstraint(
+                'users',
+                ['userId'],
+                ['id'],
+                ['onDelete' => 'CASCADE']
+            );
+        }
     }
 }

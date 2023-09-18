@@ -1,7 +1,7 @@
 [![Software License](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Latest Stable Version](https://img.shields.io/packagist/v/w/simple-rest-adapter-bundle.svg?style=flat-square)](https://packagist.org/packages/ci-hub/simple-rest-adapter-bundle)
 
-This bundle adds a simple read-only REST API endpoint to [Pimcore DataHub](https://github.com/pimcore/data-hub)
+This bundle adds a REST API endpoints to [Pimcore DataHub](https://github.com/pimcore/data-hub)
 for Assets and DataObjects. All exposed data can be configured, is indexed in Elasticsearch and delivered from there
 for better query performance and scalability.
 
@@ -27,8 +27,10 @@ Therefore, it can be used to connect Pimcore to other systems or to connect Fron
     * ordering
     * aggregations – provide possible values for fields to create filters
   * **get-element**: Method to get one single element by type and ID.
-  * **create asset**: Method to create new asset
-  * **update asset**: Method to replace existing asset
+  * **add-asset**: Method to create and replace asset
+  * **download-asset**: Method to download binary file
+  * **lock-asset**: Method to lock asset by current user
+  * **unlock-asset**: Method to unlock asset by current user
 * Endpoint security via bearer token that has to be sent as header with every request.
 
 ![Schema Configuration](docs/images/schema.png "Schema Configuration")

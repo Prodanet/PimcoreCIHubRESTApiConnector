@@ -16,6 +16,9 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
@@ -35,6 +38,9 @@ final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
 
     /**
      * @param DeleteIndexElementMessage $message
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
      */
     public function __invoke(DeleteIndexElementMessage $message): void
     {

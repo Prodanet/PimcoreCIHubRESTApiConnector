@@ -16,8 +16,9 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
-final class AuthManager
+class AuthManager
 {
     /**
      * @var string
@@ -25,8 +26,9 @@ final class AuthManager
     protected string $config;
     private Request $request;
 
-    public function __construct(private readonly DataHubConfigurationRepository $configRepository,
-                                private readonly RequestStack $requestStack) {
+    public function __construct(private DataHubConfigurationRepository $configRepository,
+                                private RequestStack                   $requestStack)
+    {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
     }
@@ -47,10 +49,6 @@ final class AuthManager
 
         return (bool) $event->getArgument('isAllowed');
     }
-
-    /**
-     * @throws Exception
-     */
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();

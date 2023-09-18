@@ -20,14 +20,17 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Exception;
+use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
+use OpenApi\Attributes as OA;
 use Pimcore\Model\Element\Service;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route("/pimcore-datahub-webservices/simplerest/{config}")]
+#[Route(path: ["/datahub/rest/{config}", "/pimcore-datahub-webservices/simplerest/{config}"], name: "datahub_rest_endpoints_")]
+#[Security(name: "Bearer")]
 class SearchController extends BaseEndpointController
 {
     /**
@@ -38,7 +41,120 @@ class SearchController extends BaseEndpointController
      * @return JsonResponse
      * @throws Exception
      */
-    #[Route("/search", name: "simple_rest_adapter_endpoints_search", methods: ["GET"])]
+    #[Route("/search", name: "search", methods: ["GET"])]
+    #[OA\Get(
+        description: 'Method to search for elements, returns elements of all types. For paging use link provided in link header of response.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'size',
+                description: 'Max items of response, default 200.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer',
+                    default: 200
+                )
+            ),
+            new OA\Parameter(
+                name: 'fulltext_search',
+                description: 'Search term for fulltext search.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'filter',
+                description: 'Define filter for further filtering. See https://pimcore.com/docs/pimcore/current/Development_Documentation/Web_Services/Query_Filters.html for filter syntax, implemeted operators are $not, $or, $and.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'order_by',
+                description: 'Field to order by.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'page_cursor',
+                description: 'Page cursor for paging. Use page cursor of link header in last response.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'include_aggs',
+                description: 'Set to true to include aggregation information, default false.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'boolean',
+                    default: false
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items()
+                        ),
+                        new OA\Property(
+                            property: 'page_cursor',
+                            description: 'Page cursor for next page.',
+                            type: 'string'
+                        )
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+    )]
     public function searchAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         // Check if request is authenticated properly
@@ -86,7 +202,148 @@ class SearchController extends BaseEndpointController
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
-    #[Route("/tree-items", name: "simple_rest_adapter_endpoints_tree_items", methods: ["GET"])]
+    #[Route("/tree-items", name: "tree_items", methods: ["GET"])]
+    #[OA\Get(
+        description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                description: 'Type of elements – asset or object.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ["asset", "object"]
+                )
+            ),
+            new OA\Parameter(
+                name: 'parent_id',
+                description: 'ID of parent element.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            ),
+            new OA\Parameter(
+                name: 'include_folders',
+                description: 'Define if folders should be included, default true.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'bool',
+                    default: true
+                )
+            ),
+            new OA\Parameter(
+                name: 'size',
+                description: 'Max items of response, default 200.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'integer',
+                    default: 200
+                )
+            ),
+            new OA\Parameter(
+                name: 'fulltext_search',
+                description: 'Search term for fulltext search.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'filter',
+                description: 'Define filter for further filtering. See https://pimcore.com/docs/pimcore/current/Development_Documentation/Web_Services/Query_Filters.html for filter syntax, implemeted operators are $not, $or, $and.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ), new OA\Parameter(
+                name: 'order_by',
+                description: 'Field to order by.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'page_cursor',
+                description: 'Page cursor for paging. Use page cursor of link header in last response.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'include_aggs',
+                description: 'Set to true to include aggregation information, default false.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'boolean',
+                    default: false
+                )
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent (
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items()
+                        ),
+                        new OA\Property(
+                            property: 'page_cursor',
+                            description: 'Page cursor for next page.',
+                            type: 'string'
+                        )
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            )
+        ],
+    )]
     public function treeItemsAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         // Check if request is authenticated properly

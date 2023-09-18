@@ -14,30 +14,46 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use Nelmio\ApiDocBundle\Render\Html\AssetsMode;
 use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Controller\FrontendController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route("/pimcore-datahub-webservices/simplerest")]
+#[IsGranted('ROLE_PIMCORE_USER')]
+#[Route("/admin/datahub/rest", defaults: ["area" => 'cihub'])]
 class SwaggerController extends FrontendController
 {
     /**
+     * @param Request $request
+     * @param RenderOpenApi $renderOpenApi
+     * @param array $options
      * @return Response
      */
-    #[Route("/swagger", name: "simple_rest_adapter_swagger_ui", methods: ['GET'])]
-    public function userInterfaceAction(): Response
+    #[Route("/swagger", name: "datahub_rest_adapter_swagger_ui", methods: ['GET'])]
+    public function userInterfaceAction(Request $request, RenderOpenApi $renderOpenApi, array $options = []): Response
     {
+        $options += [
+            'assets_mode' => AssetsMode::CDN,
+            'swagger_ui_config' => [],
+        ];
+
         return $this->renderTemplate('@SimpleRESTAdapter/Swagger/index.html.twig', [
-            'configUrl' => $this->generateUrl('simple_rest_adapter_swagger_config'),
+            'configUrl' => $this->generateUrl('datahub_rest_adapter_swagger_config'),
+            'swagger_data' => ['spec' => json_decode($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'), true)],
+            'assets_mode' => $options['assets_mode'],
+            'swagger_ui_config' => $options['swagger_ui_config'],
         ]);
     }
 
     /**
+     * @param Request $request
+     * @param RenderOpenApi $renderOpenApi
      * @return Response
      */
-    #[Route("/swagger-config", name: "simple_rest_adapter_swagger_config", methods: ["GET"])]
+    #[Route("/swagger-config", name: "datahub_rest_adapter_swagger_config", methods: ["GET"])]
     public function configAction(Request $request, RenderOpenApi $renderOpenApi): Response
     {
         return new Response($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'));

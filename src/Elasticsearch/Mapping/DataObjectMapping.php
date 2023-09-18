@@ -16,7 +16,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
 use RuntimeException;
 
-final class DataObjectMapping extends DefaultMapping
+class DataObjectMapping extends DefaultMapping
 {
     /**
      * {@inheritdoc}

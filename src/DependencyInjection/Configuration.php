@@ -24,7 +24,7 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('simple_rest_adapter');
+        $treeBuilder = new TreeBuilder('datahub_rest_adapter');
         $treeBuilder->getRootNode()
             ->addDefaultsIfNotSet()
             ->children()

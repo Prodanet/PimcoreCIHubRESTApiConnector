@@ -1,13 +1,13 @@
 {
-  "name": "ci-hub/simple-rest-adapter-bundle",
+  "name": "ci-hub/rest-adapter-bundle",
   "type": "pimcore-bundle",
   "license": "GPL-3.0-or-later",
-  "description": "Simple REST Adapter for Pimcore DataHub",
+  "description": "REST Adapter for Pimcore DataHub",
   "keywords": [
     "pimcore",
     "pimcore-bundle"
   ],
-  "homepage": "https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle",
+  "homepage": "https://github.com/BrandOriented/SimpleRESTAdapterBundle",
   "authors": [
     {
       "name": "CI HUB GmbH",
@@ -36,6 +36,7 @@
     "php": "~8.0.0 || ~8.1.0 || ~8.2.0",
     "elasticsearch/elasticsearch": "^7.0 || ^8.9",
     "handcraftedinthealps/elasticsearch-dsl": "^8.0",
+    "nelmio/api-doc-bundle": "^4.12",
     "pimcore/admin-ui-classic-bundle": "^1.1",
     "pimcore/compatibility-bridge-v10": "^1.0",
     "pimcore/data-hub": "^1.0",
@@ -47,18 +48,17 @@
     "codeception/codeception": "^5.0",
     "codeception/module-symfony": "^3.1",
     "codeception/module-webdriver": "^4.0.0",
+    "mockery/mockery": "^1.6",
     "phpstan/phpstan": "^1.10",
     "phpstan/phpstan-symfony": "^1.3",
+    "phpunit/phpunit": "^10.3",
     "symfony/phpunit-bridge": "*",
     "symplify/easy-coding-standard": "^9.0"
   },
   "autoload": {
     "psr-4": {
       "CIHub\\Bundle\\SimpleRESTAdapterBundle\\": "src/"
-    },
-    "exclude-from-classmap": [
-      "vendor/phpunit"
-    ]
+    }
   },
   "config": {
     "sort-packages": true,

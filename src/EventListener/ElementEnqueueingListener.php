@@ -93,10 +93,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         $type = 'asset';
         $asset = $event->getAsset();
 
-        if (!$asset instanceof Asset) {
-            return;
-        }
-
         $configurations = $this->configLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
@@ -173,10 +169,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
     {
         $type = 'asset';
         $asset = $event->getAsset();
-
-        if (!$asset instanceof Asset) {
-            return;
-        }
 
         $configurations = $this->configLoader->loadConfigs();
 

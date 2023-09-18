@@ -20,6 +20,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
+use Doctrine\DBAL\Exception;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
@@ -28,6 +29,7 @@ use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Controller\FrontendController;
+use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -58,20 +60,24 @@ abstract class BaseEndpointController extends FrontendController
      * @var Request
      */
     protected Request $request;
+    protected User $user;
 
     /**
      * @param DataHubConfigurationRepository $configRepository
-     * @param LabelExtractorInterface        $labelExtractor
-     * @param RequestStack                   $requestStack
+     * @param LabelExtractorInterface $labelExtractor
+     * @param RequestStack $requestStack
+     * @param AuthManager $authManager
+     * @throws Exception
      */
     public function __construct(
-        private readonly DataHubConfigurationRepository $configRepository,
-        private readonly LabelExtractorInterface        $labelExtractor,
-        private readonly RequestStack $requestStack,
-        protected readonly AuthManager $authManager
+        private DataHubConfigurationRepository $configRepository,
+        private LabelExtractorInterface        $labelExtractor,
+        private RequestStack                   $requestStack,
+        protected AuthManager                  $authManager
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
+        $this->user = $this->authManager->authenticate();
     }
 
     /**

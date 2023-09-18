@@ -25,7 +25,7 @@ class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBu
     use BundleAdminClassicTrait;
     use PackageVersionTrait;
 
-    public const PACKAGE_NAME = 'ci-hub/simple-rest-adapter-bundle';
+    public const PACKAGE_NAME = 'ci-hub/rest-adapter-bundle';
     public function getInstaller(): ?InstallerInterface
     {
         return $this->container->get(Installer::class);

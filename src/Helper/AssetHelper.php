@@ -8,19 +8,21 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\ClassDefinition\Data\ManyToManyRelation;
 use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element;
+use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class AssetHelper
+class AssetHelper
 {
-    public function __construct(protected readonly AuthManager $authManager) {
+    public function __construct(protected AuthManager $authManager)
+    {
 
     }
 
-    public static function isLocked(int $cid, string $ctype, int $userId): bool
+    public function isLocked(int $cid, string $ctype, int $userId): bool
     {
         if ($lock = Element\Editlock::getByElement($cid, $ctype)) {
             if ((time() - $lock->getDate()) > 3600) {
@@ -36,7 +38,7 @@ final class AssetHelper
         return false;
     }
 
-    public static function unlockForLocker(int $userId, int $assetId)
+    public function unlockForLocker(int $userId, int $assetId)
     {
         $lock = Element\Editlock::getByElement($assetId, 'asset');
 
@@ -49,6 +51,9 @@ final class AssetHelper
         return false;
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function validateManyToManyRelationAssetType(array $context, string $filename, string $sourcePath): void
     {
         if (isset($context['containerType'], $context['objectId'], $context['fieldname'])
@@ -131,7 +136,7 @@ final class AssetHelper
         throw new Exception('missing permission');
     }
 
-    public static function lock(int $cid, string $ctype, int $userId): Element\Editlock|bool
+    public function lock(int $cid, string $ctype, int $userId): Element\Editlock|bool
     {
         $lock = new Element\Editlock();
         $lock->setCid($cid);
