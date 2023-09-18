@@ -332,8 +332,8 @@ class AssetController extends BaseEndpointController
             )
         ],
     )]
-    public function lock(): Response {
-        $user = $this->authManager->authenticate();
+    public function lock(AssetHelper $assetHelper): Response
+    {
         $assetId = $this->request->query->getInt('id');
         $type = $this->request->query->get('type');
 
@@ -343,12 +343,12 @@ class AssetController extends BaseEndpointController
         }
 
         // check for lock on non-folder items only.
-        if ($type !== 'folder' && ($asset->isAllowed('publish', $user) || $asset->isAllowed('delete', $user))) {
-            if (AssetHelper::isLocked($assetId, 'asset', $user->getId())) {
+        if ($type !== 'folder' && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
+            if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
                 return new JsonResponse(['success' => false, 'message' => "asset is already locked for editing"], 403);
             }
 
-            AssetHelper::lock($assetId, 'asset', $user->getId());
+            $assetHelper->lock($assetId, 'asset', $this->user->getId());
 
             return new JsonResponse(['success' => true, 'message' => "asset was just locked"]);
         }
@@ -439,8 +439,8 @@ class AssetController extends BaseEndpointController
             )
         ],
     )]
-    public function unlock(): Response {
-        $user = $this->authManager->authenticate();
+    public function unlock(AssetHelper $assetHelper): Response
+    {
         $assetId = $this->request->query->getInt('id');
         $type = $this->request->query->get('type');
 
@@ -450,9 +450,9 @@ class AssetController extends BaseEndpointController
         }
 
         // check for lock on non-folder items only.
-        if ($type !== 'folder' && ($asset->isAllowed('publish', $user) || $asset->isAllowed('delete', $user))) {
-            if (AssetHelper::isLocked($assetId, 'asset', $user->getId())) {
-                $unlocked = AssetHelper::unlockForLocker($user->getId(), $assetId);
+        if ($type !== 'folder' && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
+            if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
+                $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $assetId);
                 if($unlocked) {
                     return new JsonResponse(['success' => true, 'message' => "asset has been unlocked for editing"]);
                 }
@@ -559,8 +559,6 @@ class AssetController extends BaseEndpointController
                         TranslatorInterface $translator,
                         AssetHelper $assetHelper): Response
     {
-        // Check if request is authenticated properly
-        $user = $this->authManager->authenticate();
         try {
             $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
 
@@ -607,12 +605,12 @@ class AssetController extends BaseEndpointController
 
             if ($this->request->query->has('id')) {
                 $asset = Asset::getById((int)$this->request->get('id'));
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $user, $translator);
+                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
             } else if (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$filename)) {
                 $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$filename);
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $user, $translator);
+                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
             } else {
-                if (!$parentAsset->isAllowed('create', $user) && !$this->authManager->isAllowed($parentAsset, 'create', $user)) {
+                if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
                     throw new AccessDeniedHttpException(
                         'Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath()
                     );
@@ -620,8 +618,8 @@ class AssetController extends BaseEndpointController
                 $asset = Asset::create($parentAsset->getId(), [
                     'filename' => $filename,
                     'sourcePath' => $sourcePath,
-                    'userOwner' => $user->getId(),
-                    'userModification' => $user->getId(),
+                    'userOwner' => $this->user->getId(),
+                    'userModification' => $this->user->getId(),
                 ]);
             }
 
