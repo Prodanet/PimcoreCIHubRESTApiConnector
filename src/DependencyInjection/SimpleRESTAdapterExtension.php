@@ -22,6 +22,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractor;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\UploadHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
@@ -38,6 +39,7 @@ use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\Routing\RouterInterface;
 
 class SimpleRESTAdapterExtension extends Extension implements PrependExtensionInterface
 {
@@ -90,6 +92,10 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $definition = new Definition(AssetHelper::class);
         $definition->setArgument('$authManager', new Reference(AuthManager::class));
         $container->addDefinitions([AssetHelper::class => $definition]);
+
+        $definition = new Definition(UploadHelper::class);
+        $definition->setArgument('$router', new Reference(RouterInterface::class));
+        $container->addDefinitions([UploadHelper::class => $definition]);
 
 
         $container->setAlias(LabelExtractorInterface::class, LabelExtractor::class);

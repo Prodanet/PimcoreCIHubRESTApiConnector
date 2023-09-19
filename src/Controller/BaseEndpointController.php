@@ -285,7 +285,7 @@ abstract class BaseEndpointController extends FrontendController
         $required = [];
 
         foreach ($params as $key => $value) {
-            if (null !== $value) {
+            if (!empty($value)) {
                 continue;
             }
 

@@ -13,7 +13,8 @@ use Pimcore\Model\User\Permission\Definition;
 class Installer extends SettingsStoreAwareInstaller
 {
     const PERMISSION_KEY = 'plugin_datahub_adapter';
-    const TABLE = 'users_datahub_config';
+    const CONFIG_TABLE = 'users_datahub_config';
+    const UPLOAD_SESSION_TABLE = 'datahub_upload_sessions';
 
     /**
      * @throws Exception
@@ -33,11 +34,11 @@ class Installer extends SettingsStoreAwareInstaller
 
 
         // create table
-        if ($schema->hasTable(self::TABLE)) {
-            $table = $schema->getTable(self::TABLE);
-            $table->addColumn('id', 'int', ['length' => 1, 'autoincrement' => true, 'notnull' => true]);
+        if ($schema->hasTable(self::CONFIG_TABLE)) {
+            $table = $schema->getTable(self::CONFIG_TABLE);
+            $table->addColumn('id', 'int', ['length' => 11, 'autoincrement' => true, 'notnull' => true]);
             $table->addColumn('data', 'text', ['notnull' => false]);
-            $table->addColumn('userId', 'int', ['length' => 1, 'notnull' => true]);
+            $table->addColumn('userId', 'int', ['length' => 11, 'notnull' => true]);
             $table->setPrimaryKey(['id']);
             $table->addForeignKeyConstraint(
                 'users',
@@ -45,6 +46,15 @@ class Installer extends SettingsStoreAwareInstaller
                 ['id'],
                 ['onDelete' => 'CASCADE']
             );
+        }
+        // create table
+        if ($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
+            $table = $schema->getTable(self::UPLOAD_SESSION_TABLE);
+            $table->addColumn('id', 'int', ['length' => 11, 'autoincrement' => true, 'notnull' => true]);
+            $table->addColumn('session', 'varchar', ['length' => 255, 'notnull' => false]);
+            $table->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
+            $table->addColumn('total_parts', 'int', ['length' => 11, 'notnull' => false]);
+            $table->setPrimaryKey(['id']);
         }
     }
 }

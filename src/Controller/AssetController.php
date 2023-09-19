@@ -11,25 +11,20 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
-use Pimcore;
-use Pimcore\Config;
-use Pimcore\Event\AssetEvents;
-use Pimcore\Event\Model\Asset\ResolveUploadTargetEvent;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route(path: ["/datahub/rest/{config}", "/pimcore-datahub-webservices/simplerest/{config}"], name: "datahub_rest_endpoints_")]
 #[Security(name: "Bearer")]
+#[OA\Tag(name: "Asset")]
 class AssetController extends BaseEndpointController
 {
     /**
@@ -466,180 +461,6 @@ class AssetController extends BaseEndpointController
         throw new AccessDeniedHttpException(
             'Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath()
         );
-    }
-
-    /**
-     * @throws \Doctrine\DBAL\Exception
-     *
-     */
-    #[Route("/add-asset", name: "upload_asset", methods: ["POST"])]
-    #[OA\Post(
-        description: 'SImple method to create and upload asset',
-        parameters: [
-            new OA\Parameter(
-                name: 'Authorization',
-                description: 'Bearer (in Swagger UI use authorize feature to set header)',
-                in: 'header'
-            ),
-            new OA\Parameter(
-                name: 'config',
-                description: 'Name of the config.',
-                in: 'path',
-                required: true,
-                schema: new OA\Schema(
-                    type: 'string'
-                )
-            ),
-            new OA\Parameter(
-                name: 'type',
-                description: 'Type of elements – asset or object.',
-                in: 'query',
-                required: true,
-                schema: new OA\Schema(
-                    type: 'string',
-                    enum: ["asset", "object"]
-                )
-            ),
-            new OA\RequestBody(
-                content: new OA\MediaType(
-                    mediaType: 'multipart/form-data',
-                    schema: new OA\Schema(
-                        properties: [
-                            new OA\Property(
-                                property: 'file',
-                                type: 'string',
-                                format: 'binary'
-                            )
-                        ],
-                        type: 'file'
-                    )
-                )
-            )
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Successful operation.',
-                content: new OA\JsonContent (
-                    properties: [
-                        new OA\Property(
-                            property: 'id',
-                            description: 'Asset ID',
-                            type: 'integer'
-                        ),
-                        new OA\Property(
-                            property: 'path',
-                            description: 'Asset path',
-                            type: 'string'
-                        ),
-                        new OA\Property(
-                            property: 'success',
-                            description: 'Succes response',
-                            type: 'boolean'
-                        )
-                    ],
-                    type: 'object'
-                )
-            ),
-            new OA\Response(
-                response: 400,
-                description: 'Not found'
-            ),
-            new OA\Response(
-                response: 401,
-                description: 'Access denied'
-            ),
-            new OA\Response(
-                response: 500,
-                description: 'Server error'
-            )
-        ],
-    )]
-    public function add(Config              $pimcoreConfig,
-                        TranslatorInterface $translator,
-                        AssetHelper $assetHelper): Response
-    {
-        try {
-            $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
-
-            /** @var UploadedFile $uploadedFile */
-            $uploadedFile = $this->request->files->get('file');
-            $sourcePath = $uploadedFile->getRealPath();
-            $filename = $uploadedFile->getClientOriginalName();
-            $filename = Service::getValidKey($filename, 'asset');
-
-            if (empty($filename)) {
-                throw new Exception('The filename of the asset is empty');
-            }
-
-            if ($this->request->query->has('parentId')) {
-                $parentAsset = Asset::getById((int)$this->request->query->get('parentId'));
-                if(!$parentAsset instanceof Asset) {
-                    throw new Exception('Parent does not exist');
-                }
-                $parentId = $parentAsset->getId();
-            } else {
-                $parentId = Asset\Service::createFolderByPath($defaultUploadPath)->getId();
-                $parentAsset = Asset::getById($parentId);
-            }
-
-            $context = $this->request->get('context');
-            if ($context) {
-                $context = json_decode($context, true);
-                $context = $context ?: [];
-
-                $assetHelper->validateManyToManyRelationAssetType($context, $filename, $sourcePath);
-
-                $event = new ResolveUploadTargetEvent($parentId, $filename, $context);
-                Pimcore::getEventDispatcher()->dispatch($event, AssetEvents::RESOLVE_UPLOAD_TARGET);
-                $filename = Service::getValidKey($event->getFilename(), 'asset');
-                $parentId = $event->getParentId();
-                $parentAsset = Asset::getById($parentId);
-            }
-
-            if (is_file($sourcePath) && filesize($sourcePath) < 1) {
-                throw new Exception('File is empty!');
-            } elseif (!is_file($sourcePath)) {
-                throw new Exception('Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.');
-            }
-
-            if ($this->request->query->has('id')) {
-                $asset = Asset::getById((int)$this->request->get('id'));
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
-            } else if (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$filename)) {
-                $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$filename);
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
-            } else {
-                if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
-                    throw new AccessDeniedHttpException(
-                        'Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath()
-                    );
-                }
-                $asset = Asset::create($parentAsset->getId(), [
-                    'filename' => $filename,
-                    'sourcePath' => $sourcePath,
-                    'userOwner' => $this->user->getId(),
-                    'userModification' => $this->user->getId(),
-                ]);
-            }
-
-            @unlink($sourcePath);
-
-            return new JsonResponse([
-                'success' => true,
-                'asset' => [
-                    'id' => $asset->getId(),
-                    'path' => $asset->getFullPath(),
-                    'type' => $asset->getType(),
-                ]
-            ]);
-
-        } catch (Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
-        }
     }
 
     /**

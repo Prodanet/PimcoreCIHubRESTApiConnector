@@ -31,6 +31,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(path: ["/datahub/rest/{config}", "/pimcore-datahub-webservices/simplerest/{config}"], name: "datahub_rest_endpoints_")]
 #[Security(name: "Bearer")]
+#[OA\Tag(name: "Search")]
 class SearchController extends BaseEndpointController
 {
     /**
