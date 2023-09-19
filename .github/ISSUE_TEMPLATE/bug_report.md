@@ -1,38 +1,42 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+name: 🐛 Bug Report
+description: ⚠️ NEVER report security issues
+labels: Bug
 
----
+body:
 
-**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+- type: input
+  id: affected-versions
+  attributes:
+  label: Pimcore version(s) affected
+  placeholder: x.y.z
+  validations:
+  required: true
+- type: textarea
+  id: description
+  attributes:
+  label: Description
+  description: A clear and concise description of the problem
+  validations:
+  required: true
+- type: textarea
+  id: how-to-reproduce
+  attributes:
+  label: How to reproduce
+  description: |
+  ⚠️ This is the most important part of the report ⚠️
+  Without a way to easily reproduce your issue, there is little chance we will be able to help you and work on a fix.
+  Please, take the time to show us some code and/or config that is needed for others to reproduce the problem easily.
+  validations:
+  required: true
+- type: textarea
+  id: possible-solution
+  attributes:
+  label: Possible Solution
+  description: |
+  Optional: only if you have suggestions on a fix/reason for the bug
+  Don't hesitate to create a pull request with your solution, it helps get faster feedback.
+- type: textarea
+  id: additional-context
+  attributes:
+  label: Additional Context
+  description: "Optional: any other context about the problem: log messages, screenshots, etc."
