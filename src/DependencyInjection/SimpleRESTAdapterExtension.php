@@ -31,6 +31,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationReposito
 use Exception;
 use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Bundle\ElasticsearchClientBundle\DependencyInjection\PimcoreElasticsearchClientExtension;
+use Pimcore\Config;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -94,7 +95,9 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $container->addDefinitions([AssetHelper::class => $definition]);
 
         $definition = new Definition(UploadHelper::class);
+        $definition->setArgument('$pimcoreConfig', new Reference(Config::class));
         $definition->setArgument('$router', new Reference(RouterInterface::class));
+        $definition->setArgument('$authManager', new Reference(AuthManager::class));
         $container->addDefinitions([UploadHelper::class => $definition]);
 
 

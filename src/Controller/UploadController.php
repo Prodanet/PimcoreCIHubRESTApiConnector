@@ -2,6 +2,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\UploadHelper;
 use Exception;
@@ -18,14 +19,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Ulid;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route(path: ["/datahub/rest/{config}/asset", "/pimcore-datahub-webservices/simplerest/{config}/asset"], name: "datahub_rest_endpoints_asset_")]
 #[Security(name: "Bearer")]
 class UploadController extends BaseEndpointController
 {
-    const PART_SIZE = 1024;
+    const PART_SIZE = 1024 * 1024;
 
     #[OA\Post(
         description: 'Simple method to create and upload asset',
@@ -113,7 +113,7 @@ class UploadController extends BaseEndpointController
     #[Route("/add-asset", name: "upload_asset", methods: ["POST"])]
     public function add(Config              $pimcoreConfig,
                         TranslatorInterface $translator,
-                        AssetHelper         $assetHelper): Response
+                        AssetHelper $assetHelper): Response
     {
         try {
             $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
@@ -258,14 +258,18 @@ class UploadController extends BaseEndpointController
     #[Route("/upload/start", name: "upload_start", methods: ["POST"])]
     public function start(UploadHelper $helper): Response
     {
-        $uuid = new Ulid();
-        $totalParts = (int)($this->request->get('filesize') / $partSize);
-        $response = $helper->getSessionResponse($this->request, $uuid, $this->config, self::PART_SIZE, 0, $totalParts);
-        $helper->createSession($uuid, [], (int)($this->request->get('filesize') / self::PART_SIZE));
+        $filesize = (int)$this->request->get('filesize');
+        $session = $helper->createSession($this->request, self::PART_SIZE);
 
-        return new JsonResponse($response);
+        return new JsonResponse($helper->getSessionResponse(
+            $this->request,
+            $session->getId(),
+            $this->config,
+            self::PART_SIZE,
+            0,
+            $session->getTotalParts()
+        ));
     }
-
     #[OA\Get(
         description: 'Return information about an upload session.',
         parameters: [
@@ -310,7 +314,14 @@ class UploadController extends BaseEndpointController
         $this->checkRequiredParameters(['id' => $id]);
         if ($helper->hasSession($id)) {
             $session = $helper->getSession($id);
-            $response = $helper->getSessionResponse($this->request, $id, $this->config, self::PART_SIZE, 0, (int)$session['total_parts']);
+            $response = $helper->getSessionResponse(
+                $this->request,
+                $id,
+                $this->config,
+                self::PART_SIZE,
+                $session->getTotalParts(),
+                $session->getPartsCount()
+            );
             return new JsonResponse($response);
         }
 
@@ -421,17 +432,10 @@ class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: "Uploads (Chunked)")]
     #[Route("/{id}/commit", name: "upload_commit", methods: ["POST"])]
-    public function commit(string $id): Response
+    public function commit(string $id, UploadHelper $helper): Response
     {
-        $helper->deleteSession($id);
-        $asset = Asset::getById($this->request->get('assetId'));
-        if ($asset instanceof Asset) {
-            return new JsonResponse([$id]);
-        }
-
-        return new JsonResponse([] . 404);
+        return new JsonResponse($helper->commitSession($id));
     }
-
     #[OA\Get(
         description: 'Return a list of the chunks uploaded to the upload session so far.',
         parameters: [
@@ -464,7 +468,64 @@ class UploadController extends BaseEndpointController
         responses: [
             new OA\Response(
                 response: 201,
-                description: 'Returns a new upload session.'
+                description: 'Returns a new upload session.',
+                content: new OA\JsonContent (
+                    example: [
+                        'entries' => [
+                            [
+                                'id' => '01HAPEWC2QAD29AMJC9RM17CAH',
+                                'checksum' => '672dbdbcf8a83ebdf9225ef6f920bb0b5b3bc7fa8f73078e3a1d0',
+                                'size' => 4857600,
+                                'ordinal' => 1,
+                            ],
+                            [
+                                'id' => '01HAPEWC2QAD29AMJC9RM1723A',
+                                'checksum' => '6eb3746e6273a5c4e656bef1536e6cec36efe53fa1d010d548942',
+                                'size' => 7857600,
+                                'ordinal' => 2,
+                            ]
+                        ],
+                        'total' => 2
+                    ],
+                    properties: [
+                        new OA\Property(
+                            property: 'entries',
+                            description: 'Parts array',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'id',
+                                        description: 'Part ID',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'checksum',
+                                        description: 'Checksum of the part',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'size',
+                                        description: 'Size of the part',
+                                        type: 'integer'
+                                    ),
+                                    new OA\Property(
+                                        property: 'ordinal',
+                                        description: 'Ordinal number of the part',
+                                        type: 'integer'
+                                    )
+                                ],
+                                type: 'object'
+                            )
+                        ),
+                        new OA\Property(
+                            property: 'total',
+                            description: 'Total uploaded parts',
+                            type: 'integer'
+                        )
+                    ],
+                    type: 'object'
+                )
             )
         ],
     )]
@@ -472,7 +533,12 @@ class UploadController extends BaseEndpointController
     #[Route("/{id}/parts", name: "upload_list_parts", methods: ["GET"])]
     public function parts(string $id, UploadHelper $helper): Response
     {
-        return new JsonResponse($helper->getParts($id));
+        $session = $helper->getSession($id);
+
+        return new JsonResponse([
+            'entries' => $session->getParts()->toArray(),
+            'total' => $session->getPartsCount()
+        ]);
     }
 
     #[OA\Put(
@@ -502,6 +568,22 @@ class UploadController extends BaseEndpointController
                     type: 'string'
                 ),
                 example: '01HAPEWC2QAD29AMJC9RM17CAH'
+            ),
+            new OA\Parameter(
+                name: 'ordinal',
+                description: 'The ordinal number of the upload part.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                ),
+                example: '1'
+            ),
+            new OA\RequestBody(
+                description: 'The binary content of the file part.',
+                content: new OA\MediaType(
+                    mediaType: 'application/octet-stream',
+                )
             )
         ],
         responses: [
@@ -513,19 +595,33 @@ class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: "Uploads (Chunked)")]
     #[Route("/{id}/part", name: "upload_part", methods: ["PUT"])]
-    public function part(string $id): Response
+    public function part(string $id, UploadHelper $helper): Response
     {
-        $uuid = new Ulid();
+        $session = $helper->getSession($id);
+
+        /**
+         * @var resource $content
+         */
+        $content = $this->request->getContent(true);
+        $size = (int)$this->request->headers->get('Content-Length', 0);
+        $ordinal = (int)$this->request->get('ordinal');
+        if ($size === 0) {
+            throw new InvalidParameterException(['Content-Length']);
+        }
+        if (empty($ordinal)) {
+            throw new InvalidParameterException(['ordinal']);
+        }
+
+        $part = $helper->uploadPart($session, $content, $size, $ordinal);
 
         return new JsonResponse([
             "part" => [
-                "part_id" => $uuid,
-                "sha1" => "134b65991ed521fcfe4724b7d814ab8ded5185dc",
-                "size" => 3222784
+                "part_id" => $part->getId(),
+                "checksum" => $part->getHash(),
+                "size" => $part->getSize()
             ]
         ]);
     }
-
     #[OA\Get(
         description: 'Return the status of the upload.',
         parameters: [
@@ -566,10 +662,11 @@ class UploadController extends BaseEndpointController
     #[Route("/{id}/status", name: "upload_status", methods: ["GET"])]
     public function status(string $id, UploadHelper $helper): Response
     {
-        if ($helper->hasSession($id)) {
-            $data = $helper->getSession($id);
-            $response = $helper->getSessionResponse($this->request, $id, $this->config, self::PART_SIZE, count($data['parts']), (int)$data['total_parts']);
-            $response['file_size'] = $data['file_size'];
+        if ($helper->hasSession($id))
+            $session = $helper->getSession($id);
+        {
+            $response = $helper->getSessionResponse($this->request, $id, $this->config, self::PART_SIZE, $session->getPartsCount(), $session->getTotalParts());
+            $response['file_size'] = $session->getFileSize();
             return new JsonResponse($response);
         }
 

@@ -2,35 +2,53 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Helper;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
-use DateInterval;
-use Pimcore\Db;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Concatenate;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Model\ChunkUploadResponse;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Model\UploadPart;
+use Exception;
+use League\Flysystem\FilesystemException;
+use Pimcore\Config;
+use Pimcore\Model\Asset;
+use Pimcore\Model\Element\Service;
+use Pimcore\Model\User;
+use Pimcore\Tool\Storage;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Uid\Ulid;
 
 final class UploadHelper
 {
-    public function __construct(private RouterInterface $router)
+    protected User $user;
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function __construct(private Config          $pimcoreConfig,
+                                private RouterInterface $router,
+                                private AuthManager     $authManager
+    )
     {
+        $this->user = $this->authManager->authenticate();
     }
 
-    public function getSessionResponse(Request $request, string $uuid, string $config, $partSize, int $processed = 0, int $totalParts = 0): array
+    public function getSessionResponse(Request $request, string $id, string $config, $partSize, int $processed = 0, int $totalParts = 0): array
     {
-        return [
-            "id" => $uuid,
-            "num_parts_processed" => $processed,
-            "part_size" => $partSize,
-            "endpoints" => [
-                "abort" => $this->generateUrl('datahub_rest_endpoints_asset_upload_abort', ['config' => $config, 'id' => $uuid]),
-                "commit" => $this->generateUrl('datahub_rest_endpoints_asset_upload_commit', ['config' => $config, 'id' => $uuid]),
-                "list_parts" => $this->generateUrl('datahub_rest_endpoints_asset_upload_list_parts', ['config' => $config, 'id' => $uuid]),
-                "status" => $this->generateUrl('datahub_rest_endpoints_asset_upload_status', ['config' => $config, 'id' => $uuid]),
-                "upload_part" => $this->generateUrl('datahub_rest_endpoints_asset_upload_part', ['config' => $config, 'id' => $uuid])
-            ],
-            "session_expires_at" => Ulid::fromString($uuid)->getDateTime()->add(new DateInterval('PT1H'))->format('Y-m-d\TH:i:s.u\Z'),
-            "total_parts" => $totalParts
-        ];
+        $response = new ChunkUploadResponse($id);
+        $response->setPartSize($partSize);
+        $response->setNumPartsProcessed($processed);
+        $response->setTotalParts($totalParts);
+        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_abort', ['config' => $config, 'id' => $id]));
+        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_commit', ['config' => $config, 'id' => $id]));
+        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_list_parts', ['config' => $config, 'id' => $id]));
+        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_status', ['config' => $config, 'id' => $id]));
+        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_part', ['config' => $config, 'id' => $id]));
+
+        return $response->toArray();
     }
 
     private function generateUrl(string $route, array $parameters = []): string
@@ -38,46 +56,173 @@ final class UploadHelper
         return $this->router->generate($route, $parameters);
     }
 
-    public function createSession(string $id, array $parts = [], int $totalParts = 1)
+    /**
+     * @throws Exception
+     */
+    public function createSession(Request $request, int $partSize): DatahubUploadSession
     {
-        Db::get()->executeQuery('INSERT INTO datahub_upload_sessions (session, parts, total_parts) VALUES (?, ?, ?)', [$id, $parts, $totalParts]);
+        $fileName = $request->get('file_name');
+        $fileName = Service::getValidKey($fileName, 'asset');
+
+        $fileSize = (int)$request->get('file_size');
+        $assetId = (int)$request->get('asset_id', 0);
+
+        if (!isset($fileName, $fileSize)) {
+            throw new InvalidParameterException(['file_size', 'file_name']);
+        }
+        $parentId = $request->request->has('parentId', null);
+        $parentId = $this->getParent($parentId, $assetId);
+
+        $totalParts = ($fileSize / $partSize);
+
+        $id = new Ulid();
+        $session = new DatahubUploadSession();
+        $session->setId($id);
+        $session->setFileName($fileName);
+        $session->setAssetId($assetId);
+        $session->setParentId($parentId);
+        $session->setParts([]);
+        $session->setTotalParts($totalParts);
+        $session->setFileSize($fileSize);
+        $session->save();
+
+        return $session;
     }
 
-    public function deleteSession(string $id)
+    public function deleteSession(string $id): void
     {
-        Db::get()->executeQuery('DELETE FROM datahub_upload_sessions WHERE session = ?', [$id]);
+        $session = DatahubUploadSession::getById($id);
+        $session->delete();
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws Exception
+     */
+    public function commitSession(string $id): array
+    {
+        $session = DatahubUploadSession::getById($id);
+        $parentId = $this->getParent($session->getParentId(), $session->getAssetId());
+
+        $storage = Storage::get('temp');
+
+        $concatenate = new Concatenate($storage);
+        $storage->write($session->getTemporaryPath(), '');
+
+        try {
+            foreach ($session->getParts() as $part) {
+                $partTemporaryFile = $session->getTemporaryPartFilename($part->getId());
+                $concatenate->handle($session->getTemporaryPath(), $partTemporaryFile);
+                $storage->delete($partTemporaryFile);
+            }
+            $stream = stream_get_meta_data($storage->readStream($session->getTemporaryPath()));
+            $asset = Asset::create($parentId, [
+                'filename' => $session->getFileName(),
+                'sourcePath' => $stream['uri'],
+                'userOwner' => $this->user->getId(),
+                'userModification' => $this->user->getId(),
+            ]);
+            @unlink($session->getFileName());
+            $session->delete();
+
+            return [
+                'id' => $asset->getId(),
+                'path' => $asset->getFullPath(),
+                'type' => $asset->getType(),
+            ];
+        } catch (Exception $exception) {
+            return [
+                'message' => $exception->getMessage(),
+            ];
+        }
     }
 
     public function hasSession(string $id): bool
     {
-        $data = Db::get()->fetchOne('SELECT session FROM datahub_upload_sessions WHERE session = ?', [$id]);
-        if ($data) {
+        $session = DatahubUploadSession::hasById($id);
+        if (!empty($session)) {
             return true;
         }
 
         return false;
     }
 
-    public function getSession(string $id): array
+    public function getSession(string $id): DatahubUploadSession
     {
-        $data = Db::get()->fetchAssociative('SELECT * FROM datahub_upload_sessions WHERE session = ?', [$id]);
-        if ($data) {
-            $data['parts'] = json_decode($data['parts']);
-            return $data;
+        $session = DatahubUploadSession::getById($id);
+        if (!empty($session)) {
+            return $session;
         }
 
         throw new NotFoundException('Session not found');
     }
 
-    public function getParts(string $id)
+    public function uploadPart(DatahubUploadSession                                                     $session,
+                               #[LanguageLevelTypeAware(["7.2" => "HashContext"], default: "resource")] $content,
+                               int                                                                      $size,
+                               int                                                                      $ordinal
+    ): UploadPart
     {
-        $data = Db::get()->fetchOne('SELECT parts FROM datahub_upload_sessions WHERE session = ?', [$id]);
-        if ($data) {
-            $data = json_decode($data);
+        $ctx = hash_init('sha3-512');
+        hash_update_stream($ctx, $content);
+        $hash = hash_final($ctx);
+
+        $id = new Ulid();
+
+        $part = new UploadPart();
+        $part->setId($id);
+        $part->setHash($hash);
+        $part->setSize($size);
+        $part->setOrdinal($ordinal);
+        rewind($content);
+
+        $storage = Storage::get('temp');
+        $storage->writeStream($session->getTemporaryPartFilename($id), $content);
+
+        $session->addPart($part);
+        $session->save();
+
+        return $part;
+    }
+
+    /**
+     * @param int|null $parentId
+     * @param int $assetId
+     * @return int
+     * @throws Exception
+     */
+    private function getParent(?int $parentId, int $assetId): int
+    {
+        $defaultUploadPath = $this->pimcoreConfig['assets']['default_upload_path'] ?? '/';
+        if ($parentId !== null) {
+            $parentAsset = Asset::getById($parentId);
+            if (!$parentAsset instanceof Asset) {
+                throw new NotFoundException('Parent does not exist');
+            }
+            $parentId = $parentAsset->getId();
         } else {
-            throw new NotFoundException('Session not found');
+            $parentId = Asset\Service::createFolderByPath($defaultUploadPath)->getId();
+            $parentAsset = Asset::getById($parentId);
         }
 
-        return $data;
+        if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
+            throw new AccessDeniedHttpException(
+                'Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath()
+            );
+        }
+
+        if ($assetId !== 0) {
+            $asset = Asset::getById($assetId);
+            if (!$asset instanceof Asset) {
+                throw new NotFoundException('Asset does not exist');
+            }
+
+            if (!$asset->isAllowed('update', $this->user) && !$this->authManager->isAllowed($asset, 'update', $this->user)) {
+                throw new AccessDeniedHttpException(
+                    'Missing the permission to update asset: ' . $asset->getId()
+                );
+            }
+        }
+        return $parentId;
     }
 }

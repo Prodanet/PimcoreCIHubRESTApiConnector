@@ -50,10 +50,13 @@ class Installer extends SettingsStoreAwareInstaller
         // create table
         if ($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
             $table = $schema->getTable(self::UPLOAD_SESSION_TABLE);
-            $table->addColumn('id', 'int', ['length' => 11, 'autoincrement' => true, 'notnull' => true]);
-            $table->addColumn('session', 'varchar', ['length' => 255, 'notnull' => false]);
+            $table->addColumn('id', 'varchar', ['length' => 255, 'unique' => true, 'notnull' => false]);
             $table->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
-            $table->addColumn('total_parts', 'int', ['length' => 11, 'notnull' => false]);
+            $table->addColumn('totalParts', 'int', ['length' => 11, 'notnull' => false]);
+            $table->addColumn('fileSize', 'int', ['length' => 11, 'notnull' => false]);
+            $table->addColumn('assetId', 'int', ['length' => 11, 'notnull' => false]);
+            $table->addColumn('parentId', 'int', ['length' => 11, 'notnull' => false]);
+            $table->addColumn('fileName', 'varchar', ['length' => 700, 'notnull' => true]);
             $table->setPrimaryKey(['id']);
         }
     }
