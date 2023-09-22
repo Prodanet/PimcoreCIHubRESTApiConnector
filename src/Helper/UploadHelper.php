@@ -70,7 +70,7 @@ final class UploadHelper
         if (!isset($fileName, $fileSize)) {
             throw new InvalidParameterException(['file_size', 'file_name']);
         }
-        $parentId = $request->request->has('parentId', null);
+        $parentId = $request->request->get('parentId');
         $parentId = $this->getParent($parentId, $assetId);
 
         $totalParts = ($fileSize / $partSize);
@@ -157,6 +157,9 @@ final class UploadHelper
         throw new NotFoundException('Session not found');
     }
 
+    /**
+     * @throws FilesystemException
+     */
     public function uploadPart(DatahubUploadSession                                                     $session,
                                #[LanguageLevelTypeAware(["7.2" => "HashContext"], default: "resource")] $content,
                                int                                                                      $size,
@@ -191,7 +194,7 @@ final class UploadHelper
      * @return int
      * @throws Exception
      */
-    private function getParent(?int $parentId, int $assetId): int
+    private function getParent(?int $parentId, int $assetId = 0): int
     {
         $defaultUploadPath = $this->pimcoreConfig['assets']['default_upload_path'] ?? '/';
         if ($parentId !== null) {

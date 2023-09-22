@@ -19,30 +19,10 @@ final class UploadPart implements UploadPartInterface
         }
     }
 
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->getId(),
-            'size' => $this->getSize(),
-            'hash' => $this->getHash(),
-            'ordinal' => $this->getOrdinal(),
-        ];
-    }
-
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
     public function setId(string $id): self
     {
         $this->id = $id;
         return $this;
-    }
-
-    public function getSize(): int
-    {
-        return $this->size;
     }
 
     public function setSize(int $size): self
@@ -51,15 +31,31 @@ final class UploadPart implements UploadPartInterface
         return $this;
     }
 
-    public function getHash(): string
-    {
-        return $this->hash;
-    }
-
     public function setHash(string $hash): self
     {
         $this->hash = $hash;
         return $this;
+    }
+
+    public function setOrdinal(int $ordinal): UploadPart
+    {
+        $this->ordinal = $ordinal;
+        return $this;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getSize(): int
+    {
+        return $this->size;
+    }
+
+    public function getHash(): string
+    {
+        return $this->hash;
     }
 
     public function getOrdinal(): int
@@ -67,9 +63,13 @@ final class UploadPart implements UploadPartInterface
         return $this->ordinal;
     }
 
-    public function setOrdinal(int $ordinal): UploadPart
+    public function toArray(): array
     {
-        $this->ordinal = $ordinal;
-        return $this;
+        return [
+            'id' => $this->getId(),
+            'size' => $this->getSize(),
+            'hash' => $this->getHash(),
+            'ordinal' => $this->getOrdinal(),
+        ];
     }
 }

@@ -37,7 +37,6 @@ final class DatahubUploadSession extends AbstractModel
 
         return null;
     }
-
     /**
      * get score by id
      */
@@ -70,6 +69,13 @@ final class DatahubUploadSession extends AbstractModel
         return $this->parts;
     }
 
+    public function addPart(UploadPart $part): DatahubUploadSession
+    {
+        $this->parts->add($part);
+
+        return $this;
+    }
+
     public function setParts(string|array $parts): DatahubUploadSession
     {
         if (is_string($parts)) {
@@ -77,13 +83,6 @@ final class DatahubUploadSession extends AbstractModel
         }
 
         $this->parts = new UploadParts($parts);
-        return $this;
-    }
-
-    public function addPart(UploadPart $part): DatahubUploadSession
-    {
-        $this->parts->add($part);
-
         return $this;
     }
 
@@ -125,6 +124,28 @@ final class DatahubUploadSession extends AbstractModel
         return $this;
     }
 
+    public function getParentId(): int
+    {
+        return $this->parentId;
+    }
+
+    public function setParentId(int $parentId): DatahubUploadSession
+    {
+        $this->parentId = $parentId;
+        return $this;
+    }
+
+    public function getFileName(): string
+    {
+        return $this->fileName;
+    }
+
+    public function setFileName(string $fileName): DatahubUploadSession
+    {
+        $this->fileName = $fileName;
+        return $this;
+    }
+
     /**
      * Rewind.
      */
@@ -132,6 +153,16 @@ final class DatahubUploadSession extends AbstractModel
     {
         $this->getData();
         reset($this->data);
+    }
+
+    /**
+     * current.
+     */
+    public function current(): mixed
+    {
+        $this->getData();
+
+        return current($this->data);
     }
 
     /**
@@ -163,50 +194,17 @@ final class DatahubUploadSession extends AbstractModel
         return $this->current() !== false;
     }
 
-    /**
-     * current.
-     */
-    public function current(): mixed
-    {
-        $this->getData();
-
-        return current($this->data);
-    }
-
     public function getTemporaryPath(): string
     {
         return sprintf('tmp-%s-%s', $this->getParentId(), $this->getFileName());
     }
 
-    public function getParentId(): int
-    {
-        return $this->parentId;
-    }
-
-    public function setParentId(int $parentId): DatahubUploadSession
-    {
-        $this->parentId = $parentId;
-        return $this;
-    }
-
-    public function getFileName(): string
-    {
-        return $this->fileName;
-    }
-
-    public function setFileName(string $fileName): DatahubUploadSession
-    {
-        $this->fileName = $fileName;
-        return $this;
-    }
-
-    public function getTemporaryPartFilename(string $id): string
-    {
-        return sprintf('%s-%s', $this->getTemporaryPartExpression(), $id);
-    }
-
     public function getTemporaryPartExpression(): string
     {
         return sprintf('session-%s-%s', $this->id, $this->fileName);
+    }
+    public function getTemporaryPartFilename(string $id): string
+    {
+        return sprintf('%s-%s', $this->getTemporaryPartExpression(), $id);
     }
 }

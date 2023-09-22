@@ -22,17 +22,17 @@ final class UploadParts implements UploadPartsInterface
         }
     }
 
-    public function add(UploadPartInterface $part): UploadPartsInterface
-    {
-        $this->parts[] = $part;
-        return $this;
-    }
-
     public function toArray(): array
     {
         return array_map(function (UploadPartInterface $part) {
             return $part->toArray();
         }, $this->parts);
+    }
+
+    public function add(UploadPartInterface $part): UploadPartsInterface
+    {
+        $this->parts[] = $part;
+        return $this;
     }
 
     public function getIterator(): Traversable

@@ -14,7 +14,6 @@ use function Clue\StreamFilter\fun;
 class Dao extends AbstractDao
 {
     protected string $tableName = 'datahub_upload_sessions';
-
     /**
      * get vote by id
      *
@@ -30,6 +29,23 @@ class Dao extends AbstractDao
         }
 
         $this->assignVariablesToModel($data);
+    }
+
+    /**
+     * get vote by id
+     *
+     * @throws Exception
+     */
+    public function hasById(string $id): bool
+    {
+        $this->model->setId($id);
+        $data = $this->db->fetchAssociative('SELECT id FROM ' . $this->tableName . ' WHERE id = ?', [$this->model->getId()]);
+
+        if (!$data) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -78,23 +94,6 @@ class Dao extends AbstractDao
         }
 
         $this->db->insert($this->tableName, $buffer);
-    }
-
-    /**
-     * get vote by id
-     *
-     * @throws Exception
-     */
-    public function hasById(string $id): bool
-    {
-        $this->model->setId($id);
-        $data = $this->db->fetchAssociative('SELECT id FROM ' . $this->tableName . ' WHERE id = ?', [$this->model->getId()]);
-
-        if (!$data) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

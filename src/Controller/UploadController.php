@@ -198,6 +198,9 @@ class UploadController extends BaseEndpointController
         }
     }
 
+    /**
+     * @throws Exception
+     */
     #[OA\Post(
         description: 'Creates an upload session for a new file.',
         parameters: [
@@ -470,23 +473,6 @@ class UploadController extends BaseEndpointController
                 response: 201,
                 description: 'Returns a new upload session.',
                 content: new OA\JsonContent (
-                    example: [
-                        'entries' => [
-                            [
-                                'id' => '01HAPEWC2QAD29AMJC9RM17CAH',
-                                'checksum' => '672dbdbcf8a83ebdf9225ef6f920bb0b5b3bc7fa8f73078e3a1d0',
-                                'size' => 4857600,
-                                'ordinal' => 1,
-                            ],
-                            [
-                                'id' => '01HAPEWC2QAD29AMJC9RM1723A',
-                                'checksum' => '6eb3746e6273a5c4e656bef1536e6cec36efe53fa1d010d548942',
-                                'size' => 7857600,
-                                'ordinal' => 2,
-                            ]
-                        ],
-                        'total' => 2
-                    ],
                     properties: [
                         new OA\Property(
                             property: 'entries',
@@ -524,7 +510,24 @@ class UploadController extends BaseEndpointController
                             type: 'integer'
                         )
                     ],
-                    type: 'object'
+                    type: 'object',
+                    example: [
+                        'entries' => [
+                            [
+                                'id' => '01HAPEWC2QAD29AMJC9RM17CAH',
+                                'checksum' => '672dbdbcf8a83ebdf9225ef6f920bb0b5b3bc7fa8f73078e3a1d0',
+                                'size' => 4857600,
+                                'ordinal' => 1,
+                            ],
+                            [
+                                'id' => '01HAPEWC2QAD29AMJC9RM1723A',
+                                'checksum' => '6eb3746e6273a5c4e656bef1536e6cec36efe53fa1d010d548942',
+                                'size' => 7857600,
+                                'ordinal' => 2,
+                            ]
+                        ],
+                        'total' => 2
+                    ]
                 )
             )
         ],

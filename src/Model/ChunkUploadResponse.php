@@ -14,7 +14,6 @@ final class ChunkUploadResponse implements ApiResponseInterface
     protected array $endpoints = [];
     protected int $totalParts = 0;
     protected string $sessionExpiresAt;
-
     public function __construct(string $id)
     {
         $this->setId($id);
