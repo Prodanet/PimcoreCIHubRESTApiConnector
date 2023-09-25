@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
@@ -28,7 +26,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
-use Exception;
 use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Bundle\ElasticsearchClientBundle\DependencyInjection\PimcoreElasticsearchClientExtension;
 use Pimcore\Config;
@@ -44,14 +41,8 @@ use Symfony\Component\Routing\RouterInterface;
 
 class SimpleRESTAdapterExtension extends Extension implements PrependExtensionInterface
 {
-    /**
-     * @var array
-     */
     private array $ciHubConfig = [];
 
-    /**
-     * {@inheritdoc}
-     */
     public function prepend(ContainerBuilder $container): void
     {
         $bundles = $container->getParameter('kernel.bundles');
@@ -60,16 +51,14 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
             $this->ciHubConfig = $container->getExtensionConfig('ci_hub_adapter');
         }
         $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        $loader->load(('config.php'));
+        $loader->load('config.php');
         if ($container->hasExtension('doctrine_migrations')) {
             $loader->load('doctrine_migrations.php');
         }
     }
 
     /**
-     * {@inheritdoc}
-     *
-     * @throws Exception
+     * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -99,7 +88,6 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $definition->setArgument('$router', new Reference(RouterInterface::class));
         $definition->setArgument('$authManager', new Reference(AuthManager::class));
         $container->addDefinitions([UploadHelper::class => $definition]);
-
 
         $container->setAlias(LabelExtractorInterface::class, LabelExtractor::class);
         $container->setAlias(RenderOpenApi::class, 'nelmio_api_doc.render_docs');
@@ -138,7 +126,6 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
     /**
      * Registers the configuration as parameters to the container.
      *
-     * @param ContainerBuilder            $container
      * @param array<string, string|array> $config
      */
     private function registerConfiguration(ContainerBuilder $container, array $config): void

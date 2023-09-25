@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index;
@@ -22,8 +20,6 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Exception;
-use InvalidArgumentException;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
@@ -31,24 +27,12 @@ use Pimcore\Model\Element\ElementInterface;
 
 final class IndexPersistenceService
 {
-    /**
-     * @var Client
-     */
     private Client $client;
 
-    /**
-     * @var DataHubConfigurationRepository
-     */
     private DataHubConfigurationRepository $configRepository;
 
-    /**
-     * @var AssetProvider
-     */
     private AssetProvider $assetProvider;
 
-    /**
-     * @var DataObjectProvider
-     */
     private DataObjectProvider $objectProvider;
 
     /**
@@ -57,11 +41,7 @@ final class IndexPersistenceService
     private array $indexSettings;
 
     /**
-     * @param Client                         $client
-     * @param DataHubConfigurationRepository $configRepository
-     * @param AssetProvider                  $assetProvider
-     * @param DataObjectProvider             $objectProvider
-     * @param array<string, string|array>    $indexSettings
+     * @param array<string, string|array> $indexSettings
      */
     public function __construct(
         Client $client,
@@ -80,9 +60,8 @@ final class IndexPersistenceService
     /**
      * Checks whether the given alias name exists or not.
      *
-     * @param string $name – A comma-separated list of alias names to return.
+     * @param string $name – A comma-separated list of alias names to return
      *
-     * @return bool
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -100,10 +79,11 @@ final class IndexPersistenceService
      * Creates or updates an index alias for the given index/indices and name.
      *
      * @param string $index – A comma-separated list of index names the alias should point to (supports wildcards);
-     *                        use `_all` to perform the operation on all indices.
-     * @param string $name – The name of the alias to be created or updated.
+     *                      use `_all` to perform the operation on all indices
+     * @param string $name – The name of the alias to be created or updated
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -121,10 +101,11 @@ final class IndexPersistenceService
     /**
      * Creates a new index either with or without settings/mappings.
      *
-     * @param string $name – The name of the index.
-     * @param array $mapping – The mapping for the index.
+     * @param string $name – The name of the index
+     * @param array $mapping – The mapping for the index
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -149,9 +130,10 @@ final class IndexPersistenceService
      * Deletes an existing index.
      *
      * @param string $name – A comma-separated list of indices to delete;
-     *                       use `_all` or `*` string to delete all indices
+     *                     use `_all` or `*` string to delete all indices
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -168,10 +150,11 @@ final class IndexPersistenceService
     /**
      * Deletes an element from an index.
      *
-     * @param int $elementId – The ID of a Pimcore element (asset or object).
-     * @param string $indexName – The name of the index to delete the item from.
+     * @param int $elementId – The ID of a Pimcore element (asset or object)
+     * @param string $indexName – The name of the index to delete the item from
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -191,6 +174,7 @@ final class IndexPersistenceService
      * @param string|null $indexName – A comma-separated list of index names to filter aliases
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
@@ -198,11 +182,11 @@ final class IndexPersistenceService
     {
         $params = [];
 
-        if ($aliasName !== null) {
+        if (null !== $aliasName) {
             $params['name'] = $aliasName;
         }
 
-        if ($indexName !== null) {
+        if (null !== $indexName) {
             $params['index'] = $indexName;
         }
 
@@ -215,6 +199,7 @@ final class IndexPersistenceService
      * @param string $indexName – A comma-separated list of index names
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
@@ -230,9 +215,8 @@ final class IndexPersistenceService
     /**
      * Checks whether the given index name exists or not.
      *
-     * @param string $name – A comma-separated list of index names.
+     * @param string $name – A comma-separated list of index names
      *
-     * @return bool
      * @throws ClientResponseException
      * @throws ServerResponseException
      * @throws MissingParameterException
@@ -250,9 +234,10 @@ final class IndexPersistenceService
      * Refreshes one or more indices. For data streams, the API refreshes the stream’s backing indices.
      *
      * @param string $name – A comma-separated list of index names;
-     *                       use `_all` or empty string to perform the operation on all indices
+     *                     use `_all` or empty string to perform the operation on all indices
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
@@ -268,10 +253,11 @@ final class IndexPersistenceService
     /**
      * Reindex data from a source index to a destination index.
      *
-     * @param string $source – The name of the source index.
-     * @param string $dest – The name of the destination index.
+     * @param string $source – The name of the source index
+     * @param string $dest – The name of the destination index
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
@@ -294,22 +280,20 @@ final class IndexPersistenceService
     /**
      * Indexes an element's data or updates the values, if it already exists.
      *
-     * @param ElementInterface $element      – A Pimcore element, either asset or object.
-     * @param string           $endpointName – The endpoint configuration name.
-     * @param string           $indexName    – The name of the index to update the item.
+     * @param ElementInterface $element – A Pimcore element, either asset or object
+     * @param string $endpointName – The endpoint configuration name
+     * @param string $indexName – The name of the index to update the item
      *
      * @return array<string, mixed>
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function update(ElementInterface $element, string $endpointName, string $indexName): array
     {
         $configuration = $this->configRepository->findOneByName($endpointName);
 
         if (!$configuration instanceof Configuration) {
-            throw new InvalidArgumentException(
-                sprintf('No DataHub configuration found for name "%s".', $endpointName)
-            );
+            throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $endpointName));
         }
 
         $reader = new ConfigReader($configuration->getConfiguration());
@@ -319,7 +303,7 @@ final class IndexPersistenceService
         } elseif ($element instanceof Asset) {
             $body = $this->assetProvider->getIndexData($element, $reader);
         } else {
-            throw new InvalidArgumentException('This element type is currently not supported.');
+            throw new \InvalidArgumentException('This element type is currently not supported.');
         }
 
         $params = [

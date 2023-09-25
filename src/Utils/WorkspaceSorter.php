@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Utils;
@@ -23,14 +21,13 @@ final class WorkspaceSorter
      * Sorts the workspace either by lowest or highest specificity.
      *
      * @param array<int, array> $workspace
-     * @param int               $sortFlag
      *
      * @return array<int, array>
      */
     public static function sort(array $workspace, int $sortFlag = self::LOWEST_SPECIFICITY): array
     {
         usort($workspace, static function ($left, $right) {
-            return substr_count($left['cpath'], '/') - substr_count($right['cpath'], '/');
+            return mb_substr_count($left['cpath'], '/') - mb_substr_count($right['cpath'], '/');
         });
 
         return self::LOWEST_SPECIFICITY === $sortFlag ? $workspace : array_reverse($workspace);

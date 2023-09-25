@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Manager;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
@@ -7,7 +17,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundExceptio
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
-use Pimcore;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Db;
 use Pimcore\Event\ElementEvents;
@@ -20,35 +29,36 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 class AuthManager
 {
-    /**
-     * @var string
-     */
     protected string $config;
     private Request $request;
 
-    public function __construct(private DataHubConfigurationRepository $configRepository,
-                                private RequestStack                   $requestStack)
+    public function __construct(
+        private DataHubConfigurationRepository $configRepository,
+        private RequestStack                   $requestStack
+    )
     {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
     }
 
-    public function isAllowed(Asset $asset, string $type, User $user) {
+    public function isAllowed(Asset $asset, string $type, User $user)
+    {
         $configuration = $this->getDataHubConfiguration();
         $reader = new ConfigReader($configuration->getConfiguration());
         $isAllowed = false;
         foreach ($reader->getPermissions() as $permission) {
             $permissionType = $permission[$type] ?? false;
-            if($permission['id'] === $user->getId() && $permissionType === true) {
+            if ($permission['id'] === $user->getId() && true === $permissionType) {
                 $isAllowed = true;
             }
         }
 
         $event = new ElementEvent($asset, ['isAllowed' => $isAllowed, 'permissionType' => $type, 'user' => $user]);
-        Pimcore::getEventDispatcher()->dispatch($event, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
+        \Pimcore::getEventDispatcher()->dispatch($event, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
 
         return (bool) $event->getArgument('isAllowed');
     }
+
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();
@@ -82,12 +92,12 @@ class AuthManager
         }
 
         // skip beyond "Bearer "
-        $authorizationHeader = substr($this->request->headers->get('Authorization'), 7);
+        $authorizationHeader = mb_substr($this->request->headers->get('Authorization'), 7);
 
         $db = Db::get();
         $userId = $db->fetchOne('SELECT userId FROM `users_datahub_config` WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
         foreach ($reader->getPermissions() as $permission) {
-            if($permission['id'] === $userId) {
+            if ($permission['id'] === $userId) {
                 return User::getById($userId);
             }
         }

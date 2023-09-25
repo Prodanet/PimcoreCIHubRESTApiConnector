@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
@@ -41,48 +39,29 @@ abstract class BaseEndpointController extends FrontendController
         '$or' => BoolQuery::SHOULD,
     ];
 
-    /**
-     * @var string
-     */
     protected string $config;
 
-    /**
-     * @var bool
-     */
     protected bool $includeAggregations = false;
 
-    /**
-     * @var int
-     */
     protected int $nextPageCursor = 200;
 
-    /**
-     * @var Request
-     */
     protected Request $request;
     protected User $user;
 
     /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param LabelExtractorInterface $labelExtractor
-     * @param RequestStack $requestStack
-     * @param AuthManager $authManager
      * @throws Exception
      */
     public function __construct(
         private DataHubConfigurationRepository $configRepository,
-        private LabelExtractorInterface        $labelExtractor,
-        private RequestStack                   $requestStack,
-        protected AuthManager                  $authManager
+        private LabelExtractorInterface $labelExtractor,
+        private RequestStack            $requestStack,
+        protected AuthManager           $authManager
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
         $this->user = $this->authManager->authenticate();
     }
 
-    /**
-     * @param Search $search
-     */
     public function applySearchSettings(Search $search): void
     {
         $size = (int) $this->request->get('size', 200);
@@ -99,27 +78,23 @@ abstract class BaseEndpointController extends FrontendController
         $this->nextPageCursor = $pageCursor + $size;
     }
 
-    /**
-     * @param Search       $search
-     * @param ConfigReader $reader
-     */
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $reader): void
     {
-        $parentId = intval($this->request->get('parent_id', 1));
+        $parentId = (int)$this->request->get('parent_id', 1);
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
         $filter = json_decode($this->request->get('filter'), true);
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
-            FILTER_VALIDATE_BOOLEAN
+            \FILTER_VALIDATE_BOOLEAN
         );
 
         if (!empty($fulltext)) {
             $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
-        if (is_array($filter) && !empty($filter)) {
+        if (\is_array($filter) && !empty($filter)) {
             $this->buildQueryConditions($search, $filter);
         }
 
@@ -136,16 +111,15 @@ abstract class BaseEndpointController extends FrontendController
             }
         }
 
-
         $query['bool']['filter']['bool']['must'][] = [
             'term' => [
-                'system.type' => $type
-            ]
+                'system.type' => $type,
+            ],
         ];
         $query['bool']['filter']['bool']['must'][] = [
             'term' => [
-                'system.parentId' => $parentId
-            ]
+                'system.parentId' => $parentId,
+            ],
         ];
 
         $body['query'] = $query;
@@ -158,47 +132,46 @@ abstract class BaseEndpointController extends FrontendController
                     $field => [
                         'order' => $order,
                         'missing' => '_last',
-                        'unmapped_type' => 'keyword'
-                    ]
+                        'unmapped_type' => 'keyword',
+                    ],
                 ];
             }
         }
         $sort[] = [
             'system.id' => [
-                'order' => 'asc'
-            ]
+                'order' => 'asc',
+            ],
         ];
         $body['sort'] = $sort;
     }
 
     /**
-     * @param Search                      $search
      * @param array<string, string|array> $filters
      */
     protected function buildQueryConditions(Search $search, array $filters): void
     {
         foreach ($filters as $key => $value) {
-            if (array_key_exists(strtolower($key), self::OPERATOR_MAP)) {
-                $operator = self::OPERATOR_MAP[strtolower($key)];
+            if (\array_key_exists(mb_strtolower($key), self::OPERATOR_MAP)) {
+                $operator = self::OPERATOR_MAP[mb_strtolower($key)];
 
-                if (!is_array($value)) {
+                if (!\is_array($value)) {
                     continue;
                 }
 
                 foreach ($value as $condition) {
-                    if (!is_array($condition)) {
+                    if (!\is_array($condition)) {
                         continue;
                     }
 
                     $field = (string) array_key_first($condition);
                     $search->addQuery(new TermQuery($field, $condition[$field]), $operator);
                 }
-            } else if (is_array($value)) {
+            } elseif (\is_array($value)) {
                 foreach ($value as $subKey => $subValue) {
-                    if (array_key_exists(strtolower($subKey), self::OPERATOR_MAP)) {
-                        $subOperator = self::OPERATOR_MAP[strtolower($subKey)];
+                    if (\array_key_exists(mb_strtolower($subKey), self::OPERATOR_MAP)) {
+                        $subOperator = self::OPERATOR_MAP[mb_strtolower($subKey)];
 
-                        if ($subOperator !== BoolQuery::MUST_NOT) {
+                        if (BoolQuery::MUST_NOT !== $subOperator) {
                             continue;
                         }
 
@@ -213,7 +186,6 @@ abstract class BaseEndpointController extends FrontendController
 
     /**
      * @param array<string, string|array> $result
-     * @param ConfigReader                $reader
      *
      * @return array<string, string|array>
      */
@@ -225,7 +197,7 @@ abstract class BaseEndpointController extends FrontendController
             $hitIndices = $items = [];
 
             foreach ($result['hits']['hits'] as $hit) {
-                if (!in_array($hit['_index'], $hitIndices, true)) {
+                if (!\in_array($hit['_index'], $hitIndices, true)) {
                     $hitIndices[] = $hit['_index'];
                 }
 
@@ -297,9 +269,6 @@ abstract class BaseEndpointController extends FrontendController
         }
     }
 
-    /**
-     * @return Configuration
-     */
     protected function getDataHubConfiguration(): Configuration
     {
         $configuration = $this->configRepository->findOneByName($this->config);

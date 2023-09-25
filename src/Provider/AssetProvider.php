@@ -1,21 +1,18 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Pimcore\Model\Element\ElementInterface;
@@ -30,20 +27,10 @@ class AssetProvider implements ProviderInterface
      */
     public const CIHUB_PREVIEW_THUMBNAIL = 'galleryThumbnail';
 
-    /**
-     * @var array
-     */
     private array $defaultPreviewThumbnail;
 
-    /**
-     * @var RouterInterface
-     */
     private RouterInterface $router;
 
-    /**
-     * @param array $defaultPreviewThumbnail
-     * @param RouterInterface $router
-     */
     public function __construct(array $defaultPreviewThumbnail, RouterInterface $router)
     {
         $this->defaultPreviewThumbnail = $defaultPreviewThumbnail;
@@ -51,12 +38,11 @@ class AssetProvider implements ProviderInterface
     }
 
     /**
-     * {@inheritdoc}
-     * @throws Exception
+     * @throws \Exception
      */
     public function getIndexData(ElementInterface $element, ConfigReader $reader): array
     {
-        /** @var Asset $element */
+        /* @var Asset $element */
         Assert::isInstanceOf($element, Asset::class);
 
         $data = [
@@ -88,11 +74,9 @@ class AssetProvider implements ProviderInterface
     /**
      * Returns the binary data values of an asset.
      *
-     * @param Asset $asset
-     * @param ConfigReader $reader
-     *
      * @return array<string, array>
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public function getBinaryDataValues(Asset $asset, ConfigReader $reader): array
     {
@@ -102,7 +86,7 @@ class AssetProvider implements ProviderInterface
 
         try {
             $checksum = $this->getChecksum($asset);
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             $checksum = null;
         }
 
@@ -125,10 +109,9 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (Exception $exception) {
+                } catch (\Exception $exception) {
                     $thumbChecksum = null;
                 }
-
 
                 $data[$thumbnailName] = [
                     'checksum' => $thumbChecksum,
@@ -137,12 +120,12 @@ class AssetProvider implements ProviderInterface
                         'id' => $id,
                         'thumbnail' => $thumbnailName,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getFilename() //pathinfo($thumbnail->getAsset()->getKey(), PATHINFO_BASENAME),
+                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getAsset()->getKey(), PATHINFO_BASENAME),
                 ];
             }
 
             // Make sure the preview thumbnail used by CI HUB is added to the list of thumbnails
-            if (!array_key_exists(self::CIHUB_PREVIEW_THUMBNAIL, $data) && 'ciHub' === $reader->getType()) {
+            if (!\array_key_exists(self::CIHUB_PREVIEW_THUMBNAIL, $data) && 'ciHub' === $reader->getType()) {
                 if (Thumbnail\Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Thumbnail\Config) {
                     $thumbnail = $asset->getThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
                 } else {
@@ -151,7 +134,7 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (Exception $exception) {
+                } catch (\Exception $exception) {
                     $thumbChecksum = null;
                 }
 
@@ -162,7 +145,7 @@ class AssetProvider implements ProviderInterface
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getKey() // pathinfo($thumbnail->get(), PATHINFO_BASENAME),
+                    'filename' => $thumbnail->getAsset()->getKey(), // pathinfo($thumbnail->get(), PATHINFO_BASENAME),
                 ];
             }
         } else {
@@ -185,7 +168,7 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (Exception $exception) {
+                } catch (\Exception $exception) {
                     $thumbChecksum = null;
                 }
 
@@ -196,7 +179,7 @@ class AssetProvider implements ProviderInterface
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getFilename() // pathinfo($thumbnail->getFileSystemPath(), PATHINFO_BASENAME),
+                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getFileSystemPath(), PATHINFO_BASENAME),
                 ];
             }
         }
@@ -205,23 +188,18 @@ class AssetProvider implements ProviderInterface
     }
 
     /**
-     * @param Asset     $asset
-     * @param string    $type
-     *
-     * @return null|string
-     *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
         $file = $asset->getLocalFile();
         if (is_file($file)) {
-            if ($type == 'md5') {
+            if ('md5' == $type) {
                 return md5_file($file);
-            } elseif ($type == 'sha1') {
+            } elseif ('sha1' == $type) {
                 return sha1_file($file);
             } else {
-                throw new Exception("hashing algorithm '" . $type . "' isn't supported");
+                throw new \Exception("hashing algorithm '" . $type . "' isn't supported");
             }
         }
 
@@ -230,8 +208,6 @@ class AssetProvider implements ProviderInterface
 
     /**
      * Returns the meta data values of an asset.
-     *
-     * @param Asset $asset
      *
      * @return array<string, string>|null
      */
@@ -249,8 +225,6 @@ class AssetProvider implements ProviderInterface
 
     /**
      * Returns the system values of an asset.
-     *
-     * @param Asset $asset
      *
      * @return array<string, mixed>
      */
@@ -270,8 +244,8 @@ class AssetProvider implements ProviderInterface
 
         if (!$asset instanceof Asset\Folder) {
             try {
-                $checksum =  $this->getChecksum($asset);
-            } catch (Exception $exception) {
+                $checksum = $this->getChecksum($asset);
+            } catch (\Exception $exception) {
                 $checksum = null;
             }
 

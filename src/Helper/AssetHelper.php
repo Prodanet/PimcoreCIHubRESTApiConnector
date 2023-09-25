@@ -1,9 +1,18 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Helper;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
-use Exception;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\ClassDefinition\Data\ManyToManyRelation;
 use Pimcore\Model\DataObject\Concrete;
@@ -19,7 +28,6 @@ class AssetHelper
 {
     public function __construct(protected AuthManager $authManager)
     {
-
     }
 
     public function isLocked(int $cid, string $ctype, int $userId): bool
@@ -42,7 +50,7 @@ class AssetHelper
     {
         $lock = Element\Editlock::getByElement($assetId, 'asset');
 
-        if($lock->getUserId() === $userId) {
+        if ($lock->getUserId() === $userId) {
             Element\Editlock::unlock($assetId, 'asset');
 
             return true;
@@ -74,7 +82,7 @@ class AssetHelper
             if (
                 !(
                     $fieldDefinition->getAssetsAllowed()
-                    && ($allowedAssetTypes === [] || in_array($type, $allowedAssetTypes, true))
+                    && ([] === $allowedAssetTypes || \in_array($type, $allowedAssetTypes, true))
                 )
             ) {
                 throw new ValidationException(sprintf('Invalid relation in field `%s` [type: %s]', $context['fieldname'], $type));
@@ -83,15 +91,13 @@ class AssetHelper
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function updateAsset(Asset $asset, string $sourcePath, string $filename, User $user, TranslatorInterface $translator): JsonResponse
     {
         $parentAsset = $asset->getParent();
         if (!$parentAsset->isAllowed('update', $user) && !$this->authManager->isAllowed($parentAsset, 'update', $user)) {
-            throw new AccessDeniedHttpException(
-                'Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath()
-            );
+            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath());
         }
 
         $mimetype = MimeTypes::getDefault()->guessMimeType($sourcePath);
@@ -109,8 +115,8 @@ class AssetHelper
         $asset->setCustomSetting('thumbnails', null);
         $asset->setUserModification($user->getId());
 
-        $newFileExt = pathinfo($filename, PATHINFO_EXTENSION);
-        $currentFileExt = pathinfo($asset->getFilename(), PATHINFO_EXTENSION);
+        $newFileExt = pathinfo($filename, \PATHINFO_EXTENSION);
+        $currentFileExt = pathinfo($asset->getFilename(), \PATHINFO_EXTENSION);
         if ($newFileExt != $currentFileExt) {
             $newFilename = preg_replace('/\.' . $currentFileExt . '$/i', '.' . $newFileExt, $asset->getFilename());
             $newFilename = Element\Service::getSafeCopyName($newFilename, $asset->getParent());
@@ -133,7 +139,7 @@ class AssetHelper
             return $response;
         }
 
-        throw new Exception('missing permission');
+        throw new \Exception('missing permission');
     }
 
     public function lock(int $cid, string $ctype, int $userId): Element\Editlock|bool

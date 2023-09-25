@@ -1,23 +1,32 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\UploadPartsInterface;
-use Exception;
 use League\Flysystem\Filesystem;
 use Pimcore\Logger;
 use Pimcore\Model\Dao\AbstractDao;
 use Pimcore\Model\Exception\NotFoundException;
 use Pimcore\Tool\Storage;
-use function Clue\StreamFilter\fun;
 
 class Dao extends AbstractDao
 {
     protected string $tableName = 'datahub_upload_sessions';
+
     /**
-     * get vote by id
+     * get vote by id.
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getById(string $id): void
     {
@@ -25,16 +34,16 @@ class Dao extends AbstractDao
         $data = $this->db->fetchAssociative('SELECT * FROM ' . $this->tableName . ' WHERE id = ?', [$this->model->getId()]);
 
         if (!$data) {
-            throw new NotFoundException("Uload Session with the ID " . $this->model->getId() . " doesn't exists");
+            throw new NotFoundException('Uload Session with the ID ' . $this->model->getId() . " doesn't exists");
         }
 
         $this->assignVariablesToModel($data);
     }
 
     /**
-     * get vote by id
+     * get vote by id.
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function hasById(string $id): bool
     {
@@ -49,7 +58,7 @@ class Dao extends AbstractDao
     }
 
     /**
-     * save vote
+     * save vote.
      */
     public function save(): void
     {
@@ -59,25 +68,24 @@ class Dao extends AbstractDao
 
         $validColumns = $this->getValidTableColumns($this->tableName);
 
-        if (count($vars)) {
-
+        if (\count($vars)) {
             foreach ($vars as $k => $v) {
-                if (!in_array($k, $validColumns)) {
+                if (!\in_array($k, $validColumns, true)) {
                     continue;
                 }
 
-                $getter = "get" . ucfirst($k);
+                $getter = 'get' . ucfirst($k);
 
-                if (!is_callable([$this->model, $getter])) {
+                if (!\is_callable([$this->model, $getter])) {
                     continue;
                 }
 
                 $value = $this->model->$getter();
 
-                if (is_bool($value)) {
+                if (\is_bool($value)) {
                     $value = (int)$value;
                 }
-                if (is_array($value)) {
+                if (\is_array($value)) {
                     $value = json_encode($value);
                 }
                 if ($value instanceof UploadPartsInterface) {
@@ -89,7 +97,8 @@ class Dao extends AbstractDao
         }
 
         if ($this->hasById($this->model->getId())) {
-            $this->db->update($this->tableName, $buffer, ["id" => $this->model->getId()]);
+            $this->db->update($this->tableName, $buffer, ['id' => $this->model->getId()]);
+
             return;
         }
 
@@ -97,7 +106,7 @@ class Dao extends AbstractDao
     }
 
     /**
-     * delete vote
+     * delete vote.
      */
     public function delete(): void
     {
@@ -109,12 +118,11 @@ class Dao extends AbstractDao
         foreach ($this->model->getParts() as $part) {
             try {
                 $storage->delete($this->model->getTemporaryPartFilename($part->getId()));
-            } catch (Exception $ignore) {
+            } catch (\Exception $ignore) {
                 Logger::error($ignore->getMessage());
             }
         }
 
-        $this->db->delete($this->tableName, ["id" => $this->model->getId()]);
+        $this->db->delete($this->tableName, ['id' => $this->model->getId()]);
     }
-
 }

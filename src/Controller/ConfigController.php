@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
@@ -21,8 +19,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\GetModifiedConfigurationEve
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
-use Exception;
-use InvalidArgumentException;
 use Pimcore\Bundle\AdminBundle\Controller\AdminAbstractController;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Bundle\DataHubBundle\Controller\ConfigController as BaseConfigController;
@@ -34,17 +30,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-#[Route("/admin/rest/config", name: "datahub_rest_adapter_config_", options: ["expose" => true])]
+#[Route('/admin/rest/config', name: 'datahub_rest_adapter_config_', options: ['expose' => true])]
 class ConfigController extends AdminAbstractController
 {
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param EventDispatcherInterface       $eventDispatcher
-     * @param Request                        $request
-     *
-     * @return JsonResponse
-     */
-    #[Route("/delete", name: "delete", methods: ['GET'])]
+    #[Route('/delete', name: 'delete', methods: ['GET'])]
     public function deleteAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -57,9 +46,7 @@ class ConfigController extends AdminAbstractController
             $configuration = $configRepository->findOneByName($name);
 
             if (!$configuration instanceof Configuration) {
-                throw new InvalidArgumentException(
-                    sprintf('No DataHub configuration found for name "%s".', $name)
-                );
+                throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $name));
             }
 
             $config = $configuration->getConfiguration();
@@ -73,18 +60,12 @@ class ConfigController extends AdminAbstractController
             $eventDispatcher->dispatch($postDeleteEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_DELETE);
 
             return $this->json(['success' => true]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param Request                        $request
-     *
-     * @return JsonResponse
-     */
-    #[Route("/get", name: "get", methods: ['GET'])]
+    #[Route('/get', name: 'get', methods: ['GET'])]
     public function getAction(DataHubConfigurationRepository $configRepository, Request $request): JsonResponse
     {
         $this->checkPermission(BaseConfigController::CONFIG_NAME);
@@ -93,9 +74,7 @@ class ConfigController extends AdminAbstractController
         $configuration = $configRepository->findOneByName($configName);
 
         if (!$configuration instanceof Configuration) {
-            throw new InvalidArgumentException(
-                sprintf('No DataHub configuration found for name "%s".', $configName)
-            );
+            throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $configName));
         }
 
         // Add endpoint routes to current config
@@ -112,21 +91,13 @@ class ConfigController extends AdminAbstractController
             'configuration' => $reader->toArray(),
             'userPermissions' => [
                 'update' => $configuration->isAllowed('update'),
-                'delete' => $configuration->isAllowed('delete')
+                'delete' => $configuration->isAllowed('delete'),
             ],
             'modificationDate' => $configRepository->getModificationDate(),
         ]);
     }
 
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param IndexManager                   $indexManager
-     * @param LabelExtractorInterface        $labelExtractor
-     * @param Request                        $request
-     *
-     * @return JsonResponse
-     */
-    #[Route("/label-list", name: "label_list", methods: ["GET"])]
+    #[Route('/label-list', name: 'label_list', methods: ['GET'])]
     public function labelListAction(
         DataHubConfigurationRepository $configRepository,
         IndexManager $indexManager,
@@ -139,16 +110,14 @@ class ConfigController extends AdminAbstractController
         $configuration = $configRepository->findOneByName($configName);
 
         if (!$configuration instanceof Configuration) {
-            throw new InvalidArgumentException(
-                sprintf('No DataHub configuration found for name "%s".', $configName)
-            );
+            throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $configName));
         }
 
         $reader = new ConfigReader($configuration->getConfiguration());
         $indices = array_merge(
             [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName)],
             array_map(static function ($className) use ($indexManager, $configName) {
-                return $indexManager->getIndexName(strtolower($className), $configName);
+                return $indexManager->getIndexName(mb_strtolower($className), $configName);
             }, $reader->getObjectClassNames())
         );
 
@@ -157,14 +126,7 @@ class ConfigController extends AdminAbstractController
         return $this->json(['success' => true, 'labelList' => $labels]);
     }
 
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param EventDispatcherInterface $eventDispatcher
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    #[Route("/save", name: "save", methods: ['POST'])]
+    #[Route('/save', name: 'save', methods: ['POST'])]
     public function saveAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
@@ -181,25 +143,22 @@ class ConfigController extends AdminAbstractController
             $configuration = $configRepository->findOneByName($name);
 
             if (!$configuration instanceof Configuration) {
-                throw new InvalidArgumentException(
-                    sprintf('No DataHub configuration found for name "%s".', $name)
-                );
+                throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $name));
             }
             $reader = new ConfigReader($configuration->getConfiguration());
             $savedModificationDate = $reader->getModificationDate();
             if ($modificationDate < $savedModificationDate) {
-                //throw new \Exception('The configuration has been changed during editing.');
+                // throw new \Exception('The configuration has been changed during editing.');
             }
 
             // ToDo Fix modifcationDate
-//            if ($modificationDate < $savedModificationDate) {
-//                throw new RuntimeException('The configuration was modified during editing, please reload the configuration and make your changes again.');
-//            }
+            //            if ($modificationDate < $savedModificationDate) {
+            //                throw new RuntimeException('The configuration was modified during editing, please reload the configuration and make your changes again.');
+            //            }
 
             $oldConfig = $reader->toArray();
             $newConfig = $newConfigReader->toArray();
             $newConfig['general']['modificationDate'] = time();
-
 
             $preSaveEvent = new GetModifiedConfigurationEvent($newConfig, $oldConfig);
 
@@ -213,15 +172,12 @@ class ConfigController extends AdminAbstractController
             $eventDispatcher->dispatch($postSaveEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_SAVE);
 
             return $this->json(['success' => true, 'modificationDate' => $configRepository->getModificationDate()]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
-    /**
-     * @return JsonResponse
-     */
-    #[Route("/thumbnails", name: "thumbnails", methods: ["GET"])]
+    #[Route('/thumbnails', name: 'thumbnails', methods: ['GET'])]
     public function thumbnailsAction(): JsonResponse
     {
         $this->checkPermission('thumbnails');
@@ -238,10 +194,7 @@ class ConfigController extends AdminAbstractController
     }
 
     /**
-     * @param string                $route
      * @param array<string, string> $parameters
-     *
-     * @return string
      */
     private function getEndpoint(string $route, array $parameters = []): string
     {

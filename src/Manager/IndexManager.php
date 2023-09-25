@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Manager;
@@ -21,11 +19,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\DiffArray;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
-use InvalidArgumentException;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
-use RuntimeException;
 
 class IndexManager
 {
@@ -33,20 +29,10 @@ class IndexManager
     public const INDEX_ASSET_FOLDER = 'assetfolder';
     public const INDEX_OBJECT_FOLDER = 'objectfolder';
 
-    /**
-     * @var string
-     */
     private string $indexNamePrefix;
 
-    /**
-     * @var IndexPersistenceService
-     */
     private IndexPersistenceService $indexService;
 
-    /**
-     * @param string                  $indexNamePrefix
-     * @param IndexPersistenceService $indexService
-     */
     public function __construct(string $indexNamePrefix, IndexPersistenceService $indexService)
     {
         $this->indexNamePrefix = $indexNamePrefix;
@@ -55,8 +41,6 @@ class IndexManager
 
     /**
      * Clears an index by cloning and renaming the existing index.
-     *
-     * @param string $indexName
      *
      * @throws ClientResponseException
      * @throws MissingParameterException
@@ -67,9 +51,7 @@ class IndexManager
         $mapping = $this->getIndexMapping($indexName);
 
         if (empty($mapping)) {
-            throw new RuntimeException(
-                sprintf('Could not clear index data. No mapping found for "%s"', $indexName)
-            );
+            throw new \RuntimeException(sprintf('Could not clear index data. No mapping found for "%s"', $indexName));
         }
 
         $this->updateMapping($indexName, $mapping, false, true);
@@ -78,8 +60,9 @@ class IndexManager
     /**
      * Creates or updates an index by its name and mapping.
      *
-     * @param string $indexName – The index to create or update.
-     * @param array $mapping – The mapping to check against.
+     * @param string $indexName – The index to create or update
+     * @param array $mapping – The mapping to check against
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -98,7 +81,6 @@ class IndexManager
     /**
      * Deletes all indices of a certain endpoint configuration.
      *
-     * @param string $endpointName
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -112,9 +94,8 @@ class IndexManager
     /**
      * Tries to find an index by alias name.
      *
-     * @param string $aliasName – The name of the alias of an index.
+     * @param string $aliasName – The name of the alias of an index
      *
-     * @return string
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
@@ -123,7 +104,7 @@ class IndexManager
         $aliases = $this->indexService->getAlias($aliasName);
 
         foreach ($aliases as $index => $aliasMapping) {
-            if (array_key_exists($aliasName, $aliasMapping['aliases'])) {
+            if (\array_key_exists($aliasName, $aliasMapping['aliases'])) {
                 return $index;
             }
         }
@@ -132,9 +113,7 @@ class IndexManager
     }
 
     /**
-     * Returns all index names of the current
-     *
-     * @param ConfigReader $reader
+     * Returns all index names of the current.
      *
      * @return array<int, string>
      */
@@ -152,7 +131,7 @@ class IndexManager
             $indices[] = $this->getIndexName(self::INDEX_OBJECT_FOLDER, $endpointName);
 
             foreach ($reader->getObjectClassNames() as $className) {
-                $indices[] = $this->getIndexName(strtolower($className), $endpointName);
+                $indices[] = $this->getIndexName(mb_strtolower($className), $endpointName);
             }
         }
 
@@ -165,6 +144,7 @@ class IndexManager
      * @param string $indexName – A comma-separated list of index names
      *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -173,9 +153,7 @@ class IndexManager
     {
         if (!str_ends_with($indexName, '-odd') && !str_ends_with($indexName, '-even')) {
             if (!$this->indexService->aliasExists($indexName)) {
-                throw new RuntimeException(
-                    sprintf('Could not get index mapping. No alias found for "%s"', $indexName)
-                );
+                throw new \RuntimeException(sprintf('Could not get index mapping. No alias found for "%s"', $indexName));
             }
 
             $indexName = $this->findIndexNameByAlias($indexName);
@@ -189,10 +167,8 @@ class IndexManager
     /**
      * Builds the index name for a given name or element and the endpoint's name.
      *
-     * @param mixed  $value        – A string or a Pimcore element.
-     * @param string $endpointName – The endpoint's name.
-     *
-     * @return string
+     * @param mixed $value – A string or a Pimcore element
+     * @param string $endpointName – The endpoint's name
      */
     public function getIndexName(mixed $value, string $endpointName): string
     {
@@ -206,17 +182,12 @@ class IndexManager
             } elseif ($value instanceof DataObject\Folder) {
                 $indexName = self::INDEX_OBJECT_FOLDER;
             } elseif ($value instanceof DataObject\Concrete) {
-                $indexName = strtolower($value->getClassName());
+                $indexName = mb_strtolower($value->getClassName());
             }
         }
 
-        if (!is_string($indexName)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'The given value must either be a string or a Pimcore element, %s given.',
-                    gettype($value)
-                )
-            );
+        if (!\is_string($indexName)) {
+            throw new \InvalidArgumentException(sprintf('The given value must either be a string or a Pimcore element, %s given.', \gettype($value)));
         }
 
         return sprintf(
@@ -230,10 +201,7 @@ class IndexManager
     /**
      * Checks whether the current mapping of an index is different to the given mapping.
      *
-     * @param string                $indexName
-     * @param array<string, mixed>  $mapping
-     *
-     * @return bool
+     * @param array<string, mixed> $mapping
      */
     public function hasMappingChanged(string $indexName, array $mapping): bool
     {
@@ -247,11 +215,6 @@ class IndexManager
 
     /**
      * Checks whether the workspaces have changed compared to the prior configuration or not.
-     *
-     * @param ConfigReader $reader
-     * @param ConfigReader $priorReader
-     *
-     * @return bool
      */
     public function hasWorkspaceChanged(ConfigReader $reader, ConfigReader $priorReader): bool
     {
@@ -276,11 +239,6 @@ class IndexManager
      * Creates a new target index with mappings and re-indexes the data from the source index.
      * Then a new alias pointing to the new index is created and the old index is removed.
      *
-     * @param string $indexName
-     * @param array $mapping
-     * @param bool $reindexData
-     * @param bool $force
-     *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
@@ -301,7 +259,7 @@ class IndexManager
         if ($force || $this->hasMappingChanged($source, $mapping)) {
             // Create a new target index with mapping
             $indexResponse = $this->indexService->createIndex($target, $mapping);
-            if (!isset($indexResponse['acknowledged']) || $indexResponse['acknowledged'] !== true) {
+            if (!isset($indexResponse['acknowledged']) || true !== $indexResponse['acknowledged']) {
                 throw new ESClientException(sprintf('Could not create index "%s"', $target));
             }
 
@@ -315,15 +273,13 @@ class IndexManager
                 // Reindex the data from the source to the target index
                 $reIndexResponse = $this->indexService->reindex($source, $target);
                 if (!isset($reIndexResponse['failures']) || !empty($reIndexResponse['failures'])) {
-                    throw new ESClientException(
-                        sprintf('Could not reindex data from "%s" to "%s"', $source, $target)
-                    );
+                    throw new ESClientException(sprintf('Could not reindex data from "%s" to "%s"', $source, $target));
                 }
             }
 
             // Create the alias for the new target index
             $aliasResponse = $this->indexService->createAlias($target, $indexName);
-            if (!isset($aliasResponse['acknowledged']) || $aliasResponse['acknowledged'] !== true) {
+            if (!isset($aliasResponse['acknowledged']) || true !== $aliasResponse['acknowledged']) {
                 throw new ESClientException(sprintf('Could not create alias for "%s"', $target));
             }
 

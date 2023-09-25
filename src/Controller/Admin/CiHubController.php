@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller\Admin;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
@@ -12,31 +22,26 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route("/admin/ci-hub")]
+#[Route('/admin/ci-hub')]
 class CiHubController extends UserAwareController
 {
     use JsonHelperTrait;
 
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @return Response
-     */
-    #[Route("/config/list", name: "admin_ci_hub_user_config_list", options: ["expose" => true])]
+    #[Route('/config/list', name: 'admin_ci_hub_user_config_list', options: ['expose' => true])]
     public function list(DataHubConfigurationRepository $configRepository): Response
     {
         $list = $configRepository->all();
+
         return $this->jsonResponse([
             'data' => array_keys($list),
-            'success' => count($list) > 0
+            'success' => \count($list) > 0,
         ]);
     }
 
     /**
-     * @param Request $request
-     * @return Response
      * @throws Exception
      */
-    #[Route("/config/update", name: "admin_ci_hub_user_config_update", options: ["expose" => true])]
+    #[Route('/config/update', name: 'admin_ci_hub_user_config_update', options: ['expose' => true])]
     public function update(Request $request): Response
     {
         /** @var User|User\Role|null $user */
@@ -57,12 +62,12 @@ class CiHubController extends UserAwareController
             $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = ' . $user->getId());
             if ($data) {
                 $db->update('users_datahub_config', [
-                    'data' => $request->get('data')
+                    'data' => $request->get('data'),
                 ], ['userId' => $user->getId()]);
             } else {
                 $db->insert('users_datahub_config', [
                     'data' => $request->get('data'),
-                    'userId' => $user->getId()
+                    'userId' => $user->getId(),
                 ]);
             }
         }
@@ -71,11 +76,9 @@ class CiHubController extends UserAwareController
     }
 
     /**
-     * @param Request $request
-     * @return Response
      * @throws Exception
      */
-    #[Route("/config", name: "admin_ci_hub_user_config", options: ["expose" => true])]
+    #[Route('/config', name: 'admin_ci_hub_user_config', options: ['expose' => true])]
     public function get(Request $request): Response
     {
         $userId = (int)$request->get('id');

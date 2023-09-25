@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index;
@@ -18,28 +16,17 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Exception;
 use ONGR\ElasticsearchDSL\Search;
 use Symfony\Component\HttpFoundation\Request;
 
 final class IndexQueryService
 {
-    /**
-     * @var Client
-     */
     private Client $client;
 
-    /**
-     * @var string
-     */
     private string $indexNamePrefix;
     private Request $request;
     private int $maxResult;
 
-    /**
-     * @param Client $client
-     * @param string $indexNamePrefix
-     */
     public function __construct(Client $client, string $indexNamePrefix, int $maxResult = 100)
     {
         $this->client = $client;
@@ -47,19 +34,14 @@ final class IndexQueryService
         $this->maxResult = $maxResult;
     }
 
-    /**
-     * @return Search
-     */
     public function createSearch(Request $request): Search
     {
         $this->request = $request;
+
         return new Search();
     }
 
     /**
-     * @param int $id
-     * @param string $index
-     *
      * @return array<string, mixed>
      *
      * @throws ClientResponseException
@@ -77,14 +59,11 @@ final class IndexQueryService
     }
 
     /**
-     * @param string $index
-     * @param array $query
-     * @param array $params
-     *
      * @return array<string, mixed>
+     *
      * @throws ClientResponseException
      * @throws ServerResponseException
-     * @throws Exception
+     * @throws \Exception
      */
     public function search(string $index, array $query, array $params = []): array
     {

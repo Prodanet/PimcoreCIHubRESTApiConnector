@@ -1,10 +1,18 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Exception\InvalidStreamException;
-use Exception;
-use php_user_filter;
 
 final class AppendStream
 {
@@ -23,11 +31,11 @@ final class AppendStream
 
     public function append(mixed $stream): void
     {
-        if (!is_resource($stream)) {
+        if (!\is_resource($stream)) {
             throw new InvalidStreamException($stream);
         }
 
-        if (get_resource_type($stream) !== 'stream') {
+        if ('stream' !== get_resource_type($stream)) {
             throw new InvalidStreamException($stream);
         }
 
@@ -35,7 +43,7 @@ final class AppendStream
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function getResource()
     {
@@ -43,7 +51,7 @@ final class AppendStream
             return fopen('data://text/plain,', 'r');
         }
 
-        if (count($this->streams) == 1) {
+        if (1 == \count($this->streams)) {
             return reset($this->streams);
         }
 
@@ -51,7 +59,7 @@ final class AppendStream
         fwrite($head, fread($this->streams[0], 8192));
         rewind($head);
 
-        $anonymous = new class($this->streams, $this->chunkSize) extends php_user_filter {
+        $anonymous = new class($this->streams, $this->chunkSize) extends \php_user_filter {
             private static array $streams = [];
             private static int $maxLength;
 
@@ -62,7 +70,6 @@ final class AppendStream
             }
 
             /**
-             *
              * @param resource $in Incoming bucket brigade
              * @param resource $out Outgoing bucket brigade
              * @param int $consumed Number of bytes consumed
@@ -75,17 +82,17 @@ final class AppendStream
                 }
 
                 foreach (self::$streams as $stream) {
-                    while (feof($stream) !== true) {
+                    while (true !== feof($stream)) {
                         $bucket = stream_bucket_new($stream, fread($stream, self::$maxLength));
                         stream_bucket_append($out, $bucket);
                     }
                 }
 
-                return PSFS_PASS_ON;
+                return \PSFS_PASS_ON;
             }
         };
 
-        stream_filter_register($filter = bin2hex(random_bytes(32)), get_class($anonymous));
+        stream_filter_register($filter = bin2hex(random_bytes(32)), $anonymous::class);
         stream_filter_append($head, $filter);
 
         return $head;

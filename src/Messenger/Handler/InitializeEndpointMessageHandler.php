@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
@@ -21,7 +19,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationReposito
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\PDO\Statement;
-use Exception;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -37,19 +34,10 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private array $conditions = [];
 
-    /**
-     * @var DataHubConfigurationRepository
-     */
     private DataHubConfigurationRepository $configRepository;
 
-    /**
-     * @var Connection
-     */
     private Connection $connection;
 
-    /**
-     * @var MessageBusInterface
-     */
     private MessageBusInterface $messageBus;
 
     /**
@@ -57,11 +45,6 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private array $params = [];
 
-    /**
-     * @param DataHubConfigurationRepository $configRepository
-     * @param Connection $connection
-     * @param MessageBusInterface            $messageBus
-     */
     public function __construct(
         DataHubConfigurationRepository $configRepository,
         Connection $connection,
@@ -72,9 +55,6 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         $this->messageBus = $messageBus;
     }
 
-    /**
-     * @param InitializeEndpointMessage $message
-     */
     public function __invoke(InitializeEndpointMessage $message): void
     {
         $endpointName = $message->getEndpointName();
@@ -126,8 +106,6 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      * Builds the conditions for database query.
      *
      * @param array<int, array> $workspace
-     * @param string            $keyColumn
-     * @param string            $pathColumn
      */
     private function buildConditions(array $workspace, string $keyColumn, string $pathColumn): void
     {
@@ -141,7 +119,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
             $pathParts = explode('/', $path);
 
             // If not root folder, add distinct conditions
-            if (count($pathParts) > 2 || $pathParts[1] !== '') {
+            if (\count($pathParts) > 2 || '' !== $pathParts[1]) {
                 $this->addDistinctConditions($pathParts, $keyColumn, $pathColumn);
             }
 
@@ -160,9 +138,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
     /**
      * Builds the conditions for distinct elements.
      *
-     * @param array<int, string>  $pathParts
-     * @param string              $keyColumn
-     * @param string              $pathColumn
+     * @param array<int, string> $pathParts
      */
     private function addDistinctConditions(array $pathParts, string $keyColumn, string $pathColumn): void
     {
@@ -171,7 +147,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         $keyParam = array_pop($pathParts);
         $keyPathParam = implode('/', $pathParts) . '/';
 
-        if (!in_array($keyParam, $this->params, true)) {
+        if (!\in_array($keyParam, $this->params, true)) {
             $this->conditions[self::CONDITION_DISTINCT][] = sprintf(
                 '(%s = :%s AND %s = :%s)',
                 $keyColumn,
@@ -185,16 +161,13 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         }
 
         // Add parent folders to distinct conditions as well
-        if (count($pathParts) > 1) {
+        if (\count($pathParts) > 1) {
             $this->addDistinctConditions($pathParts, $keyColumn, $pathColumn);
         }
     }
 
     /**
      * Runs the database query and returns found ID's.
-     *
-     * @param string                $from
-     * @param string                $select
      *
      * @return array<int, mixed>
      */
@@ -217,7 +190,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         try {
             /** @var Statement $statement */
             $ids = $qb->fetchFirstColumn();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $ids = [];
         }
 

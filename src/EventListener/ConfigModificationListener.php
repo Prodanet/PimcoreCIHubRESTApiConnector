@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
@@ -23,44 +21,21 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
-use RuntimeException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 class ConfigModificationListener implements EventSubscriberInterface
 {
-    /**
-     * @var IndexManager
-     */
     private IndexManager $indexManager;
 
-    /**
-     * @var MessageBusInterface
-     */
     private MessageBusInterface $messageBus;
 
-    /**
-     * @var AssetMapping
-     */
     private AssetMapping $assetMapping;
 
-    /**
-     * @var DataObjectMapping
-     */
     private DataObjectMapping $objectMapping;
 
-    /**
-     * @var FolderMapping
-     */
     private FolderMapping $folderMapping;
 
-    /**
-     * @param IndexManager        $indexManager
-     * @param MessageBusInterface $messageBus
-     * @param AssetMapping        $assetMapping
-     * @param DataObjectMapping   $objectMapping
-     * @param FolderMapping       $folderMapping
-     */
     public function __construct(
         IndexManager $indexManager,
         MessageBusInterface $messageBus,
@@ -75,9 +50,6 @@ class ConfigModificationListener implements EventSubscriberInterface
         $this->folderMapping = $folderMapping;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function getSubscribedEvents(): array
     {
         return [
@@ -86,9 +58,6 @@ class ConfigModificationListener implements EventSubscriberInterface
         ];
     }
 
-    /**
-     * @param ConfigurationEvent $event
-     */
     public function onPreDelete(ConfigurationEvent $event): void
     {
         $reader = new ConfigReader($event->getConfiguration());
@@ -96,9 +65,7 @@ class ConfigModificationListener implements EventSubscriberInterface
     }
 
     /**
-     * @param ConfigurationEvent $event
-     *
-     * @throws RuntimeException
+     * @throws \RuntimeException
      * @throws ESClientException
      */
     public function onPostSave(ConfigurationEvent $event): void
@@ -115,14 +82,10 @@ class ConfigModificationListener implements EventSubscriberInterface
             $this->handleObjectIndices($reader);
         }
 
-
         // Initialize endpoint
         $this->initializeEndpoint($reader);
     }
 
-    /**
-     * @param ConfigReader $reader
-     */
     private function handleAssetIndices(ConfigReader $reader): void
     {
         $endpointName = $reader->getName();
@@ -140,9 +103,6 @@ class ConfigModificationListener implements EventSubscriberInterface
         );
     }
 
-    /**
-     * @param ConfigReader $reader
-     */
     private function handleObjectIndices(ConfigReader $reader): void
     {
         $endpointName = $reader->getName();
@@ -158,16 +118,14 @@ class ConfigModificationListener implements EventSubscriberInterface
         // DataObject Classes
         foreach ($objectClasses as $class) {
             $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(strtolower($class['name']), $endpointName),
+                $this->indexManager->getIndexName(mb_strtolower($class['name']), $endpointName),
                 $this->objectMapping->generate($class)
             );
         }
     }
 
     /**
-     * @param ConfigReader $reader
-     *
-     * @throws RuntimeException
+     * @throws \RuntimeException
      * @throws ESClientException
      */
     private function initializeEndpoint(ConfigReader $reader): void

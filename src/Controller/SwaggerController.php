@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
@@ -23,16 +21,10 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_PIMCORE_USER')]
-#[Route("/admin/datahub/rest", defaults: ["area" => 'cihub'])]
+#[Route('/admin/datahub/rest', defaults: ['area' => 'cihub'])]
 class SwaggerController extends FrontendController
 {
-    /**
-     * @param Request $request
-     * @param RenderOpenApi $renderOpenApi
-     * @param array $options
-     * @return Response
-     */
-    #[Route("/swagger", name: "datahub_rest_adapter_swagger_ui", methods: ['GET'])]
+    #[Route('/swagger', name: 'datahub_rest_adapter_swagger_ui', methods: ['GET'])]
     public function userInterfaceAction(Request $request, RenderOpenApi $renderOpenApi, array $options = []): Response
     {
         $options += [
@@ -48,12 +40,7 @@ class SwaggerController extends FrontendController
         ]);
     }
 
-    /**
-     * @param Request $request
-     * @param RenderOpenApi $renderOpenApi
-     * @return Response
-     */
-    #[Route("/swagger-config", name: "datahub_rest_adapter_swagger_config", methods: ["GET"])]
+    #[Route('/swagger-config', name: 'datahub_rest_adapter_swagger_config', methods: ['GET'])]
     public function configAction(Request $request, RenderOpenApi $renderOpenApi): Response
     {
         return new Response($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'));

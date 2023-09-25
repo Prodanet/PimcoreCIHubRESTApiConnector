@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Extractor;
@@ -21,22 +19,13 @@ final class LabelExtractor implements LabelExtractorInterface
     public const ALLOWED_PROPERTIES = ['data', 'dimensionData', 'metaData', 'system'];
     public const ALLOWED_SYSTEM_PROPERTIES = ['id', 'key', 'mimeType', 'subtype', 'type'];
 
-    /**
-     * @var IndexManager
-     */
     private IndexManager $indexManager;
 
-    /**
-     * @param IndexManager $indexManager
-     */
     public function __construct(IndexManager $indexManager)
     {
         $this->indexManager = $indexManager;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function extractLabels(array $indices): array
     {
         $labels = [];
@@ -49,7 +38,7 @@ final class LabelExtractor implements LabelExtractorInterface
             }
 
             foreach ($mapping['properties'] as $property => $definition) {
-                if (!in_array($property, self::ALLOWED_PROPERTIES, true)) {
+                if (!\in_array($property, self::ALLOWED_PROPERTIES, true)) {
                     continue;
                 }
 
@@ -60,8 +49,8 @@ final class LabelExtractor implements LabelExtractorInterface
                     array_filter(
                         array_keys($definition['properties'] ?? []),
                         static function ($key) use ($property) {
-                            return 'system' !== $property ||
-                                in_array($key, self::ALLOWED_SYSTEM_PROPERTIES, true);
+                            return 'system' !== $property
+                                || \in_array($key, self::ALLOWED_SYSTEM_PROPERTIES, true);
                         }
                     )
                 );

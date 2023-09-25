@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Reader;
@@ -42,8 +40,6 @@ class ConfigReader
     /**
      * Extracts the correct object schema from a DataHub configuration.
      *
-     * @param string $className
-     *
      * @return array<string, array|string>
      */
     public function extractObjectSchema(string $className): array
@@ -72,7 +68,7 @@ class ConfigReader
         foreach ($labelSettings as $setting) {
             $id = $setting['id'];
 
-            if (!in_array($id, $labels, true)) {
+            if (!\in_array($id, $labels, true)) {
                 continue;
             }
 
@@ -86,8 +82,6 @@ class ConfigReader
 
     /**
      * Returns the API key to authenticate against.
-     *
-     * @return string|null
      */
     public function getApiKey(): ?string
     {
@@ -114,7 +108,7 @@ class ConfigReader
         $assetSchema = $this->getAssetSchema();
         $thumbnails = $assetSchema['thumbnails'] ?? [];
 
-        return is_array($thumbnails) ? $thumbnails : [];
+        return \is_array($thumbnails) ? $thumbnails : [];
     }
 
     /**
@@ -129,8 +123,6 @@ class ConfigReader
 
     /**
      * Returns the modification date (timestamp) of the configuration.
-     *
-     * @return int
      */
     public function getModificationDate(): int
     {
@@ -139,8 +131,6 @@ class ConfigReader
 
     /**
      * Returns the name of the configuration.
-     *
-     * @return string|null
      */
     public function getName(): ?string
     {
@@ -174,8 +164,6 @@ class ConfigReader
 
     /**
      * Returns the type of the configuration.
-     *
-     * @return string|null
      */
     public function getType(): ?string
     {
@@ -185,18 +173,15 @@ class ConfigReader
     /**
      * Returns a workspace by type.
      *
-     * @param string $type
-     *
      * @return array<int, array>
      */
     public function getWorkspace(string $type): array
     {
         return $this->config['workspaces'][$type] ?? [];
     }
+
     /**
      * Returns a permission for user.
-     *
-     * @param string $type
      *
      * @return array<int, array>
      */
@@ -207,8 +192,6 @@ class ConfigReader
 
     /**
      * Checks if asset indexing is enabled.
-     *
-     * @return bool
      */
     public function isAssetIndexingEnabled(): bool
     {
@@ -219,8 +202,6 @@ class ConfigReader
 
     /**
      * Checks if object indexing is enabled.
-     *
-     * @return bool
      */
     public function isObjectIndexingEnabled(): bool
     {
@@ -229,8 +210,6 @@ class ConfigReader
 
     /**
      * Checks if the original image is allowed.
-     *
-     * @return bool
      */
     public function isOriginalImageAllowed(): bool
     {

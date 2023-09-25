@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
@@ -19,7 +17,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
@@ -29,20 +26,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path: ["/datahub/rest/{config}", "/pimcore-datahub-webservices/simplerest/{config}"], name: "datahub_rest_endpoints_")]
-#[Security(name: "Bearer")]
-#[OA\Tag(name: "Search")]
+#[Route(path: ['/datahub/rest/{config}', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_')]
+#[Security(name: 'Bearer')]
+#[OA\Tag(name: 'Search')]
 class SearchController extends BaseEndpointController
 {
     /**
-     * @param Request $request
-     * @param IndexManager $indexManager
-     * @param IndexQueryService $indexService
-     *
-     * @return JsonResponse
-     * @throws Exception
+     * @throws \Exception
      */
-    #[Route("/search", name: "search", methods: ["GET"])]
+    #[Route('/search', name: 'search', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to search for elements, returns elements of all types. For paging use link provided in link header of response.',
         parameters: [
@@ -115,13 +107,13 @@ class SearchController extends BaseEndpointController
                     type: 'boolean',
                     default: false
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\JsonContent (
+                content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'total_count',
@@ -137,7 +129,7 @@ class SearchController extends BaseEndpointController
                             property: 'page_cursor',
                             description: 'Page cursor for next page.',
                             type: 'string'
-                        )
+                        ),
                     ],
                     type: 'object'
                 )
@@ -153,7 +145,7 @@ class SearchController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function searchAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
@@ -176,7 +168,7 @@ class SearchController extends BaseEndpointController
             $indices = array_merge(
                 $indices,
                 array_map(function ($className) use ($indexManager) {
-                    return $indexManager->getIndexName(strtolower($className), $this->config);
+                    return $indexManager->getIndexName(mb_strtolower($className), $this->config);
                 }, $reader->getObjectClassNames())
             );
         }
@@ -194,16 +186,11 @@ class SearchController extends BaseEndpointController
     }
 
     /**
-     * @param Request $request
-     * @param IndexManager $indexManager
-     * @param IndexQueryService $indexService
-     *
-     * @return JsonResponse
      * @throws \Doctrine\DBAL\Exception
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
-    #[Route("/tree-items", name: "tree_items", methods: ["GET"])]
+    #[Route('/tree-items', name: 'tree_items', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
         parameters: [
@@ -228,7 +215,7 @@ class SearchController extends BaseEndpointController
                 required: true,
                 schema: new OA\Schema(
                     type: 'string',
-                    enum: ["asset", "object"]
+                    enum: ['asset', 'object']
                 )
             ),
             new OA\Parameter(
@@ -304,13 +291,13 @@ class SearchController extends BaseEndpointController
                     type: 'boolean',
                     default: false
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\JsonContent (
+                content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'total_count',
@@ -326,7 +313,7 @@ class SearchController extends BaseEndpointController
                             property: 'page_cursor',
                             description: 'Page cursor for next page.',
                             type: 'string'
-                        )
+                        ),
                     ],
                     type: 'object'
                 )
@@ -342,7 +329,7 @@ class SearchController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function treeItemsAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
@@ -362,15 +349,13 @@ class SearchController extends BaseEndpointController
 
         $root = Service::getElementById($type, $id);
         if (!$root->isAllowed('list')) {
-            throw new AccessDeniedHttpException(
-                'Missing the permission to list in the folder: ' . $root->getRealFullPath()
-            );
+            throw new AccessDeniedHttpException('Missing the permission to list in the folder: ' . $root->getRealFullPath());
         }
 
         $parentId = $this->request->get('parent_id', '1');
         $includeFolders = filter_var(
             $this->request->get('include_folders', true),
-            FILTER_VALIDATE_BOOLEAN
+            \FILTER_VALIDATE_BOOLEAN
         );
 
         $indices = [];
@@ -383,7 +368,7 @@ class SearchController extends BaseEndpointController
             }
         } elseif ('object' === $type && $reader->isObjectIndexingEnabled()) {
             $indices = array_map(function ($className) use ($indexManager) {
-                return $indexManager->getIndexName(strtolower($className), $this->config);
+                return $indexManager->getIndexName(mb_strtolower($className), $this->config);
             }, $reader->getObjectClassNames());
 
             if (true === $includeFolders) {

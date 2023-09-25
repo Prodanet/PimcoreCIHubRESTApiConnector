@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
@@ -8,7 +18,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
@@ -22,18 +31,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path: ["/datahub/rest/{config}", "/pimcore-datahub-webservices/simplerest/{config}"], name: "datahub_rest_endpoints_")]
-#[Security(name: "Bearer")]
-#[OA\Tag(name: "Asset")]
+#[Route(path: ['/datahub/rest/{config}', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_')]
+#[Security(name: 'Bearer')]
+#[OA\Tag(name: 'Asset')]
 class AssetController extends BaseEndpointController
 {
-    /**
-     * @param IndexManager $indexManager
-     * @param IndexQueryService $indexService
-     *
-     * @return JsonResponse
-     */
-    #[Route("/get-element", name: "get_element", methods: ["GET"])]
+    #[Route('/get-element', name: 'get_element', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to get one single element by type and ID.',
         parameters: [
@@ -58,7 +61,7 @@ class AssetController extends BaseEndpointController
                 required: true,
                 schema: new OA\Schema(
                     type: 'string',
-                    enum: ["asset", "object"]
+                    enum: ['asset', 'object']
                 )
             ),
             new OA\Parameter(
@@ -69,13 +72,13 @@ class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\JsonContent (
+                content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'total_count',
@@ -91,7 +94,7 @@ class AssetController extends BaseEndpointController
                             property: 'page_cursor',
                             description: 'Page cursor for next page.',
                             type: 'string'
-                        )
+                        ),
                     ],
                     type: 'object'
                 )
@@ -107,7 +110,7 @@ class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function getElementAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
@@ -123,9 +126,7 @@ class AssetController extends BaseEndpointController
 
         $root = Service::getElementById($type, $id);
         if (!$root->isAllowed('view', $this->user)) {
-            throw new AccessDeniedHttpException(
-                'Missing the permission to list in the folder: ' . $root->getRealFullPath()
-            );
+            throw new AccessDeniedHttpException('Missing the permission to list in the folder: ' . $root->getRealFullPath());
         }
 
         $indices = [];
@@ -139,7 +140,7 @@ class AssetController extends BaseEndpointController
             $indices = array_merge(
                 [$indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config)],
                 array_map(function ($className) use ($indexManager) {
-                    return $indexManager->getIndexName(strtolower($className), $this->config);
+                    return $indexManager->getIndexName(mb_strtolower($className), $this->config);
                 }, $reader->getObjectClassNames())
             );
         }
@@ -147,7 +148,7 @@ class AssetController extends BaseEndpointController
         foreach ($indices as $index) {
             try {
                 $result = $indexService->get($id, $index);
-            } catch (Exception $ignore) {
+            } catch (\Exception $ignore) {
                 $result = [];
             }
 
@@ -163,7 +164,7 @@ class AssetController extends BaseEndpointController
         return $this->json($this->buildResponse($result, $reader));
     }
 
-    #[Route("/version", name: "version", methods: ["GET"])]
+    #[Route('/version', name: 'version', methods: ['GET'])]
     public function getElementVersion(): Response
     {
         $id = $this->request->query->getInt('id');
@@ -177,23 +178,18 @@ class AssetController extends BaseEndpointController
         $response = [];
 
         if ($asset->isAllowed('versions', $this->user)) {
-
             if ($version instanceof Version) {
                 $response = [
                     'assetId' => $asset->getId(),
-                    'metadata' => $asset->getMetadata()
+                    'metadata' => $asset->getMetadata(),
                 ];
             }
-
         }
 
         return new JsonResponse(['success' => true, 'data' => $response]);
     }
 
-    /**
-     * @return Response
-     */
-    #[Route("/versions", name: "versions", methods: ["GET"])]
+    #[Route('/versions', name: 'versions', methods: ['GET'])]
     public function getVersions(): Response
     {
         $assetId = $this->request->query->getInt('id');
@@ -213,7 +209,7 @@ class AssetController extends BaseEndpointController
                 }
             }
 
-            //only load auto-save versions from current user
+            // only load auto-save versions from current user
             $list = new Listing();
             $list->setLoadAutoSave(true);
             $list->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
@@ -226,16 +222,16 @@ class AssetController extends BaseEndpointController
 
             $versions = $list->load();
             $versions = Service::getSafeVersionInfo($versions);
-            $versions = array_reverse($versions); //reverse array to sort by ID DESC
+            $versions = array_reverse($versions); // reverse array to sort by ID DESC
             foreach ($versions as &$version) {
-                if ($version['index'] === 0 &&
-                    $version['date'] == $asset->getModificationDate() &&
-                    $version['versionCount'] == $asset->getVersionCount()
+                if (0 === $version['index']
+                    && $version['date'] == $asset->getModificationDate()
+                    && $version['versionCount'] == $asset->getVersionCount()
                 ) {
                     $version['public'] = true;
                 }
                 $version['scheduled'] = null;
-                if (array_key_exists($version['id'], $schedules)) {
+                if (\array_key_exists($version['id'], $schedules)) {
                     $version['scheduled'] = $schedules[$version['id']];
                 }
             }
@@ -247,10 +243,9 @@ class AssetController extends BaseEndpointController
     }
 
     /**
-     * @return Response
      * @throws \Doctrine\DBAL\Exception
      */
-    #[Route("/lock-asset", name: "lock_asset", methods: ["POST"])]
+    #[Route('/lock-asset', name: 'lock_asset', methods: ['POST'])]
     #[OA\Post(
         description: 'Method to lock single element by type and ID.',
         parameters: [
@@ -275,7 +270,7 @@ class AssetController extends BaseEndpointController
                 required: true,
                 schema: new OA\Schema(
                     type: 'string',
-                    enum: ["asset", "object"]
+                    enum: ['asset', 'object']
                 )
             ),
             new OA\Parameter(
@@ -286,13 +281,13 @@ class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\JsonContent (
+                content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'total_count',
@@ -308,7 +303,7 @@ class AssetController extends BaseEndpointController
                             property: 'page_cursor',
                             description: 'Page cursor for next page.',
                             type: 'string'
-                        )
+                        ),
                     ],
                     type: 'object'
                 )
@@ -324,7 +319,7 @@ class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function lock(AssetHelper $assetHelper): Response
@@ -338,26 +333,23 @@ class AssetController extends BaseEndpointController
         }
 
         // check for lock on non-folder items only.
-        if ($type !== 'folder' && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
+        if ('folder' !== $type && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
             if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
-                return new JsonResponse(['success' => false, 'message' => "asset is already locked for editing"], 403);
+                return new JsonResponse(['success' => false, 'message' => 'asset is already locked for editing'], 403);
             }
 
             $assetHelper->lock($assetId, 'asset', $this->user->getId());
 
-            return new JsonResponse(['success' => true, 'message' => "asset was just locked"]);
+            return new JsonResponse(['success' => true, 'message' => 'asset was just locked']);
         }
 
-        throw new AccessDeniedHttpException(
-            'Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath()
-        );
+        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath());
     }
 
     /**
-     * @return Response
      * @throws \Doctrine\DBAL\Exception
      */
-    #[Route("/unlock-asset", name: "unlock_asset", methods: ["POST"])]
+    #[Route('/unlock-asset', name: 'unlock_asset', methods: ['POST'])]
     #[OA\Post(
         description: 'Method to unlock single element by type and ID.',
         parameters: [
@@ -382,7 +374,7 @@ class AssetController extends BaseEndpointController
                 required: true,
                 schema: new OA\Schema(
                     type: 'string',
-                    enum: ["asset", "object"]
+                    enum: ['asset', 'object']
                 )
             ),
             new OA\Parameter(
@@ -393,13 +385,13 @@ class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\JsonContent (
+                content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
                             property: 'total_count',
@@ -415,7 +407,7 @@ class AssetController extends BaseEndpointController
                             property: 'page_cursor',
                             type: 'string',
                             description: 'Page cursor for next page.'
-                        )
+                        ),
                     ],
                     type: 'object'
                 )
@@ -431,7 +423,7 @@ class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function unlock(AssetHelper $assetHelper): Response
@@ -445,29 +437,26 @@ class AssetController extends BaseEndpointController
         }
 
         // check for lock on non-folder items only.
-        if ($type !== 'folder' && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
+        if ('folder' !== $type && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
             if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
                 $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $assetId);
-                if($unlocked) {
-                    return new JsonResponse(['success' => true, 'message' => "asset has been unlocked for editing"]);
+                if ($unlocked) {
+                    return new JsonResponse(['success' => true, 'message' => 'asset has been unlocked for editing']);
                 }
 
-                return new JsonResponse(['success' => true, 'message' => "asset is locked for editing"], 403);
+                return new JsonResponse(['success' => true, 'message' => 'asset is locked for editing'], 403);
             }
 
-            return new JsonResponse(['success' => false, 'message' => "asset is already unlocked for editing"]);
+            return new JsonResponse(['success' => false, 'message' => 'asset is already unlocked for editing']);
         }
 
-        throw new AccessDeniedHttpException(
-            'Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath()
-        );
+        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath());
     }
 
     /**
-     * @return Response
      * @throws \Doctrine\DBAL\Exception
      */
-    #[Route("/download-asset", name: "download_asset", methods: ["GET"])]
+    #[Route('/download-asset', name: 'download_asset', methods: ['GET'])]
     #[OA\Post(
         description: 'Method to download binary file by asset ID.',
         parameters: [
@@ -502,7 +491,7 @@ class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'string'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -521,7 +510,7 @@ class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 500,
                 description: 'Server error'
-            )
+            ),
         ],
     )]
     public function download(): Response
@@ -564,7 +553,7 @@ class AssetController extends BaseEndpointController
                 } else {
                     $assetFile = $asset->getImageThumbnail($defaultPreviewThumbnail);
                 }
-            } else if ($asset instanceof Asset\Image) {
+            } elseif ($asset instanceof Asset\Image) {
                 $assetFile = $asset->getThumbnail($thumbnail);
             } else {
                 $assetFile = $asset->getImageThumbnail($thumbnail);
@@ -579,6 +568,7 @@ class AssetController extends BaseEndpointController
         $response->headers->set('Content-Length', $assetFile->getFileSize());
 
         $stream = $assetFile->getStream();
+
         return $response->setCallback(function () use ($stream) {
             fpassthru($stream);
         });

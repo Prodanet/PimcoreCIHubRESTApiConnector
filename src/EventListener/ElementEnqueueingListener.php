@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Simple REST Adapter.
- *
- * LICENSE
- *
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
  * files that are distributed with this source code.
  *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
- * @license    https://github.com/ci-hub-gmbh/SimpleRESTAdapterBundle/blob/master/gpl-3.0.txt GNU General Public License version 3 (GPLv3)
  */
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
@@ -32,32 +30,14 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class ElementEnqueueingListener implements EventSubscriberInterface
 {
-    /**
-     * @var CompositeConfigurationLoader
-     */
     private CompositeConfigurationLoader $configLoader;
 
-    /**
-     * @var IndexManager
-     */
     private IndexManager $indexManager;
 
-    /**
-     * @var MessageBusInterface
-     */
     private MessageBusInterface $messageBus;
 
-    /**
-     * @var WorkspaceGuardInterface
-     */
     private WorkspaceGuardInterface $workspaceGuard;
 
-    /**
-     * @param CompositeConfigurationLoader $configLoader
-     * @param IndexManager                $indexManager
-     * @param MessageBusInterface         $messageBus
-     * @param WorkspaceGuardInterface     $workspaceGuard
-     */
     public function __construct(
         CompositeConfigurationLoader $configLoader,
         IndexManager $indexManager,
@@ -70,9 +50,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         $this->workspaceGuard = $workspaceGuard;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function getSubscribedEvents(): array
     {
         return [
@@ -85,9 +62,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         ];
     }
 
-    /**
-     * @param AssetEvent $event
-     */
     public function enqueueAsset(AssetEvent $event): void
     {
         $type = 'asset';
@@ -121,9 +95,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    /**
-     * @param DataObjectEvent $event
-     */
     public function enqueueObject(DataObjectEvent $event): void
     {
         $type = 'object';
@@ -141,7 +112,7 @@ class ElementEnqueueingListener implements EventSubscriberInterface
             $objectClassNames = $reader->getObjectClassNames();
 
             // Check if object class is configured
-            if (!in_array($object->getClassName(), $objectClassNames, true)) {
+            if (!\in_array($object->getClassName(), $objectClassNames, true)) {
                 continue;
             }
 
@@ -162,9 +133,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    /**
-     * @param AssetEvent $event
-     */
     public function removeAsset(AssetEvent $event): void
     {
         $type = 'asset';
@@ -193,9 +161,6 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    /**
-     * @param DataObjectEvent $event
-     */
     public function removeObject(DataObjectEvent $event): void
     {
         $type = 'object';
@@ -213,7 +178,7 @@ class ElementEnqueueingListener implements EventSubscriberInterface
             $objectClassNames = $reader->getObjectClassNames();
 
             // Check if object class is configured
-            if (!in_array($object->getClassName(), $objectClassNames, true)) {
+            if (!\in_array($object->getClassName(), $objectClassNames, true)) {
                 continue;
             }
 
@@ -229,19 +194,13 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    /**
-     * @param ElementInterface|null $parent
-     * @param string                $folderClass
-     * @param string                $type
-     * @param string                $name
-     */
     private function enqueueParentFolders(
         ?ElementInterface $parent,
         string $folderClass,
         string $type,
         string $name
     ): void {
-        while ($parent instanceof $folderClass && $parent->getId() !== 1) {
+        while ($parent instanceof $folderClass && 1 !== $parent->getId()) {
             $this->messageBus->dispatch(new UpdateIndexElementMessage($parent->getId(), $type, $name));
             $parent = $parent->getParent();
         }

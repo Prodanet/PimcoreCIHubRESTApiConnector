@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model;
 
 use Pimcore\Logger;
@@ -23,13 +33,14 @@ final class DatahubUploadSession extends AbstractModel
     public string $fileName;
 
     /**
-     * get score by id
+     * get score by id.
      */
     public static function getById(string $id): ?self
     {
         try {
-            $obj = new self;
+            $obj = new self();
             $obj->getDao()->getById($id);
+
             return $obj;
         } catch (NotFoundException $ex) {
             throw new \CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException("Upload Session with id $id not found");
@@ -37,14 +48,16 @@ final class DatahubUploadSession extends AbstractModel
 
         return null;
     }
+
     /**
-     * get score by id
+     * get score by id.
      */
     public static function hasById(string $id): ?self
     {
         try {
-            $obj = new self;
+            $obj = new self();
             $obj->getDao()->hasById($id);
+
             return $obj;
         } catch (NotFoundException $ex) {
             Logger::warn("Upload Session with id $id not found");
@@ -58,9 +71,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->id;
     }
 
-    public function setId(string $id): DatahubUploadSession
+    public function setId(string $id): self
     {
         $this->id = $id;
+
         return $this;
     }
 
@@ -69,20 +83,21 @@ final class DatahubUploadSession extends AbstractModel
         return $this->parts;
     }
 
-    public function addPart(UploadPart $part): DatahubUploadSession
+    public function addPart(UploadPart $part): self
     {
         $this->parts->add($part);
 
         return $this;
     }
 
-    public function setParts(string|array $parts): DatahubUploadSession
+    public function setParts(string|array $parts): self
     {
-        if (is_string($parts)) {
+        if (\is_string($parts)) {
             $parts = json_decode($parts, true);
         }
 
         $this->parts = new UploadParts($parts);
+
         return $this;
     }
 
@@ -91,9 +106,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->totalParts;
     }
 
-    public function setTotalParts(int $totalParts): DatahubUploadSession
+    public function setTotalParts(int $totalParts): self
     {
         $this->totalParts = $totalParts;
+
         return $this;
     }
 
@@ -102,9 +118,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->fileSize;
     }
 
-    public function setFileSize(int $fileSize): DatahubUploadSession
+    public function setFileSize(int $fileSize): self
     {
         $this->fileSize = $fileSize;
+
         return $this;
     }
 
@@ -118,9 +135,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->assetId;
     }
 
-    public function setAssetId(int $assetId): DatahubUploadSession
+    public function setAssetId(int $assetId): self
     {
         $this->assetId = $assetId;
+
         return $this;
     }
 
@@ -129,9 +147,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->parentId;
     }
 
-    public function setParentId(int $parentId): DatahubUploadSession
+    public function setParentId(int $parentId): self
     {
         $this->parentId = $parentId;
+
         return $this;
     }
 
@@ -140,9 +159,10 @@ final class DatahubUploadSession extends AbstractModel
         return $this->fileName;
     }
 
-    public function setFileName(string $fileName): DatahubUploadSession
+    public function setFileName(string $fileName): self
     {
         $this->fileName = $fileName;
+
         return $this;
     }
 
@@ -191,7 +211,7 @@ final class DatahubUploadSession extends AbstractModel
     {
         $this->getData();
 
-        return $this->current() !== false;
+        return false !== $this->current();
     }
 
     public function getTemporaryPath(): string
@@ -203,6 +223,7 @@ final class DatahubUploadSession extends AbstractModel
     {
         return sprintf('session-%s-%s', $this->id, $this->fileName);
     }
+
     public function getTemporaryPartFilename(string $id): string
     {
         return sprintf('%s-%s', $this->getTemporaryPartExpression(), $id);

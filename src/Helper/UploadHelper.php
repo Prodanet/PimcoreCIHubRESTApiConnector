@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * This source file is subject to the GNU General Public License version 3 (GPLv3)
+ * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
+ * files that are distributed with this source code.
+ *
+ * @license    https://choosealicense.com/licenses/gpl-3.0/ GNU General Public License v3.0
+ * @copyright  Copyright (c) 2023 Brand Oriented sp. z o.o. (https://brandoriented.pl)
+ * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
+ */
+
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Helper;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
@@ -9,7 +19,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\ChunkUploadResponse;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\UploadPart;
-use Exception;
 use League\Flysystem\FilesystemException;
 use Pimcore\Config;
 use Pimcore\Model\Asset;
@@ -28,9 +37,10 @@ final class UploadHelper
     /**
      * @throws \Doctrine\DBAL\Exception
      */
-    public function __construct(private Config          $pimcoreConfig,
-                                private RouterInterface $router,
-                                private AuthManager     $authManager
+    public function __construct(
+        private Config          $pimcoreConfig,
+        private RouterInterface $router,
+        private AuthManager     $authManager
     )
     {
         $this->user = $this->authManager->authenticate();
@@ -57,7 +67,7 @@ final class UploadHelper
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function createSession(Request $request, int $partSize): DatahubUploadSession
     {
@@ -97,7 +107,7 @@ final class UploadHelper
 
     /**
      * @throws FilesystemException
-     * @throws Exception
+     * @throws \Exception
      */
     public function commitSession(string $id): array
     {
@@ -130,7 +140,7 @@ final class UploadHelper
                 'path' => $asset->getFullPath(),
                 'type' => $asset->getType(),
             ];
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             return [
                 'message' => $exception->getMessage(),
             ];
@@ -160,10 +170,12 @@ final class UploadHelper
     /**
      * @throws FilesystemException
      */
-    public function uploadPart(DatahubUploadSession                                                     $session,
-                               #[LanguageLevelTypeAware(["7.2" => "HashContext"], default: "resource")] $content,
-                               int                                                                      $size,
-                               int                                                                      $ordinal
+    public function uploadPart(
+        DatahubUploadSession $session,
+        #[LanguageLevelTypeAware(['7.2' => 'HashContext'], default: 'resource')]
+                             $content,
+        int                  $size,
+        int                  $ordinal
     ): UploadPart
     {
         $ctx = hash_init('sha3-512');
@@ -189,15 +201,12 @@ final class UploadHelper
     }
 
     /**
-     * @param int|null $parentId
-     * @param int $assetId
-     * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     private function getParent(?int $parentId, int $assetId = 0): int
     {
         $defaultUploadPath = $this->pimcoreConfig['assets']['default_upload_path'] ?? '/';
-        if ($parentId !== null) {
+        if (null !== $parentId) {
             $parentAsset = Asset::getById($parentId);
             if (!$parentAsset instanceof Asset) {
                 throw new NotFoundException('Parent does not exist');
@@ -209,23 +218,20 @@ final class UploadHelper
         }
 
         if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
-            throw new AccessDeniedHttpException(
-                'Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath()
-            );
+            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath());
         }
 
-        if ($assetId !== 0) {
+        if (0 !== $assetId) {
             $asset = Asset::getById($assetId);
             if (!$asset instanceof Asset) {
                 throw new NotFoundException('Asset does not exist');
             }
 
             if (!$asset->isAllowed('update', $this->user) && !$this->authManager->isAllowed($asset, 'update', $this->user)) {
-                throw new AccessDeniedHttpException(
-                    'Missing the permission to update asset: ' . $asset->getId()
-                );
+                throw new AccessDeniedHttpException('Missing the permission to update asset: ' . $asset->getId());
             }
         }
+
         return $parentId;
     }
 }
