@@ -12,62 +12,148 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\Schema\Schema;
 use Pimcore\Db;
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
-use Pimcore\Model\User\Permission\Definition;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 
 /**
  * Class Installer.
  */
 class Installer extends SettingsStoreAwareInstaller
 {
-    public const PERMISSION_KEY = 'plugin_datahub_adapter';
-    public const USER_DATAHUB_CONFIG_TABLE = 'users_datahub_config';
-    public const UPLOAD_SESSION_TABLE = 'datahub_upload_sessions';
+    public const USER_PERMISSIONS = ['plugin_datahub_adapter'];
+
+    protected ?Schema $schema = null;
+
+    private array $tablesToInstall = [
+        'users_datahub_config' => 'CREATE TABLE `users_datahub_config` (
+                `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+                `userid` int(11) UNSIGNED NOT NULL,
+                `data` text NOT NULL,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (userid) REFERENCES users(id)
+            );',
+        'datahub_upload_sessions' => 'CREATE TABLE `datahub_upload_sessions` (
+                `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+                `parts` json NOT NULL,
+                `totalParts` int(20) NOT NULL,
+                `fileSize` int(20) NOT NULL,
+                `assetId` int(20) UNSIGNED NOT NULL,
+                `parentId` int(20) UNSIGNED NOT NULL,
+                `fileName` varchar(700) NOT NULL,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (assetId) REFERENCES assets(id)
+            );',
+    ];
+
+    public function __construct(
+        protected BundleInterface $bundle,
+        protected Connection $db
+    ) {
+        parent::__construct($bundle);
+    }
 
     /**
-     * @throws \Exception
+     * @throws Exception
+     */
+    protected function addPermissions(): void
+    {
+        $db = Db::get();
+
+        foreach (self::USER_PERMISSIONS as $permission) {
+            $db->insert('users_permission_definitions', [
+                $db->quoteIdentifier('key') => $permission,
+                $db->quoteIdentifier('category') => \Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY,
+            ]);
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function removePermissions(): void
+    {
+        $db = Db::get();
+
+        foreach (self::USER_PERMISSIONS as $permission) {
+            $db->delete('users_permission_definitions', [
+                $db->quoteIdentifier('key') => $permission,
+            ]);
+        }
+    }
+
+    public function canBeInstalled(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function installTables(): void
+    {
+        foreach ($this->tablesToInstall as $name => $statement) {
+            if ($this->getSchema()->hasTable($name)) {
+                $this->output->write(sprintf(
+                    '     <comment>WARNING:</comment> Skipping table "%s" as it already exists',
+                    $name
+                ));
+
+                continue;
+            }
+
+            $this->db->executeQuery($statement);
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function uninstallTables(): void
+    {
+        foreach (array_keys($this->tablesToInstall) as $table) {
+            if (!$this->getSchema()->hasTable($table)) {
+                $this->output->write(sprintf(
+                    '     <comment>WARNING:</comment> Not dropping table "%s" as it doesn\'t exist',
+                    $table
+                ));
+
+                continue;
+            }
+
+            $this->db->executeQuery("DROP TABLE IF EXISTS $table");
+        }
+    }
+
+    /**
+     * @throws Exception
      */
     public function install(): void
     {
+        $this->addPermissions();
+        $this->installTables();
         parent::install();
-        // create backend permission
-        Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
-        $db = Db::get();
+    }
 
-        if (method_exists($db, 'getSchemaManager')) {
-            $schema = $db->getSchemaManager()->createSchema();
-        } else {
-            $schema = $db->createSchemaManager()->introspectSchema();
-        }
+    /**
+     * @throws Exception
+     */
+    public function uninstall(): void
+    {
+        $this->removePermissions();
+        $this->uninstallTables();
 
-        // create table
-        if (!$schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
-            $table = $schema->createTable(self::USER_DATAHUB_CONFIG_TABLE);
-            $table->addColumn('id', 'integer', ['length' => 11, 'autoincrement' => true, 'notnull' => true]);
-            $table->addColumn('data', 'text', ['notnull' => false]);
-            $table->addColumn('userId', 'integer', ['length' => 11, 'notnull' => true]);
-            $table->setPrimaryKey(['id']);
-            $table->addForeignKeyConstraint(
-                'users',
-                ['userId'],
-                ['id'],
-                ['onDelete' => 'CASCADE'],
-                'fk_datahub_users'
-            );
-        }
-        // create table
-        if (!$schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
-            $table = $schema->createTable(self::UPLOAD_SESSION_TABLE);
-            $table->addColumn('id', 'string', ['length' => 255, 'notnull' => false]);
-            $table->addUniqueIndex(['id']);
-            $table->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
-            $table->addColumn('totalParts', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('fileSize', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('assetId', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('parentId', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('fileName', 'string', ['length' => 700, 'notnull' => true]);
-            $table->setPrimaryKey(['id']);
-        }
+        parent::uninstall();
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function getSchema(): Schema
+    {
+        return $this->schema ??= $this->db->createSchemaManager()->introspectSchema();
     }
 }
