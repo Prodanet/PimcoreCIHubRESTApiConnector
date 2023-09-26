@@ -43,6 +43,9 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
 {
     private array $ciHubConfig = [];
 
+    /**
+     * @throws \Exception
+     */
     public function prepend(ContainerBuilder $container): void
     {
         $bundles = $container->getParameter('kernel.bundles');
