@@ -97,7 +97,7 @@ class AssetHelper
     {
         $parentAsset = $asset->getParent();
         if (!$parentAsset->isAllowed('update', $user) && !$this->authManager->isAllowed($parentAsset, 'update', $user)) {
-            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath());
+            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
 
         $mimetype = MimeTypes::getDefault()->guessMimeType($sourcePath);
@@ -118,7 +118,7 @@ class AssetHelper
         $newFileExt = pathinfo($filename, \PATHINFO_EXTENSION);
         $currentFileExt = pathinfo($asset->getFilename(), \PATHINFO_EXTENSION);
         if ($newFileExt != $currentFileExt) {
-            $newFilename = preg_replace('/\.' . $currentFileExt . '$/i', '.' . $newFileExt, $asset->getFilename());
+            $newFilename = preg_replace('/\.'.$currentFileExt.'$/i', '.'.$newFileExt, $asset->getFilename());
             $newFilename = Element\Service::getSafeCopyName($newFilename, $asset->getParent());
             $asset->setFilename($newFilename);
         }

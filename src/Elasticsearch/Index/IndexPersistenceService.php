@@ -80,7 +80,7 @@ final class IndexPersistenceService
      *
      * @param string $index – A comma-separated list of index names the alias should point to (supports wildcards);
      *                      use `_all` to perform the operation on all indices
-     * @param string $name – The name of the alias to be created or updated
+     * @param string $name  – The name of the alias to be created or updated
      *
      * @return array<string, mixed>
      *
@@ -101,8 +101,8 @@ final class IndexPersistenceService
     /**
      * Creates a new index either with or without settings/mappings.
      *
-     * @param string $name – The name of the index
-     * @param array $mapping – The mapping for the index
+     * @param string $name    – The name of the index
+     * @param array  $mapping – The mapping for the index
      *
      * @return array<string, mixed>
      *
@@ -150,7 +150,7 @@ final class IndexPersistenceService
     /**
      * Deletes an element from an index.
      *
-     * @param int $elementId – The ID of a Pimcore element (asset or object)
+     * @param int    $elementId – The ID of a Pimcore element (asset or object)
      * @param string $indexName – The name of the index to delete the item from
      *
      * @return array<string, mixed>
@@ -254,7 +254,7 @@ final class IndexPersistenceService
      * Reindex data from a source index to a destination index.
      *
      * @param string $source – The name of the source index
-     * @param string $dest – The name of the destination index
+     * @param string $dest   – The name of the destination index
      *
      * @return array<string, mixed>
      *
@@ -280,9 +280,9 @@ final class IndexPersistenceService
     /**
      * Indexes an element's data or updates the values, if it already exists.
      *
-     * @param ElementInterface $element – A Pimcore element, either asset or object
-     * @param string $endpointName – The endpoint configuration name
-     * @param string $indexName – The name of the index to update the item
+     * @param ElementInterface $element      – A Pimcore element, either asset or object
+     * @param string           $endpointName – The endpoint configuration name
+     * @param string           $indexName    – The name of the index to update the item
      *
      * @return array<string, mixed>
      *

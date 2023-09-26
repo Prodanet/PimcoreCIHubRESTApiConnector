@@ -16,12 +16,12 @@ class InvalidStreamException extends \RuntimeException
 {
     public function __construct(mixed $variable)
     {
-        $message = 'Invalid stream resource given: ' . \gettype($variable);
+        $message = 'Invalid stream resource given: '.\gettype($variable);
 
         if (\is_resource($variable)) {
-            $message .= ' ' . get_resource_type($variable);
+            $message .= ' '.get_resource_type($variable);
         } elseif (\is_object($variable)) {
-            $message .= ' ' . $variable::class;
+            $message .= ' '.$variable::class;
         }
 
         parent::__construct($message);

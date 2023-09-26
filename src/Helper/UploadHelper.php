@@ -38,11 +38,10 @@ final class UploadHelper
      * @throws \Doctrine\DBAL\Exception
      */
     public function __construct(
-        private Config          $pimcoreConfig,
+        private Config $pimcoreConfig,
         private RouterInterface $router,
-        private AuthManager     $authManager
-    )
-    {
+        private AuthManager $authManager
+    ) {
         $this->user = $this->authManager->authenticate();
     }
 
@@ -74,8 +73,8 @@ final class UploadHelper
         $fileName = $request->get('file_name');
         $fileName = Service::getValidKey($fileName, 'asset');
 
-        $fileSize = (int)$request->get('file_size');
-        $assetId = (int)$request->get('asset_id', 0);
+        $fileSize = (int) $request->get('file_size');
+        $assetId = (int) $request->get('asset_id', 0);
 
         if (!isset($fileName, $fileSize)) {
             throw new InvalidParameterException(['file_size', 'file_name']);
@@ -173,11 +172,10 @@ final class UploadHelper
     public function uploadPart(
         DatahubUploadSession $session,
         #[LanguageLevelTypeAware(['7.2' => 'HashContext'], default: 'resource')]
-                             $content,
-        int                  $size,
-        int                  $ordinal
-    ): UploadPart
-    {
+        $content,
+        int $size,
+        int $ordinal
+    ): UploadPart {
         $ctx = hash_init('sha3-512');
         hash_update_stream($ctx, $content);
         $hash = hash_final($ctx);
@@ -218,7 +216,7 @@ final class UploadHelper
         }
 
         if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
-            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath());
+            throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
 
         if (0 !== $assetId) {
@@ -228,7 +226,7 @@ final class UploadHelper
             }
 
             if (!$asset->isAllowed('update', $this->user) && !$this->authManager->isAllowed($asset, 'update', $this->user)) {
-                throw new AccessDeniedHttpException('Missing the permission to update asset: ' . $asset->getId());
+                throw new AccessDeniedHttpException('Missing the permission to update asset: '.$asset->getId());
             }
         }
 

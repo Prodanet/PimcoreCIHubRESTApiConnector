@@ -34,9 +34,8 @@ class AuthManager
 
     public function __construct(
         private DataHubConfigurationRepository $configRepository,
-        private RequestStack                   $requestStack
-    )
-    {
+        private RequestStack $requestStack
+    ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
     }

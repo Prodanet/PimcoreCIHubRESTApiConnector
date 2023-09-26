@@ -59,7 +59,7 @@ class CiHubController extends UserAwareController
         if ($request->get('data')) {
             $db = Db::get();
 
-            $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = ' . $user->getId());
+            $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$user->getId());
             if ($data) {
                 $db->update('users_datahub_config', [
                     'data' => $request->get('data'),
@@ -81,7 +81,7 @@ class CiHubController extends UserAwareController
     #[Route('/config', name: 'admin_ci_hub_user_config', options: ['expose' => true])]
     public function get(Request $request): Response
     {
-        $userId = (int)$request->get('id');
+        $userId = (int) $request->get('id');
         if ($userId < 1) {
             throw $this->createNotFoundException();
         }
@@ -96,7 +96,7 @@ class CiHubController extends UserAwareController
             throw $this->createAccessDeniedHttpException('Only admin users are allowed to modify admin users');
         }
 
-        $data = Db::get()->fetchOne('SELECT data FROM users_datahub_config WHERE userId = ' . $user->getId());
+        $data = Db::get()->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$user->getId());
 
         if (!$data) {
             $data = '{}';

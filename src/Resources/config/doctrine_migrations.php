@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->extension('doctrine_migrations', [
         'migrations_paths' => [
-            'CIHub\Bundle\SimpleRESTAdapterBundle\Migrations' => __DIR__ . '/../../Migrations/',
+            'CIHub\Bundle\SimpleRESTAdapterBundle\Migrations' => __DIR__.'/../../Migrations/',
         ],
     ]);
 };

@@ -31,10 +31,10 @@ class Dao extends AbstractDao
     public function getById(string $id): void
     {
         $this->model->setId($id);
-        $data = $this->db->fetchAssociative('SELECT * FROM ' . $this->tableName . ' WHERE id = ?', [$this->model->getId()]);
+        $data = $this->db->fetchAssociative('SELECT * FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
 
         if (!$data) {
-            throw new NotFoundException('Uload Session with the ID ' . $this->model->getId() . " doesn't exists");
+            throw new NotFoundException('Uload Session with the ID '.$this->model->getId()." doesn't exists");
         }
 
         $this->assignVariablesToModel($data);
@@ -48,7 +48,7 @@ class Dao extends AbstractDao
     public function hasById(string $id): bool
     {
         $this->model->setId($id);
-        $data = $this->db->fetchAssociative('SELECT id FROM ' . $this->tableName . ' WHERE id = ?', [$this->model->getId()]);
+        $data = $this->db->fetchAssociative('SELECT id FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
 
         if (!$data) {
             return false;
@@ -74,7 +74,7 @@ class Dao extends AbstractDao
                     continue;
                 }
 
-                $getter = 'get' . ucfirst($k);
+                $getter = 'get'.ucfirst($k);
 
                 if (!\is_callable([$this->model, $getter])) {
                     continue;
@@ -83,7 +83,7 @@ class Dao extends AbstractDao
                 $value = $this->model->$getter();
 
                 if (\is_bool($value)) {
-                    $value = (int)$value;
+                    $value = (int) $value;
                 }
                 if (\is_array($value)) {
                     $value = json_encode($value);

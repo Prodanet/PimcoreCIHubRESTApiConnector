@@ -32,9 +32,9 @@ final class Append
             throw new FileNotFoundException($target);
         }
 
-        $this->filesystem->move($target, $backup = $target . '.backup');
+        $this->filesystem->move($target, $backup = $target.'.backup');
 
-        $contentToAppend = \is_resource($content) ? $content : fopen('data://text/plain,' . $content, 'r');
+        $contentToAppend = \is_resource($content) ? $content : fopen('data://text/plain,'.$content, 'r');
         $stream = (new AppendStream([
             $this->filesystem->readStream($backup),
             $contentToAppend,

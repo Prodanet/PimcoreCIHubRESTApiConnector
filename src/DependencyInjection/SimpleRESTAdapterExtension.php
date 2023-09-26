@@ -50,7 +50,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         if (isset($bundles['PimcoreCIHubAdapterBundle'])) {
             $this->ciHubConfig = $container->getExtensionConfig('ci_hub_adapter');
         }
-        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('config.php');
         if ($container->hasExtension('doctrine_migrations')) {
             $loader->load('doctrine_migrations.php');
@@ -67,7 +67,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
 
         $this->registerConfiguration($container, $config);
 
-        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.php');
 
         $definition = new Definition(IndexManager::class);
@@ -101,7 +101,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $container->addDefinitions([AuthManager::class => $definition]);
 
         $definition = new Definition(IndexPersistenceService::class);
-        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX . $config['es_client_name']));
+        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX.$config['es_client_name']));
         $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
         $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
         $definition->setArgument('$assetProvider', new Reference(AssetProvider::class));
@@ -110,7 +110,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $container->addDefinitions([IndexPersistenceService::class => $definition]);
 
         $definition = new Definition(IndexQueryService::class);
-        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX . $config['es_client_name']));
+        $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX.$config['es_client_name']));
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
         $definition->setArgument('$maxResult', $config['max_result']);
         $container->addDefinitions([IndexQueryService::class => $definition]);

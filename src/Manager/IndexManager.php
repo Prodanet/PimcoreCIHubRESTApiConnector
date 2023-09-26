@@ -61,7 +61,7 @@ class IndexManager
      * Creates or updates an index by its name and mapping.
      *
      * @param string $indexName – The index to create or update
-     * @param array $mapping – The mapping to check against
+     * @param array  $mapping   – The mapping to check against
      *
      * @throws ClientResponseException
      * @throws MissingParameterException
@@ -167,7 +167,7 @@ class IndexManager
     /**
      * Builds the index name for a given name or element and the endpoint's name.
      *
-     * @param mixed $value – A string or a Pimcore element
+     * @param mixed  $value        – A string or a Pimcore element
      * @param string $endpointName – The endpoint's name
      */
     public function getIndexName(mixed $value, string $endpointName): string

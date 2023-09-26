@@ -126,7 +126,7 @@ class AssetController extends BaseEndpointController
 
         $root = Service::getElementById($type, $id);
         if (!$root->isAllowed('view', $this->user)) {
-            throw new AccessDeniedHttpException('Missing the permission to list in the folder: ' . $root->getRealFullPath());
+            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
 
         $indices = [];
@@ -238,7 +238,7 @@ class AssetController extends BaseEndpointController
 
             return $this->json($versions);
         } else {
-            throw $this->createAccessDeniedException('Permission denied, ' . $type . ' id [' . $assetId . ']');
+            throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$assetId.']');
         }
     }
 
@@ -343,7 +343,7 @@ class AssetController extends BaseEndpointController
             return new JsonResponse(['success' => true, 'message' => 'asset was just locked']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$asset->getParent()->getRealFullPath());
     }
 
     /**
@@ -450,7 +450,7 @@ class AssetController extends BaseEndpointController
             return new JsonResponse(['success' => false, 'message' => 'asset is already unlocked for editing']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $asset->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$asset->getParent()->getRealFullPath());
     }
 
     /**

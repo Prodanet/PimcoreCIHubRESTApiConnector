@@ -54,8 +54,8 @@ abstract class BaseEndpointController extends FrontendController
     public function __construct(
         private DataHubConfigurationRepository $configRepository,
         private LabelExtractorInterface $labelExtractor,
-        private RequestStack            $requestStack,
-        protected AuthManager           $authManager
+        private RequestStack $requestStack,
+        protected AuthManager $authManager
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
@@ -80,7 +80,7 @@ abstract class BaseEndpointController extends FrontendController
 
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $reader): void
     {
-        $parentId = (int)$this->request->get('parent_id', 1);
+        $parentId = (int) $this->request->get('parent_id', 1);
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');

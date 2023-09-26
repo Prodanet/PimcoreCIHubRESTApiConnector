@@ -341,7 +341,7 @@ class SearchController extends BaseEndpointController
 
         $id = 1;
         if ($request->get('id')) {
-            $id = (int)$request->get('id');
+            $id = (int) $request->get('id');
         }
         $type = $this->request->get('type');
         // Check if required parameters are missing
@@ -349,7 +349,7 @@ class SearchController extends BaseEndpointController
 
         $root = Service::getElementById($type, $id);
         if (!$root->isAllowed('list')) {
-            throw new AccessDeniedHttpException('Missing the permission to list in the folder: ' . $root->getRealFullPath());
+            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
 
         $parentId = $this->request->get('parent_id', '1');

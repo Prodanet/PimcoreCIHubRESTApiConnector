@@ -63,7 +63,7 @@ class ImageDataCollector implements DataCollectorInterface
             } elseif ('sha1' == $type) {
                 return sha1_file($file);
             } else {
-                throw new \Exception("hashing algorithm '" . $type . "' isn't supported");
+                throw new \Exception("hashing algorithm '".$type."' isn't supported");
             }
         }
 

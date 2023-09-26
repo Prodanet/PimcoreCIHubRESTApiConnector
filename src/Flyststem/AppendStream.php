@@ -70,10 +70,10 @@ final class AppendStream
             }
 
             /**
-             * @param resource $in Incoming bucket brigade
-             * @param resource $out Outgoing bucket brigade
-             * @param int $consumed Number of bytes consumed
-             * @param bool $closing Last bucket brigade in stream?
+             * @param resource $in       Incoming bucket brigade
+             * @param resource $out      Outgoing bucket brigade
+             * @param int      $consumed Number of bytes consumed
+             * @param bool     $closing  Last bucket brigade in stream?
              */
             public function filter($in, $out, &$consumed, bool $closing): int
             {

@@ -131,7 +131,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
                 $read ? 'LIKE' : 'NOT LIKE',
                 $pathIndex
             );
-            $this->params[$pathIndex] = rtrim($path, '/') . '/%';
+            $this->params[$pathIndex] = rtrim($path, '/').'/%';
         }
     }
 
@@ -145,7 +145,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         $keyIndex = uniqid('key_', false);
         $keyPathIndex = uniqid('key_path_', false);
         $keyParam = array_pop($pathParts);
-        $keyPathParam = implode('/', $pathParts) . '/';
+        $keyPathParam = implode('/', $pathParts).'/';
 
         if (!\in_array($keyParam, $this->params, true)) {
             $this->conditions[self::CONDITION_DISTINCT][] = sprintf(

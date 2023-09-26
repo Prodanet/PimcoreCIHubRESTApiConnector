@@ -120,11 +120,10 @@ class UploadController extends BaseEndpointController
     #[OA\Tag(name: 'Uploads')]
     #[Route('/add-asset', name: 'upload_asset', methods: ['POST'])]
     public function add(
-        Config              $pimcoreConfig,
+        Config $pimcoreConfig,
         TranslatorInterface $translator,
-        AssetHelper         $assetHelper
-    ): Response
-    {
+        AssetHelper $assetHelper
+    ): Response {
         try {
             $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
 
@@ -139,7 +138,7 @@ class UploadController extends BaseEndpointController
             }
 
             if ($this->request->query->has('parentId')) {
-                $parentAsset = Asset::getById((int)$this->request->query->get('parentId'));
+                $parentAsset = Asset::getById((int) $this->request->query->get('parentId'));
                 if (!$parentAsset instanceof Asset) {
                     throw new \Exception('Parent does not exist');
                 }
@@ -170,16 +169,16 @@ class UploadController extends BaseEndpointController
             }
 
             if ($this->request->query->has('id')) {
-                $asset = Asset::getById((int)$this->request->get('id'));
+                $asset = Asset::getById((int) $this->request->get('id'));
 
                 return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
-            } elseif (Asset\Service::pathExists($parentAsset->getRealFullPath() . '/' . $filename)) {
-                $asset = Asset::getByPath($parentAsset->getRealFullPath() . '/' . $filename);
+            } elseif (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$filename)) {
+                $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$filename);
 
                 return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
             } else {
                 if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
-                    throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: ' . $parentAsset->getRealFullPath());
+                    throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
                 }
                 $asset = Asset::create($parentAsset->getId(), [
                     'filename' => $filename,
@@ -269,7 +268,7 @@ class UploadController extends BaseEndpointController
     #[Route('/upload/start', name: 'upload_start', methods: ['POST'])]
     public function start(UploadHelper $helper): Response
     {
-        $filesize = (int)$this->request->get('filesize');
+        $filesize = (int) $this->request->get('filesize');
         $session = $helper->createSession($this->request, self::PART_SIZE);
 
         return new JsonResponse($helper->getSessionResponse(
@@ -616,8 +615,8 @@ class UploadController extends BaseEndpointController
          * @var resource $content
          */
         $content = $this->request->getContent(true);
-        $size = (int)$this->request->headers->get('Content-Length', 0);
-        $ordinal = (int)$this->request->get('ordinal');
+        $size = (int) $this->request->headers->get('Content-Length', 0);
+        $ordinal = (int) $this->request->get('ordinal');
         if (0 === $size) {
             throw new InvalidParameterException(['Content-Length']);
         }
