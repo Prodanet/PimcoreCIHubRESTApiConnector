@@ -35,6 +35,7 @@ class Installer extends SettingsStoreAwareInstaller
                 `data` text NOT NULL,
                 PRIMARY KEY (`id`),
                 FOREIGN KEY (userid) REFERENCES users(id)
+                    on update cascade on delete cascade
             );',
         'datahub_upload_sessions' => 'CREATE TABLE `datahub_upload_sessions` (
                 `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -46,6 +47,7 @@ class Installer extends SettingsStoreAwareInstaller
                 `fileName` varchar(700) NOT NULL,
                 PRIMARY KEY (`id`),
                 FOREIGN KEY (assetId) REFERENCES assets(id)
+                    on update cascade on delete cascade
             );',
     ];
 
