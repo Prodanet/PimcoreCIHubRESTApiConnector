@@ -16,7 +16,6 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Exception;
 use ONGR\ElasticsearchDSL\Search;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -53,7 +52,7 @@ final class IndexQueryService
      *
      * @throws ClientResponseException
      * @throws ServerResponseException
-     * @throws Exception
+     * @throws \Exception
      */
     public function search(string $index, array $query, array $params = []): array
     {
