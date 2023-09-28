@@ -84,7 +84,7 @@ abstract class BaseEndpointController extends FrontendController
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
-        $filter = json_decode($this->request->get('filter'), true);
+        $filter = json_decode((string) $this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
             \FILTER_VALIDATE_BOOLEAN
@@ -94,11 +94,11 @@ abstract class BaseEndpointController extends FrontendController
             $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
-        if (\is_array($filter) && !empty($filter)) {
+        if (\is_array($filter) && [] !== $filter) {
             $this->buildQueryConditions($search, $filter);
         }
 
-        if (true === $this->includeAggregations) {
+        if ($this->includeAggregations) {
             $labels = $reader->getLabelSettings();
 
             foreach ($labels as $label) {
@@ -214,7 +214,7 @@ abstract class BaseEndpointController extends FrontendController
                 $response['page_cursor'] = $this->nextPageCursor;
 
                 // Aggregations
-                if (true === $this->includeAggregations) {
+                if ($this->includeAggregations) {
                     $aggs = [];
                     $aggregations = $result['aggregations'] ?? [];
 
@@ -223,12 +223,10 @@ abstract class BaseEndpointController extends FrontendController
                             continue;
                         }
 
-                        $aggs[$field]['buckets'] = array_map(static function ($bucket) {
-                            return [
-                                'key' => $bucket['key'],
-                                'element_count' => $bucket['doc_count'],
-                            ];
-                        }, $aggregation['buckets']);
+                        $aggs[$field]['buckets'] = array_map(static fn (array $bucket): array => [
+                            'key' => $bucket['key'],
+                            'element_count' => $bucket['doc_count'],
+                        ], $aggregation['buckets']);
                     }
 
                     $response['aggregations'] = $aggs;
@@ -264,7 +262,7 @@ abstract class BaseEndpointController extends FrontendController
             $required[] = $key;
         }
 
-        if (!empty($required)) {
+        if ([] !== $required) {
             throw new InvalidParameterException($required);
         }
     }

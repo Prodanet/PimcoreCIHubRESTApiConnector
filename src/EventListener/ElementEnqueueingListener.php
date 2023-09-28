@@ -30,24 +30,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class ElementEnqueueingListener implements EventSubscriberInterface
 {
-    private CompositeConfigurationLoader $configLoader;
-
-    private IndexManager $indexManager;
-
-    private MessageBusInterface $messageBus;
-
-    private WorkspaceGuardInterface $workspaceGuard;
-
-    public function __construct(
-        CompositeConfigurationLoader $configLoader,
-        IndexManager $indexManager,
-        MessageBusInterface $messageBus,
-        WorkspaceGuardInterface $workspaceGuard
-    ) {
-        $this->configLoader = $configLoader;
-        $this->indexManager = $indexManager;
-        $this->messageBus = $messageBus;
-        $this->workspaceGuard = $workspaceGuard;
+    public function __construct(private CompositeConfigurationLoader $configLoader, private IndexManager $indexManager, private MessageBusInterface $messageBus, private WorkspaceGuardInterface $workspaceGuard)
+    {
     }
 
     public static function getSubscribedEvents(): array

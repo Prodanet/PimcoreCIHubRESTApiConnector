@@ -19,11 +19,8 @@ final class LabelExtractor implements LabelExtractorInterface
     public const ALLOWED_PROPERTIES = ['data', 'dimensionData', 'metaData', 'system'];
     public const ALLOWED_SYSTEM_PROPERTIES = ['id', 'key', 'mimeType', 'subtype', 'type'];
 
-    private IndexManager $indexManager;
-
-    public function __construct(IndexManager $indexManager)
+    public function __construct(private IndexManager $indexManager)
     {
-        $this->indexManager = $indexManager;
     }
 
     public function extractLabels(array $indices): array
@@ -33,7 +30,7 @@ final class LabelExtractor implements LabelExtractorInterface
         foreach ($indices as $index) {
             $mapping = $this->indexManager->getIndexMapping($index);
 
-            if (empty($mapping)) {
+            if ([] === $mapping) {
                 continue;
             }
 
@@ -43,15 +40,11 @@ final class LabelExtractor implements LabelExtractorInterface
                 }
 
                 $labels[] = array_map(
-                    static function ($item) use ($property) {
-                        return sprintf('%s.%s', $property, $item);
-                    },
+                    static fn ($item): string => sprintf('%s.%s', $property, $item),
                     array_filter(
                         array_keys($definition['properties'] ?? []),
-                        static function ($key) use ($property) {
-                            return 'system' !== $property
-                                || \in_array($key, self::ALLOWED_SYSTEM_PROPERTIES, true);
-                        }
+                        static fn ($key): bool => 'system' !== $property
+                            || \in_array($key, self::ALLOWED_SYSTEM_PROPERTIES, true)
                     )
                 );
             }

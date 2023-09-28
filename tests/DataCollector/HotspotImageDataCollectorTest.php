@@ -12,16 +12,12 @@ use stdClass;
 
 class HotspotImageDataCollectorTest extends TestCase
 {
-    /** @var HotspotImageDataCollector */
+    public $imageDataCollectorMock;
     private HotspotImageDataCollector $hotspotImageDataCollector;
 
-    /** @var Image */
-    private Image $imageMock;
-
-    /** @var ConfigReader */
     private ConfigReader $configReaderMock;
 
-    public function testCollectWithValidImage()
+    public function testCollectWithValidImage(): void
     {
         // Create a mock for Hotspotimage
         $hotspotImage = $this->getMockBuilder(Hotspotimage::class)
@@ -49,7 +45,7 @@ class HotspotImageDataCollectorTest extends TestCase
         $this->assertEquals(['sample' => 'result'], $result);
     }
 
-    public function testCollectWithInvalidImage()
+    public function testCollectWithInvalidImage(): void
     {
         // Create a mock for Hotspotimage
         $hotspotImage = $this->getMockBuilder(Hotspotimage::class)
@@ -67,7 +63,7 @@ class HotspotImageDataCollectorTest extends TestCase
         $this->assertEquals([], $result);
     }
 
-    public function testSupports()
+    public function testSupports(): void
     {
         // Create a mock for Hotspotimage
         $hotspotImage = $this->getMockBuilder(Hotspotimage::class)
@@ -80,7 +76,7 @@ class HotspotImageDataCollectorTest extends TestCase
         $this->assertTrue($supports);
     }
 
-    public function testSupportsWithNonHotspotImage()
+    public function testSupportsWithNonHotspotImage(): void
     {
         // Create a mock for a non-Hotspotimage object
         $nonHotspotImage = $this->getMockBuilder(stdClass::class)

@@ -18,22 +18,18 @@ final class UploadParts implements UploadPartsInterface
 
     public function __construct(array $parts = [])
     {
-        if (!empty($parts)) {
-            foreach ($parts as $part) {
-                if (\is_array($part)) {
-                    $this->add(new UploadPart($part));
-                } elseif ($part instanceof UploadPartInterface) {
-                    $this->add($part);
-                }
+        foreach ($parts as $part) {
+            if (\is_array($part)) {
+                $this->add(new UploadPart($part));
+            } elseif ($part instanceof UploadPartInterface) {
+                $this->add($part);
             }
         }
     }
 
     public function toArray(): array
     {
-        return array_map(function (UploadPartInterface $part) {
-            return $part->toArray();
-        }, $this->parts);
+        return array_map(fn (UploadPartInterface $part): array => $part->toArray(), $this->parts);
     }
 
     public function add(UploadPartInterface $part): UploadPartsInterface

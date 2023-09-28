@@ -26,28 +26,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class ConfigModificationListener implements EventSubscriberInterface
 {
-    private IndexManager $indexManager;
-
-    private MessageBusInterface $messageBus;
-
-    private AssetMapping $assetMapping;
-
-    private DataObjectMapping $objectMapping;
-
-    private FolderMapping $folderMapping;
-
-    public function __construct(
-        IndexManager $indexManager,
-        MessageBusInterface $messageBus,
-        AssetMapping $assetMapping,
-        DataObjectMapping $objectMapping,
-        FolderMapping $folderMapping
-    ) {
-        $this->indexManager = $indexManager;
-        $this->messageBus = $messageBus;
-        $this->assetMapping = $assetMapping;
-        $this->objectMapping = $objectMapping;
-        $this->folderMapping = $folderMapping;
+    public function __construct(private IndexManager $indexManager, private MessageBusInterface $messageBus, private AssetMapping $assetMapping, private DataObjectMapping $objectMapping, private FolderMapping $folderMapping)
+    {
     }
 
     public static function getSubscribedEvents(): array
@@ -118,7 +98,7 @@ class ConfigModificationListener implements EventSubscriberInterface
         // DataObject Classes
         foreach ($objectClasses as $class) {
             $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(mb_strtolower($class['name']), $endpointName),
+                $this->indexManager->getIndexName(mb_strtolower((string) $class['name']), $endpointName),
                 $this->objectMapping->generate($class)
             );
         }

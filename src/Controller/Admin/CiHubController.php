@@ -34,7 +34,7 @@ class CiHubController extends UserAwareController
 
         return $this->jsonResponse([
             'data' => array_keys($list),
-            'success' => \count($list) > 0,
+            'success' => [] !== $list,
         ]);
     }
 
@@ -88,7 +88,7 @@ class CiHubController extends UserAwareController
 
         $user = User::getById($userId);
 
-        if (!$user) {
+        if (!$user instanceof \Pimcore\Model\User) {
             throw $this->createNotFoundException();
         }
 
@@ -102,6 +102,6 @@ class CiHubController extends UserAwareController
             $data = '{}';
         }
 
-        return $this->jsonResponse(json_decode($data));
+        return $this->jsonResponse(json_decode((string) $data, null, 512, \JSON_THROW_ON_ERROR));
     }
 }

@@ -18,20 +18,11 @@ use Webmozart\Assert\Assert;
 
 final class CompositeConfigurationLoader
 {
-    private DataHubConfigurationRepository $configRepository;
-
-    /**
-     * @var iterable<ConfigurationLoaderInterface>
-     */
-    private iterable $loaders;
-
     /**
      * @param iterable<ConfigurationLoaderInterface> $loaders
      */
-    public function __construct(DataHubConfigurationRepository $configRepository, iterable $loaders)
+    public function __construct(private DataHubConfigurationRepository $configRepository, private iterable $loaders)
     {
-        $this->configRepository = $configRepository;
-        $this->loaders = $loaders;
     }
 
     /**

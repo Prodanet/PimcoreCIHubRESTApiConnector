@@ -14,17 +14,8 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
 final class UpdateIndexElementMessage
 {
-    private int $entityId;
-
-    private string $entityType;
-
-    private string $endpointName;
-
-    public function __construct(int $entityId, string $entityType, string $endpointName)
+    public function __construct(private int $entityId, private string $entityType, private string $endpointName)
     {
-        $this->entityId = $entityId;
-        $this->entityType = $entityType;
-        $this->endpointName = $endpointName;
     }
 
     public function getEntityId(): int

@@ -19,16 +19,10 @@ use Webmozart\Assert\Assert;
 final class CompositeDataCollector
 {
     /**
-     * @var iterable<DataCollectorInterface>
-     */
-    private iterable $collectors;
-
-    /**
      * @param iterable<DataCollectorInterface> $collectors
      */
-    public function __construct(iterable $collectors)
+    public function __construct(private iterable $collectors)
     {
-        $this->collectors = $collectors;
     }
 
     /**

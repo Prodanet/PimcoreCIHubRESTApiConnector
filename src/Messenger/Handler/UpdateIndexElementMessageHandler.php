@@ -22,14 +22,8 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
 {
-    private IndexManager $indexManager;
-
-    private IndexPersistenceService $indexService;
-
-    public function __construct(IndexManager $indexManager, IndexPersistenceService $indexService)
+    public function __construct(private IndexManager $indexManager, private IndexPersistenceService $indexService)
     {
-        $this->indexManager = $indexManager;
-        $this->indexService = $indexService;
     }
 
     /**

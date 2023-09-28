@@ -21,7 +21,7 @@ final class UploadPart implements UploadPartInterface
 
     public function __construct(array $part = [])
     {
-        if (!empty($part)) {
+        if ([] !== $part) {
             $this->setId($part['id']);
             $this->setSize($part['size'] ?? 0);
             $this->setHash($part['hash'] ?? '');

@@ -50,11 +50,7 @@ class Dao extends AbstractDao
         $this->model->setId($id);
         $data = $this->db->fetchAssociative('SELECT id FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
 
-        if (!$data) {
-            return false;
-        }
-
-        return true;
+        return (bool) $data;
     }
 
     /**
@@ -68,32 +64,30 @@ class Dao extends AbstractDao
 
         $validColumns = $this->getValidTableColumns($this->tableName);
 
-        if (\count($vars)) {
-            foreach ($vars as $k => $v) {
-                if (!\in_array($k, $validColumns, true)) {
-                    continue;
-                }
-
-                $getter = 'get'.ucfirst($k);
-
-                if (!\is_callable([$this->model, $getter])) {
-                    continue;
-                }
-
-                $value = $this->model->$getter();
-
-                if (\is_bool($value)) {
-                    $value = (int) $value;
-                }
-                if (\is_array($value)) {
-                    $value = json_encode($value);
-                }
-                if ($value instanceof UploadPartsInterface) {
-                    $value = json_encode($value->toArray());
-                }
-
-                $buffer[$k] = $value;
+        foreach (array_keys($vars) as $k) {
+            if (!\in_array($k, $validColumns, true)) {
+                continue;
             }
+
+            $getter = 'get'.ucfirst($k);
+
+            if (!\is_callable([$this->model, $getter])) {
+                continue;
+            }
+
+            $value = $this->model->$getter();
+
+            if (\is_bool($value)) {
+                $value = (int) $value;
+            }
+            if (\is_array($value)) {
+                $value = json_encode($value, \JSON_THROW_ON_ERROR);
+            }
+            if ($value instanceof UploadPartsInterface) {
+                $value = json_encode($value->toArray(), \JSON_THROW_ON_ERROR);
+            }
+
+            $buffer[$k] = $value;
         }
 
         if ($this->hasById($this->model->getId())) {

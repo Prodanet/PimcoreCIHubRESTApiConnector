@@ -25,18 +25,12 @@ use Pimcore\Model\Element\ElementInterface;
 
 class IndexManager
 {
-    public const INDEX_ASSET = 'asset';
-    public const INDEX_ASSET_FOLDER = 'assetfolder';
-    public const INDEX_OBJECT_FOLDER = 'objectfolder';
+    final public const INDEX_ASSET = 'asset';
+    final public const INDEX_ASSET_FOLDER = 'assetfolder';
+    final public const INDEX_OBJECT_FOLDER = 'objectfolder';
 
-    private string $indexNamePrefix;
-
-    private IndexPersistenceService $indexService;
-
-    public function __construct(string $indexNamePrefix, IndexPersistenceService $indexService)
+    public function __construct(private string $indexNamePrefix, private IndexPersistenceService $indexService)
     {
-        $this->indexNamePrefix = $indexNamePrefix;
-        $this->indexService = $indexService;
     }
 
     /**
@@ -50,7 +44,7 @@ class IndexManager
     {
         $mapping = $this->getIndexMapping($indexName);
 
-        if (empty($mapping)) {
+        if ([] === $mapping) {
             throw new \RuntimeException(sprintf('Could not clear index data. No mapping found for "%s"', $indexName));
         }
 
@@ -207,10 +201,10 @@ class IndexManager
     {
         $currentMapping = $this->getIndexMapping($indexName);
 
-        return !empty(array_merge(
+        return [] !== array_merge(
             DiffArray::diffAssocRecursive($mapping, $currentMapping),
             DiffArray::diffAssocRecursive($currentMapping, $mapping)
-        ));
+        );
     }
 
     /**
@@ -221,18 +215,14 @@ class IndexManager
         $assetWorkspace = $reader->getWorkspace('asset');
         $priorAssetWorkspace = $priorReader->getWorkspace('asset');
 
-        if (!empty(DiffArray::diffAssocRecursive($assetWorkspace, $priorAssetWorkspace))) {
+        if ([] !== DiffArray::diffAssocRecursive($assetWorkspace, $priorAssetWorkspace)) {
             return true;
         }
 
         $objectWorkspace = $reader->getWorkspace('object');
         $priorObjectWorkspace = $priorReader->getWorkspace('object');
 
-        if (!empty(DiffArray::diffAssocRecursive($objectWorkspace, $priorObjectWorkspace))) {
-            return true;
-        }
-
-        return false;
+        return [] !== DiffArray::diffAssocRecursive($objectWorkspace, $priorObjectWorkspace);
     }
 
     /**

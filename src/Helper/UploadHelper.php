@@ -45,7 +45,7 @@ final class UploadHelper
         $this->user = $this->authManager->authenticate();
     }
 
-    public function getSessionResponse(Request $request, string $id, string $config, $partSize, int $processed = 0, int $totalParts = 0): array
+    public function getSessionResponse(Request $request, string $id, string $config, int $partSize, int $processed = 0, int $totalParts = 0): array
     {
         $response = new ChunkUploadResponse($id);
         $response->setPartSize($partSize);
@@ -149,17 +149,14 @@ final class UploadHelper
     public function hasSession(string $id): bool
     {
         $session = DatahubUploadSession::hasById($id);
-        if (!empty($session)) {
-            return true;
-        }
 
-        return false;
+        return $session instanceof \CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
     }
 
     public function getSession(string $id): DatahubUploadSession
     {
         $session = DatahubUploadSession::getById($id);
-        if (!empty($session)) {
+        if ($session instanceof \CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession) {
             return $session;
         }
 

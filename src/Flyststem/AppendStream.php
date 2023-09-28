@@ -19,14 +19,11 @@ final class AppendStream
     /** @var resource[] */
     private array $streams = [];
 
-    private int $chunkSize;
-
-    public function __construct(iterable $streams = [], int $chunkSize = 8192)
+    public function __construct(iterable $streams = [], private int $chunkSize = 8192)
     {
         foreach ($streams as $stream) {
             $this->append($stream);
         }
-        $this->chunkSize = $chunkSize;
     }
 
     public function append(mixed $stream): void
@@ -82,7 +79,7 @@ final class AppendStream
                 }
 
                 foreach (self::$streams as $stream) {
-                    while (true !== feof($stream)) {
+                    while (!feof($stream)) {
                         $bucket = stream_bucket_new($stream, fread($stream, self::$maxLength));
                         stream_bucket_append($out, $bucket);
                     }

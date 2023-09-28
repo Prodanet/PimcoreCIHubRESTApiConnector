@@ -27,34 +27,11 @@ use Pimcore\Model\Element\ElementInterface;
 
 final class IndexPersistenceService
 {
-    private Client $client;
-
-    private DataHubConfigurationRepository $configRepository;
-
-    private AssetProvider $assetProvider;
-
-    private DataObjectProvider $objectProvider;
-
-    /**
-     * @var array<string, string|array>
-     */
-    private array $indexSettings;
-
     /**
      * @param array<string, string|array> $indexSettings
      */
-    public function __construct(
-        Client $client,
-        DataHubConfigurationRepository $configRepository,
-        AssetProvider $assetProvider,
-        DataObjectProvider $objectProvider,
-        array $indexSettings
-    ) {
-        $this->client = $client;
-        $this->configRepository = $configRepository;
-        $this->assetProvider = $assetProvider;
-        $this->objectProvider = $objectProvider;
-        $this->indexSettings = $indexSettings;
+    public function __construct(private Client $client, private DataHubConfigurationRepository $configRepository, private AssetProvider $assetProvider, private DataObjectProvider $objectProvider, private array $indexSettings)
+    {
     }
 
     /**
@@ -116,7 +93,7 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        if (!empty($mapping)) {
+        if ([] !== $mapping) {
             $params['body'] = [
                 'settings' => $this->indexSettings,
                 'mappings' => $mapping,

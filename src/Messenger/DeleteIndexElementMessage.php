@@ -14,17 +14,8 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
 final class DeleteIndexElementMessage
 {
-    private int $entityId;
-
-    private string $entityType;
-
-    private string $indexName;
-
-    public function __construct(int $entityId, string $entityType, string $indexName)
+    public function __construct(private int $entityId, private string $entityType, private string $indexName)
     {
-        $this->entityId = $entityId;
-        $this->entityType = $entityType;
-        $this->indexName = $indexName;
     }
 
     public function getEntityId(): int

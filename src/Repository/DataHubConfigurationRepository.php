@@ -36,10 +36,8 @@ final class DataHubConfigurationRepository
     {
         $list = Dao::getList();
 
-        if (!empty($allowedConfigTypes)) {
-            $list = array_filter($list, static function ($config) use ($allowedConfigTypes) {
-                return \in_array($config->getType(), $allowedConfigTypes, true);
-            });
+        if ([] !== $allowedConfigTypes) {
+            $list = array_filter($list, static fn ($config): bool => \in_array($config->getType(), $allowedConfigTypes, true));
         }
 
         return $list;

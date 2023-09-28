@@ -19,14 +19,8 @@ use Symfony\Component\Routing\RouterInterface;
 
 class ImageDataCollector implements DataCollectorInterface
 {
-    private RouterInterface $router;
-
-    private AssetProvider $assetProvider;
-
-    public function __construct(RouterInterface $router, AssetProvider $assetProvider)
+    public function __construct(RouterInterface $router, private AssetProvider $assetProvider)
     {
-        $this->router = $router;
-        $this->assetProvider = $assetProvider;
     }
 
     /**
@@ -35,7 +29,7 @@ class ImageDataCollector implements DataCollectorInterface
     public function collect(mixed $value, ConfigReader $reader): array
     {
         $id = $value->getId();
-        $thumbnails = $reader->getAssetThumbnails();
+        $reader->getAssetThumbnails();
 
         $data = [
             'id' => $id,
@@ -49,24 +43,5 @@ class ImageDataCollector implements DataCollectorInterface
     public function supports(mixed $value): bool
     {
         return $value instanceof Asset\Image;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function getChecksum(Asset $asset, string $type = 'md5'): ?string
-    {
-        $file = $asset->getLocalFile();
-        if (is_file($file)) {
-            if ('md5' == $type) {
-                return md5_file($file);
-            } elseif ('sha1' == $type) {
-                return sha1_file($file);
-            } else {
-                throw new \Exception("hashing algorithm '".$type."' isn't supported");
-            }
-        }
-
-        return null;
     }
 }

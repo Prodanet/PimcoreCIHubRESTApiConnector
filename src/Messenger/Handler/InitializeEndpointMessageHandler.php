@@ -18,7 +18,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\PDO\Statement;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -34,25 +33,13 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private array $conditions = [];
 
-    private DataHubConfigurationRepository $configRepository;
-
-    private Connection $connection;
-
-    private MessageBusInterface $messageBus;
-
     /**
      * @var array<string, string>
      */
     private array $params = [];
 
-    public function __construct(
-        DataHubConfigurationRepository $configRepository,
-        Connection $connection,
-        MessageBusInterface $messageBus
-    ) {
-        $this->configRepository = $configRepository;
-        $this->connection = $connection;
-        $this->messageBus = $messageBus;
+    public function __construct(private DataHubConfigurationRepository $configRepository, private Connection $connection, private MessageBusInterface $messageBus)
+    {
     }
 
     public function __invoke(InitializeEndpointMessage $message): void
@@ -71,7 +58,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
             $workspace = WorkspaceSorter::sort($reader->getWorkspace('asset'));
             $this->buildConditions($workspace, 'filename', 'path');
 
-            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && !empty($this->params)) {
+            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && [] !== $this->params) {
                 $ids = $this->fetchIdsFromDatabaseTable('assets', 'id');
 
                 foreach ($ids as $id) {
@@ -90,7 +77,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
             $workspace = WorkspaceSorter::sort($reader->getWorkspace('object'));
             $this->buildConditions($workspace, 'o_key', 'o_path');
 
-            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && !empty($this->params)) {
+            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && [] !== $this->params) {
                 $ids = $this->fetchIdsFromDatabaseTable('objects', 'o_id');
 
                 foreach ($ids as $id) {
@@ -109,14 +96,10 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private function buildConditions(array $workspace, string $keyColumn, string $pathColumn): void
     {
-        if (empty($workspace)) {
-            return;
-        }
-
         foreach ($workspace as $item) {
             $read = $item['read'];
             $path = $item['cpath'];
-            $pathParts = explode('/', $path);
+            $pathParts = explode('/', (string) $path);
 
             // If not root folder, add distinct conditions
             if (\count($pathParts) > 2 || '' !== $pathParts[1]) {
@@ -131,7 +114,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
                 $read ? 'LIKE' : 'NOT LIKE',
                 $pathIndex
             );
-            $this->params[$pathIndex] = rtrim($path, '/').'/%';
+            $this->params[$pathIndex] = rtrim((string) $path, '/').'/%';
         }
     }
 
@@ -188,9 +171,8 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         }
 
         try {
-            /** @var Statement $statement */
             $ids = $qb->fetchFirstColumn();
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $ids = [];
         }
 

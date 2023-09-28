@@ -17,11 +17,8 @@ use Pimcore\Model\DataObject\Data\ImageGallery;
 
 final class ImageGalleryDataCollector implements DataCollectorInterface
 {
-    private HotspotImageDataCollector $hotspotImageDataCollector;
-
-    public function __construct(HotspotImageDataCollector $hotspotImageDataCollector)
+    public function __construct(private HotspotImageDataCollector $hotspotImageDataCollector)
     {
-        $this->hotspotImageDataCollector = $hotspotImageDataCollector;
     }
 
     public function collect(mixed $value, ConfigReader $reader): array

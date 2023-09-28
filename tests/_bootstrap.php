@@ -30,7 +30,7 @@ Bootstrap::bootstrap();
 
 Autoloader::addNamespace('Pimcore\Tests', $pimcoreTestsSupportDir); //Pimcore 10 BC layer
 Autoloader::addNamespace('Pimcore\Tests\Support', $pimcoreTestsSupportDir);
-Autoloader::addNamespace('Pimcore\Model\DataObject', PIMCORE_CLASS_DIRECTORY . '/DataObject');
+Autoloader::addNamespace(\Pimcore\Model\DataObject::class, PIMCORE_CLASS_DIRECTORY . '/DataObject');
 Autoloader::addNamespace('DataHubBundle\Tests', __DIR__);
 
 if (!defined('TESTS_PATH')) {

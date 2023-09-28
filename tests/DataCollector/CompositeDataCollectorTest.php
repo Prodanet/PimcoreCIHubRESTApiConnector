@@ -12,7 +12,7 @@ use Webmozart\Assert\InvalidArgumentException;
 
 class CompositeDataCollectorTest extends TestCase
 {
-    public function testCollectWithSupportedCollector()
+    public function testCollectWithSupportedCollector(): void
     {
         // Create a mock for the DataCollectorInterface
         $collector = $this->createMock(DataCollectorInterface::class);
@@ -41,7 +41,7 @@ class CompositeDataCollectorTest extends TestCase
         $this->assertEquals(['sample' => 'result'], $result);
     }
 
-    public function testCollectWithUnsupportedCollector()
+    public function testCollectWithUnsupportedCollector(): void
     {
         // Create a mock for the DataCollectorInterface
         $collector = $this->createMock(DataCollectorInterface::class);
@@ -68,7 +68,7 @@ class CompositeDataCollectorTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function testCollectWithInvalidCollector()
+    public function testCollectWithInvalidCollector(): void
     {
         // Create a mock for an invalid collector that does not implement DataCollectorInterface
         $invalidCollector = $this->createMock(stdClass::class);

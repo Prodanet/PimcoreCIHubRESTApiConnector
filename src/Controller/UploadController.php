@@ -33,7 +33,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[Security(name: 'Bearer')]
 class UploadController extends BaseEndpointController
 {
-    public const PART_SIZE = 1024 * 1024;
+    final public const PART_SIZE = 1024 * 1024;
 
     #[OA\Post(
         description: 'Simple method to create and upload asset',
@@ -133,7 +133,7 @@ class UploadController extends BaseEndpointController
             $filename = $uploadedFile->getClientOriginalName();
             $filename = Service::getValidKey($filename, 'asset');
 
-            if (empty($filename)) {
+            if ('' === $filename) {
                 throw new \Exception('The filename of the asset is empty');
             }
 
@@ -150,7 +150,7 @@ class UploadController extends BaseEndpointController
 
             $context = $this->request->get('context');
             if ($context) {
-                $context = json_decode($context, true);
+                $context = json_decode((string) $context, true, 512, \JSON_THROW_ON_ERROR);
                 $context = $context ?: [];
 
                 $assetHelper->validateManyToManyRelationAssetType($context, $filename, $sourcePath);
@@ -268,7 +268,7 @@ class UploadController extends BaseEndpointController
     #[Route('/upload/start', name: 'upload_start', methods: ['POST'])]
     public function start(UploadHelper $helper): Response
     {
-        $filesize = (int) $this->request->get('filesize');
+        $this->request->get('filesize');
         $session = $helper->createSession($this->request, self::PART_SIZE);
 
         return new JsonResponse($helper->getSessionResponse(
@@ -525,13 +525,13 @@ class UploadController extends BaseEndpointController
                             [
                                 'id' => '01HAPEWC2QAD29AMJC9RM17CAH',
                                 'checksum' => '672dbdbcf8a83ebdf9225ef6f920bb0b5b3bc7fa8f73078e3a1d0',
-                                'size' => 4857600,
+                                'size' => 4_857_600,
                                 'ordinal' => 1,
                             ],
                             [
                                 'id' => '01HAPEWC2QAD29AMJC9RM1723A',
                                 'checksum' => '6eb3746e6273a5c4e656bef1536e6cec36efe53fa1d010d548942',
-                                'size' => 7857600,
+                                'size' => 7_857_600,
                                 'ordinal' => 2,
                             ],
                         ],
@@ -620,7 +620,7 @@ class UploadController extends BaseEndpointController
         if (0 === $size) {
             throw new InvalidParameterException(['Content-Length']);
         }
-        if (empty($ordinal)) {
+        if (0 === $ordinal) {
             throw new InvalidParameterException(['ordinal']);
         }
 
@@ -683,7 +683,5 @@ class UploadController extends BaseEndpointController
         $response['file_size'] = $session->getFileSize();
 
         return new JsonResponse($response);
-
-        return new JsonResponse([], 404);
     }
 }

@@ -22,11 +22,8 @@ use Webmozart\Assert\Assert;
 
 final class DataObjectProvider implements ProviderInterface
 {
-    private CompositeDataCollector $dataCollector;
-
-    public function __construct(CompositeDataCollector $dataCollector)
+    public function __construct(private CompositeDataCollector $dataCollector)
     {
-        $this->dataCollector = $dataCollector;
     }
 
     public function getIndexData(ElementInterface $element, ConfigReader $reader): array

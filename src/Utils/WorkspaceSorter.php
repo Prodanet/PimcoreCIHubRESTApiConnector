@@ -26,9 +26,7 @@ final class WorkspaceSorter
      */
     public static function sort(array $workspace, int $sortFlag = self::LOWEST_SPECIFICITY): array
     {
-        usort($workspace, static function ($left, $right) {
-            return mb_substr_count($left['cpath'], '/') - mb_substr_count($right['cpath'], '/');
-        });
+        usort($workspace, static fn (array $left, array $right): int => mb_substr_count((string) $left['cpath'], '/') - mb_substr_count((string) $right['cpath'], '/'));
 
         return self::LOWEST_SPECIFICITY === $sortFlag ? $workspace : array_reverse($workspace);
     }

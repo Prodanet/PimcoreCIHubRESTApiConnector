@@ -12,13 +12,11 @@ use stdClass;
 
 class ImageGalleryDataCollectorTest extends TestCase
 {
-    /** @var ImageGalleryDataCollector */
     private ImageGalleryDataCollector $imageGalleryDataCollector;
 
-    /** @var HotspotImageDataCollector */
     private HotspotImageDataCollector $hotspotImageDataCollectorMock;
 
-    public function testCollectWithValidItems()
+    public function testCollectWithValidItems(): void
     {
         // Create a mock for ImageGallery
         $imageGallery = $this->getMockBuilder(ImageGallery::class)
@@ -52,7 +50,7 @@ class ImageGalleryDataCollectorTest extends TestCase
         $this->assertEquals([['item1' => 'result1'], ['item2' => 'result2']], $result);
     }
 
-    public function testCollectWithNoItems()
+    public function testCollectWithNoItems(): void
     {
         // Create a mock for ImageGallery
         $imageGallery = $this->getMockBuilder(ImageGallery::class)
@@ -70,7 +68,7 @@ class ImageGalleryDataCollectorTest extends TestCase
         $this->assertEquals([], $result);
     }
 
-    public function testSupports()
+    public function testSupports(): void
     {
         // Create a mock for ImageGallery
         $imageGallery = $this->getMockBuilder(ImageGallery::class)
@@ -83,7 +81,7 @@ class ImageGalleryDataCollectorTest extends TestCase
         $this->assertTrue($supports);
     }
 
-    public function testSupportsWithNonImageGallery()
+    public function testSupportsWithNonImageGallery(): void
     {
         // Create a mock for a non-ImageGallery object
         $nonImageGallery = $this->getMockBuilder(stdClass::class)

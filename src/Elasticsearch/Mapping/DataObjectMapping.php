@@ -16,66 +16,64 @@ class DataObjectMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {
-        if (empty($config)) {
+        if ([] === $config) {
             throw new \RuntimeException('No DataObject class configuration provided.');
         }
 
-        return array_merge($this->getCommonProperties(), [
-            'properties' => [
-                'data' => [
-                    'dynamic' => 'true',
-                    'properties' => $this->generateDataProperties($config),
-                ],
-                'system' => [
-                    'dynamic' => 'false',
-                    'properties' => [
-                        'id' => [
-                            'type' => 'long',
-                        ],
-                        'key' => [
-                            'type' => 'keyword',
-                            'fields' => [
-                                'analyzed' => [
-                                    'type' => 'text',
-                                    'term_vector' => 'yes',
-                                    'analyzer' => 'datahub_ngram_analyzer',
-                                    'search_analyzer' => 'datahub_whitespace_analyzer',
-                                ],
+        return [...$this->getCommonProperties(), 'properties' => [
+            'data' => [
+                'dynamic' => 'true',
+                'properties' => $this->generateDataProperties($config),
+            ],
+            'system' => [
+                'dynamic' => 'false',
+                'properties' => [
+                    'id' => [
+                        'type' => 'long',
+                    ],
+                    'key' => [
+                        'type' => 'keyword',
+                        'fields' => [
+                            'analyzed' => [
+                                'type' => 'text',
+                                'term_vector' => 'yes',
+                                'analyzer' => 'datahub_ngram_analyzer',
+                                'search_analyzer' => 'datahub_whitespace_analyzer',
                             ],
                         ],
-                        'fullPath' => [
-                            'type' => 'keyword',
-                            'fields' => [
-                                'analyzed' => [
-                                    'type' => 'text',
-                                    'term_vector' => 'yes',
-                                    'analyzer' => 'datahub_ngram_analyzer',
-                                    'search_analyzer' => 'datahub_whitespace_analyzer',
-                                ],
+                    ],
+                    'fullPath' => [
+                        'type' => 'keyword',
+                        'fields' => [
+                            'analyzed' => [
+                                'type' => 'text',
+                                'term_vector' => 'yes',
+                                'analyzer' => 'datahub_ngram_analyzer',
+                                'search_analyzer' => 'datahub_whitespace_analyzer',
                             ],
                         ],
-                        'type' => [
-                            'type' => 'constant_keyword',
-                        ],
-                        'parentId' => [
-                            'type' => 'keyword',
-                        ],
-                        'hasChildren' => [
-                            'type' => 'boolean',
-                        ],
-                        'creationDate' => [
-                            'type' => 'date',
-                        ],
-                        'modificationDate' => [
-                            'type' => 'date',
-                        ],
-                        'subtype' => [
-                            'type' => 'keyword',
-                        ],
+                    ],
+                    'type' => [
+                        'type' => 'constant_keyword',
+                    ],
+                    'parentId' => [
+                        'type' => 'keyword',
+                    ],
+                    'hasChildren' => [
+                        'type' => 'boolean',
+                    ],
+                    'creationDate' => [
+                        'type' => 'date',
+                    ],
+                    'modificationDate' => [
+                        'type' => 'date',
+                    ],
+                    'subtype' => [
+                        'type' => 'keyword',
                     ],
                 ],
             ],
-        ]);
+        ]];
     }
 
     /**
@@ -110,42 +108,23 @@ class DataObjectMapping extends DefaultMapping
      */
     private function getPropertiesForFieldConfig(array $config): array
     {
-        switch ($config['type']) {
-            case 'hotspotimage':
-            case 'image':
-                $mapping = array_merge($this->getImageProperties(), [
-                    'dynamic' => 'false',
-                    'type' => 'object',
-                ]);
-
-                break;
-            case 'imageGallery':
-                $mapping = array_merge($this->getImageProperties(), [
-                    'dynamic' => 'false',
-                    'type' => 'nested',
-                ]);
-
-                break;
-            case 'numeric':
-                $mapping = [
-                    'type' => $config['layout']['integer'] ? 'integer' : 'float',
-                ];
-
-                break;
-            default:
-                $mapping = [
-                    'type' => 'keyword',
-                    'fields' => [
-                        'analyzed' => [
-                            'type' => 'text',
-                            'term_vector' => 'yes',
-                            'analyzer' => 'datahub_ngram_analyzer',
-                            'search_analyzer' => 'datahub_whitespace_analyzer',
-                        ],
+        return match ($config['type']) {
+            'hotspotimage', 'image' => [...$this->getImageProperties(), 'dynamic' => 'false', 'type' => 'object'],
+            'imageGallery' => [...$this->getImageProperties(), 'dynamic' => 'false', 'type' => 'nested'],
+            'numeric' => [
+                'type' => $config['layout']['integer'] ? 'integer' : 'float',
+            ],
+            default => [
+                'type' => 'keyword',
+                'fields' => [
+                    'analyzed' => [
+                        'type' => 'text',
+                        'term_vector' => 'yes',
+                        'analyzer' => 'datahub_ngram_analyzer',
+                        'search_analyzer' => 'datahub_whitespace_analyzer',
                     ],
-                ];
-        }
-
-        return $mapping;
+                ],
+            ],
+        };
     }
 }

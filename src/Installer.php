@@ -24,7 +24,7 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
  */
 class Installer extends SettingsStoreAwareInstaller
 {
-    public const USER_PERMISSIONS = ['plugin_datahub_adapter'];
+    final public const USER_PERMISSIONS = ['plugin_datahub_adapter'];
 
     protected ?Schema $schema = null;
 

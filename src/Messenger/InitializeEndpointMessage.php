@@ -14,11 +14,8 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
 final class InitializeEndpointMessage
 {
-    private string $endpointName;
-
-    public function __construct(string $endpointName)
+    public function __construct(private string $endpointName)
     {
-        $this->endpointName = $endpointName;
     }
 
     public function getEndpointName(): string

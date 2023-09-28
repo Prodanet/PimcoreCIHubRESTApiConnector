@@ -25,16 +25,10 @@ class AssetProvider implements ProviderInterface
     /**
      * This thumbnail needs to be passed with every image and document, so CI HUB can display a preview for it.
      */
-    public const CIHUB_PREVIEW_THUMBNAIL = 'galleryThumbnail';
+    final public const CIHUB_PREVIEW_THUMBNAIL = 'galleryThumbnail';
 
-    private array $defaultPreviewThumbnail;
-
-    private RouterInterface $router;
-
-    public function __construct(array $defaultPreviewThumbnail, RouterInterface $router)
+    public function __construct(private array $defaultPreviewThumbnail, private RouterInterface $router)
     {
-        $this->defaultPreviewThumbnail = $defaultPreviewThumbnail;
-        $this->router = $router;
     }
 
     /**
@@ -50,14 +44,14 @@ class AssetProvider implements ProviderInterface
         ];
 
         if (!$element instanceof Asset\Folder) {
-            $data = array_merge($data, array_filter([
+            $data = [...$data, ...array_filter([
                 'binaryData' => $this->getBinaryDataValues($element, $reader),
                 'metaData' => $this->getMetaDataValues($element),
-            ]));
+            ])];
         }
 
         if ($element instanceof Asset\Image) {
-            $data = array_merge($data, array_filter([
+            $data = [...$data, ...array_filter([
                 'dimensionData' => [
                     'width' => $element->getWidth(),
                     'height' => $element->getHeight(),
@@ -65,7 +59,7 @@ class AssetProvider implements ProviderInterface
                 'xmpData' => $element->getXMPData() ?: null,
                 'exifData' => $element->getEXIFData() ?: null,
                 'iptcData' => $element->getIPTCData() ?: null,
-            ]));
+            ])];
         }
 
         return $data;
@@ -86,7 +80,7 @@ class AssetProvider implements ProviderInterface
 
         try {
             $checksum = $this->getChecksum($asset);
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             $checksum = null;
         }
 
@@ -109,7 +103,7 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (\Exception $exception) {
+                } catch (\Exception) {
                     $thumbChecksum = null;
                 }
 
@@ -134,7 +128,7 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (\Exception $exception) {
+                } catch (\Exception) {
                     $thumbChecksum = null;
                 }
 
@@ -168,7 +162,7 @@ class AssetProvider implements ProviderInterface
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
-                } catch (\Exception $exception) {
+                } catch (\Exception) {
                     $thumbChecksum = null;
                 }
 
@@ -245,15 +239,11 @@ class AssetProvider implements ProviderInterface
         if (!$asset instanceof Asset\Folder) {
             try {
                 $checksum = $this->getChecksum($asset);
-            } catch (\Exception $exception) {
+            } catch (\Exception) {
                 $checksum = null;
             }
 
-            $data = array_merge($data, [
-                'checksum' => $checksum,
-                'mimeType' => $asset->getMimetype(),
-                'fileSize' => $asset->getFileSize(),
-            ]);
+            $data = [...$data, 'checksum' => $checksum, 'mimeType' => $asset->getMimetype(), 'fileSize' => $asset->getFileSize()];
         }
 
         return $data;

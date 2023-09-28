@@ -17,23 +17,11 @@ use Symfony\Contracts\EventDispatcher\Event;
 class ConfigurationEvent extends Event
 {
     /**
-     * @var array<string, array>
-     */
-    private array $configuration;
-
-    /**
-     * @var array<string, array>
-     */
-    private array $priorConfiguration;
-
-    /**
      * @param array<string, array> $configuration
      * @param array<string, array> $priorConfiguration
      */
-    public function __construct(array $configuration, array $priorConfiguration = [])
+    public function __construct(private array $configuration, private array $priorConfiguration = [])
     {
-        $this->configuration = $configuration;
-        $this->priorConfiguration = $priorConfiguration;
     }
 
     /**

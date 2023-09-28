@@ -18,11 +18,8 @@ use Pimcore\Model\DataObject\Data\Hotspotimage;
 
 class HotspotImageDataCollector implements DataCollectorInterface
 {
-    private ImageDataCollector $imageDataCollector;
-
-    public function __construct(ImageDataCollector $imageDataCollector)
+    public function __construct(private ImageDataCollector $imageDataCollector)
     {
-        $this->imageDataCollector = $imageDataCollector;
     }
 
     /**

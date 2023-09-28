@@ -15,16 +15,10 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Reader;
 class ConfigReader
 {
     /**
-     * @var array<string, array>
-     */
-    private array $config;
-
-    /**
      * @param array<string, array> $config
      */
-    public function __construct(array $config)
+    public function __construct(private array $config)
     {
-        $this->config = $config;
     }
 
     /**
@@ -34,7 +28,7 @@ class ConfigReader
      */
     public function add(array $data): void
     {
-        $this->config = array_merge($this->config, $data);
+        $this->config = [...$this->config, ...$data];
     }
 
     /**
@@ -155,9 +149,7 @@ class ConfigReader
     public function getObjectClassNames(): array
     {
         return array_map(
-            static function ($class) {
-                return $class['name'];
-            },
+            static fn (array $class) => $class['name'],
             $this->getObjectClasses()
         );
     }
@@ -205,7 +197,7 @@ class ConfigReader
      */
     public function isObjectIndexingEnabled(): bool
     {
-        return !empty($this->getObjectClasses());
+        return [] !== $this->getObjectClasses();
     }
 
     /**

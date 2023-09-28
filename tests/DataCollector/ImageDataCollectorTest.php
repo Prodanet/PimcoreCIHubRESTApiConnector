@@ -12,13 +12,12 @@ use Symfony\Component\Routing\RouterInterface;
 
 class ImageDataCollectorTest extends TestCase
 {
-    /** @var ImageDataCollector */
     private ImageDataCollector $imageDataCollector;
 
     /** @var AssetProvider */
-    private $assetProviderMock;
+    private \PHPUnit\Framework\MockObject\MockObject $assetProviderMock;
 
-    public function testCollectWithValidImage()
+    public function testCollectWithValidImage(): void
     {
         // Create a mock for Image
         $image = $this->getMockBuilder(Image::class)
@@ -56,7 +55,7 @@ class ImageDataCollectorTest extends TestCase
         ], $result);
     }
 
-    public function testSupports()
+    public function testSupports(): void
     {
         // Create a mock for Image
         $image = $this->getMockBuilder(Image::class)
@@ -69,7 +68,7 @@ class ImageDataCollectorTest extends TestCase
         $this->assertTrue($supports);
     }
 
-    public function testSupportsWithNonImage()
+    public function testSupportsWithNonImage(): void
     {
         // Create a mock for a non-Image object
         $nonImage = $this->getMockBuilder(stdClass::class)

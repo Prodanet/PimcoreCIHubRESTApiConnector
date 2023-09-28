@@ -9,12 +9,12 @@ use ReflectionMethod;
 
 class DataCollectorInterfaceTest extends TestCase
 {
-    public function testCollectMethodExists()
+    public function testCollectMethodExists(): void
     {
         $this->assertTrue(method_exists(DataCollectorInterface::class, 'collect'));
     }
 
-    public function testCollectMethodSignature()
+    public function testCollectMethodSignature(): void
     {
         $collectMethod = new ReflectionMethod(DataCollectorInterface::class, 'collect');
 
@@ -36,12 +36,12 @@ class DataCollectorInterfaceTest extends TestCase
         $this->assertEquals(ConfigReader::class, $readerParameter->getType()->getName());
     }
 
-    public function testSupportsMethodExists()
+    public function testSupportsMethodExists(): void
     {
         $this->assertTrue(method_exists(DataCollectorInterface::class, 'supports'));
     }
 
-    public function testSupportsMethodSignature()
+    public function testSupportsMethodSignature(): void
     {
         $supportsMethod = new ReflectionMethod(DataCollectorInterface::class, 'supports');
 

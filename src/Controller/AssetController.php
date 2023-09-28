@@ -137,18 +137,13 @@ class AssetController extends BaseEndpointController
                 $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config),
             ];
         } elseif ('object' === $type && $reader->isObjectIndexingEnabled()) {
-            $indices = array_merge(
-                [$indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config)],
-                array_map(function ($className) use ($indexManager) {
-                    return $indexManager->getIndexName(mb_strtolower($className), $this->config);
-                }, $reader->getObjectClassNames())
-            );
+            $indices = [$indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config), ...array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())];
         }
 
         foreach ($indices as $index) {
             try {
                 $result = $indexService->get($id, $index);
-            } catch (\Exception $ignore) {
+            } catch (\Exception) {
                 $result = [];
             }
 
@@ -157,7 +152,7 @@ class AssetController extends BaseEndpointController
             }
         }
 
-        if (empty($result) || false === $result['found']) {
+        if ([] === $result || false === $result['found']) {
             throw new AssetNotFoundException(sprintf('Element with type \'%s\' and ID \'%s\' not found.', $type, $id));
         }
 
@@ -168,7 +163,7 @@ class AssetController extends BaseEndpointController
     public function getElementVersion(): Response
     {
         $id = $this->request->query->getInt('id');
-        $type = $this->request->query->get('type', 'asset');
+        $this->request->query->get('type', 'asset');
 
         $version = Version::getById($id);
         $asset = $version?->loadData();
@@ -177,13 +172,11 @@ class AssetController extends BaseEndpointController
         }
         $response = [];
 
-        if ($asset->isAllowed('versions', $this->user)) {
-            if ($version instanceof Version) {
-                $response = [
-                    'assetId' => $asset->getId(),
-                    'metadata' => $asset->getMetadata(),
-                ];
-            }
+        if ($asset->isAllowed('versions', $this->user) && $version instanceof Version) {
+            $response = [
+                'assetId' => $asset->getId(),
+                'metadata' => $asset->getMetadata(),
+            ];
         }
 
         return new JsonResponse(['success' => true, 'data' => $response]);
@@ -569,7 +562,7 @@ class AssetController extends BaseEndpointController
 
         $stream = $assetFile->getStream();
 
-        return $response->setCallback(function () use ($stream) {
+        return $response->setCallback(function () use ($stream): void {
             fpassthru($stream);
         });
     }

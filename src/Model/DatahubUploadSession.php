@@ -22,6 +22,7 @@ use Pimcore\Model\Exception\NotFoundException;
  */
 final class DatahubUploadSession extends AbstractModel
 {
+    public $data;
     public string $id;
 
     public UploadParts $parts;
@@ -42,11 +43,9 @@ final class DatahubUploadSession extends AbstractModel
             $obj->getDao()->getById($id);
 
             return $obj;
-        } catch (NotFoundException $ex) {
+        } catch (NotFoundException) {
             throw new \CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException("Upload Session with id $id not found");
         }
-
-        return null;
     }
 
     /**
@@ -59,7 +58,7 @@ final class DatahubUploadSession extends AbstractModel
             $obj->getDao()->hasById($id);
 
             return $obj;
-        } catch (NotFoundException $ex) {
+        } catch (NotFoundException) {
             Logger::warn("Upload Session with id $id not found");
         }
 
@@ -93,7 +92,7 @@ final class DatahubUploadSession extends AbstractModel
     public function setParts(string|array $parts): self
     {
         if (\is_string($parts)) {
-            $parts = json_decode($parts, true);
+            $parts = json_decode($parts, true, 512, \JSON_THROW_ON_ERROR);
         }
 
         $this->parts = new UploadParts($parts);

@@ -167,9 +167,7 @@ class SearchController extends BaseEndpointController
         if ($reader->isObjectIndexingEnabled()) {
             $indices = array_merge(
                 $indices,
-                array_map(function ($className) use ($indexManager) {
-                    return $indexManager->getIndexName(mb_strtolower($className), $this->config);
-                }, $reader->getObjectClassNames())
+                array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())
             );
         }
 
@@ -363,15 +361,13 @@ class SearchController extends BaseEndpointController
         if ('asset' === $type && $reader->isAssetIndexingEnabled()) {
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config)];
 
-            if (true === $includeFolders) {
+            if ($includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
             }
         } elseif ('object' === $type && $reader->isObjectIndexingEnabled()) {
-            $indices = array_map(function ($className) use ($indexManager) {
-                return $indexManager->getIndexName(mb_strtolower($className), $this->config);
-            }, $reader->getObjectClassNames());
+            $indices = array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames());
 
-            if (true === $includeFolders) {
+            if ($includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
             }
         }

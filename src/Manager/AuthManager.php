@@ -40,7 +40,7 @@ class AuthManager
         $this->config = $this->request->get('config');
     }
 
-    public function isAllowed(Asset $asset, string $type, User $user)
+    public function isAllowed(Asset $asset, string $type, User $user): bool
     {
         $configuration = $this->getDataHubConfiguration();
         $reader = new ConfigReader($configuration->getConfiguration());
@@ -61,7 +61,7 @@ class AuthManager
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();
-        if (!$user) {
+        if (!$user instanceof \Pimcore\Model\User) {
             throw new AccessDeniedException();
         }
     }
@@ -104,7 +104,7 @@ class AuthManager
         throw new AuthenticationException('Failed to authenticate with username and token');
     }
 
-    private static function isValidUser(?User $user): bool
+    private function isValidUser(?User $user): bool
     {
         return $user instanceof User && $user->isActive() && $user->getId();
     }

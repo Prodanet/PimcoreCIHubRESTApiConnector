@@ -21,11 +21,8 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
 {
-    private IndexPersistenceService $indexService;
-
-    public function __construct(IndexPersistenceService $indexService)
+    public function __construct(private IndexPersistenceService $indexService)
     {
-        $this->indexService = $indexService;
     }
 
     /**

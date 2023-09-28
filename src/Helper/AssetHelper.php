@@ -32,7 +32,7 @@ class AssetHelper
 
     public function isLocked(int $cid, string $ctype, int $userId): bool
     {
-        if ($lock = Element\Editlock::getByElement($cid, $ctype)) {
+        if (($lock = Element\Editlock::getByElement($cid, $ctype)) instanceof \Pimcore\Model\Element\Editlock) {
             if ((time() - $lock->getDate()) > 3600) {
                 // lock is out of date unlock it
                 Element\Editlock::unlock($cid, $ctype);
@@ -46,7 +46,7 @@ class AssetHelper
         return false;
     }
 
-    public function unlockForLocker(int $userId, int $assetId)
+    public function unlockForLocker(int $userId, int $assetId): bool
     {
         $lock = Element\Editlock::getByElement($assetId, 'asset');
 
@@ -103,7 +103,7 @@ class AssetHelper
         $mimetype = MimeTypes::getDefault()->guessMimeType($sourcePath);
         $newType = Asset::getTypeFromMimeMapping($mimetype, $filename);
 
-        if ($newType != $asset->getType()) {
+        if ($newType !== $asset->getType()) {
             return new JsonResponse([
                 'success' => false,
                 'message' => sprintf($translator->trans('asset_type_change_not_allowed', [], 'admin'), $asset->getType(), $newType),
@@ -117,7 +117,7 @@ class AssetHelper
 
         $newFileExt = pathinfo($filename, \PATHINFO_EXTENSION);
         $currentFileExt = pathinfo($asset->getFilename(), \PATHINFO_EXTENSION);
-        if ($newFileExt != $currentFileExt) {
+        if ($newFileExt !== $currentFileExt) {
             $newFilename = preg_replace('/\.'.$currentFileExt.'$/i', '.'.$newFileExt, $asset->getFilename());
             $newFilename = Element\Service::getSafeCopyName($newFilename, $asset->getParent());
             $asset->setFilename($newFilename);

@@ -25,7 +25,7 @@ class Autoloader extends Autoload
     public static function addNamespace(string $prefix, string $baseDir, bool $prepend = false): void
     {
         if (!self::$reg) {
-            spl_autoload_register([__CLASS__, 'load'], true, true);
+            spl_autoload_register(fn(string $class): string|false => self::load($class), true, true);
             self::$reg = true;
         }
 

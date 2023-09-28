@@ -77,7 +77,7 @@ final class ChunkUploadResponse implements ApiResponseInterface
             'session_expires_at' => $this->sessionExpiresAt,
             'total_parts' => $this->totalParts,
         ];
-        if (!empty($this->endpoints)) {
+        if ([] !== $this->endpoints) {
             $response['endpoints'] = $this->endpoints;
         }
 
