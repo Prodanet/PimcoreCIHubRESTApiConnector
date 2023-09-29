@@ -112,7 +112,6 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
         $definition = new Definition(IndexQueryService::class);
         $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX.$config['es_client_name']));
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
-        $definition->setArgument('$maxResult', $config['max_result']);
         $container->addDefinitions([IndexQueryService::class => $definition]);
 
         $definition = new Definition(AssetMapping::class);
