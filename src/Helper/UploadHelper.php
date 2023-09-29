@@ -149,7 +149,6 @@ final class UploadHelper
     public function hasSession(string $id): bool
     {
         $session = DatahubUploadSession::hasById($id);
-
         return $session instanceof \CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
     }
 

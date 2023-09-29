@@ -29,7 +29,7 @@ final class UploadParts implements UploadPartsInterface
 
     public function toArray(): array
     {
-        return array_map(fn (UploadPartInterface $part): array => $part->toArray(), $this->parts);
+        return array_map(fn(UploadPartInterface $part): array => $part->toArray(), $this->parts);
     }
 
     public function add(UploadPartInterface $part): UploadPartsInterface

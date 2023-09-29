@@ -21,6 +21,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
@@ -39,6 +40,7 @@ class AssetController extends BaseEndpointController
     #[Route('/get-element', name: 'get_element', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to get one single element by type and ID.',
+        summary: 'Get Element (eg. Asset, Object)',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -119,8 +121,8 @@ class AssetController extends BaseEndpointController
         // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
         $reader = new ConfigReader($configuration->getConfiguration());
-        $id = $this->request->get('id');
-        $type = $this->request->get('type');
+        $id = $this->request->query->getInt('id');
+        $type = $this->request->query->getString('type');
         // Check if required parameters are missing
         $this->checkRequiredParameters(['id' => $id, 'type' => $type]);
 
@@ -140,6 +142,7 @@ class AssetController extends BaseEndpointController
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config), ...array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())];
         }
 
+        $result = [];
         foreach ($indices as $index) {
             try {
                 $result = $indexService->get($id, $index);
@@ -160,87 +163,183 @@ class AssetController extends BaseEndpointController
     }
 
     #[Route('/version', name: 'version', methods: ['GET'])]
+    #[OA\Get(
+        description: 'Method to get a specified version of the element by type and ID.',
+        summary: 'Get Version of Element (eg. Asset, Object)',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                description: 'ID of element.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'id',
+                            description: 'Version ID',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'cid',
+                            description: 'Asset ID',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'ctype',
+                            description: 'Object type',
+                            type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'note',
+                            description: 'Version note',
+                            type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'date',
+                            description: 'Timestamp of version creation',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'public',
+                            description: 'Version is public?',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'versionCount',
+                            description: 'Version sequence number',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'autoSave',
+                            description: 'Version is auto-save?',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'user',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'name',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'id',
+                                        type: 'integer'
+                                    ),
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: 'metadata',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'data',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'language',
+                                        type: 'string',
+                                        nullable: true
+                                    ),
+                                    new OA\Property(
+                                        property: 'name',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'type',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'config',
+                                        type: 'string',
+                                        nullable: true
+                                    ),
+                                ]
+                            )
+                        ),
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            ),
+        ],
+    )]
     public function getElementVersion(): Response
     {
         $id = $this->request->query->getInt('id');
-        $this->request->query->get('type', 'asset');
+        $type = $this->request->query->getString('type', 'asset');
 
         $version = Version::getById($id);
-        $asset = $version?->loadData();
-        if (!$asset instanceof Asset) {
-            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
+        $element = $version?->loadData();
+        if (!$element instanceof ElementInterface) {
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id."] doesn't exist"], 404);
         }
+
         $response = [];
 
-        if ($asset->isAllowed('versions', $this->user) && $version instanceof Version) {
+        if ($element->isAllowed('versions', $this->user) && $version instanceof Version) {
             $response = [
-                'assetId' => $asset->getId(),
-                'metadata' => $asset->getMetadata(),
+                'id' => $version->getId(),
+                'cid' => $element->getId(),
+                'note' => $version->getNote(),
+                'date' => $version->getDate(),
+                'public' => $version->isPublic(),
+                'versionCount' => $version->getVersionCount(),
+                'autoSave' => $version->isAutoSave(),
+                'user' => [
+                    'name' => $version->getUser()->getName(),
+                    'id' => $version->getUser()->getId(),
+                ],
             ];
+            if ($element instanceof Asset) {
+                $response['fileSize'] = $element->getMetadata();
+            }
         }
 
         return new JsonResponse(['success' => true, 'data' => $response]);
     }
 
     #[Route('/versions', name: 'versions', methods: ['GET'])]
-    public function getVersions(): Response
-    {
-        $assetId = $this->request->query->getInt('id');
-        $type = $this->request->query->get('type', 'asset');
-
-        $asset = Asset::getById($assetId);
-        if (!$asset instanceof Asset) {
-            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
-        }
-
-        if ($asset->isAllowed('versions', $this->user)) {
-            $schedule = $asset->getScheduledTasks();
-            $schedules = [];
-            foreach ($schedule as $task) {
-                if ($task->getActive()) {
-                    $schedules[$task->getVersion()] = $task->getDate();
-                }
-            }
-
-            // only load auto-save versions from current user
-            $list = new Listing();
-            $list->setLoadAutoSave(true);
-            $list->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
-                $asset->getId(),
-                Service::getElementType($asset),
-                $this->user->getId(),
-            ])
-                ->setOrderKey('date')
-                ->setOrder('ASC');
-
-            $versions = $list->load();
-            $versions = Service::getSafeVersionInfo($versions);
-            $versions = array_reverse($versions); // reverse array to sort by ID DESC
-            foreach ($versions as &$version) {
-                if (0 === $version['index']
-                    && $version['date'] == $asset->getModificationDate()
-                    && $version['versionCount'] == $asset->getVersionCount()
-                ) {
-                    $version['public'] = true;
-                }
-                $version['scheduled'] = null;
-                if (\array_key_exists($version['id'], $schedules)) {
-                    $version['scheduled'] = $schedules[$version['id']];
-                }
-            }
-
-            return $this->json($versions);
-        } else {
-            throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$assetId.']');
-        }
-    }
-
-    /**
-     * @throws \Doctrine\DBAL\Exception
-     */
-    #[Route('/lock-asset', name: 'lock_asset', methods: ['POST'])]
-    #[OA\Post(
-        description: 'Method to lock single element by type and ID.',
+    #[OA\Get(
+        description: 'Method to get all versions of the element by type and ID.',
+        summary: 'Get all Versions of Element (eg. Asset, Object)',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -283,19 +382,193 @@ class AssetController extends BaseEndpointController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
-                            property: 'total_count',
-                            description: 'Total count of available results.',
+                            property: 'id',
+                            description: 'Version ID',
                             type: 'integer'
                         ),
                         new OA\Property(
-                            property: 'items',
-                            type: 'array',
-                            items: new OA\Items()
+                            property: 'cid',
+                            description: 'Asset ID',
+                            type: 'integer'
                         ),
                         new OA\Property(
-                            property: 'page_cursor',
-                            description: 'Page cursor for next page.',
+                            property: 'ctype',
+                            description: 'Object type',
                             type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'note',
+                            description: 'Version note',
+                            type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'date',
+                            description: 'Timestamp of version creation',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'public',
+                            description: 'Version is public?',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'versionCount',
+                            description: 'Version sequence number',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'autoSave',
+                            description: 'Version is auto-save?',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'user',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'name',
+                                        type: 'string'
+                                    ),
+                                    new OA\Property(
+                                        property: 'id',
+                                        type: 'integer'
+                                    ),
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: 'index',
+                            type: 'integer',
+                        ),
+                        new OA\Property(
+                            property: 'scheduled',
+                            type: 'integer',
+                        ),
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            ),
+        ],
+    )]
+    public function getVersions(): Response
+    {
+        $id = $this->request->query->getInt('id');
+        $type = $this->request->query->getString('type', 'asset');
+
+        $element = Service::getElementById($type, $id);
+        if (!$element instanceof ElementInterface) {
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id."] doesn't exist"], 404);
+        }
+
+        if ($element->isAllowed('versions', $this->user)) {
+            $schedule = $element->getScheduledTasks();
+            $schedules = [];
+            foreach ($schedule as $task) {
+                if ($task->getActive()) {
+                    $schedules[$task->getVersion()] = $task->getDate();
+                }
+            }
+
+            // only load auto-save versions from current user
+            $list = new Listing();
+            $list->setLoadAutoSave(true);
+            $list->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
+                $element->getId(),
+                $type,
+                $this->user->getId(),
+            ])
+                ->setOrderKey('date')
+                ->setOrder('ASC');
+
+            $versions = $list->load();
+            $versions = Service::getSafeVersionInfo($versions);
+            $versions = array_reverse($versions); // reverse array to sort by ID DESC
+            foreach ($versions as &$version) {
+                if (0 === $version['index']
+                    && $version['date'] == $element->getModificationDate()
+                    && $version['versionCount'] == $element->getVersionCount()
+                ) {
+                    $version['public'] = true;
+                }
+                $version['scheduled'] = null;
+                if (\array_key_exists($version['id'], $schedules)) {
+                    $version['scheduled'] = $schedules[$version['id']];
+                }
+            }
+
+            return $this->json($versions);
+        } else {
+            throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$element.']');
+        }
+    }
+
+    #[Route('/lock-element', name: 'lock_element', methods: ['POST'])]
+    #[OA\Post(
+        description: 'Method to lock single element by type and ID.',
+        summary: 'Lock Asset',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                description: 'Type of elements – asset or object.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['asset', 'object']
+                )
+            ),
+            new OA\Parameter(
+                name: 'id',
+                description: 'ID of element.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'success',
+                            description: 'Success status.',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'message',
+                            description: 'Message.',
+                            type: 'string',
                         ),
                     ],
                     type: 'object'
@@ -317,34 +590,32 @@ class AssetController extends BaseEndpointController
     )]
     public function lock(AssetHelper $assetHelper): Response
     {
-        $assetId = $this->request->query->getInt('id');
-        $type = $this->request->query->get('type');
+        $id = $this->request->query->getInt('id');
+        $type = $this->request->query->getString('type');
 
-        $asset = Asset::getById($assetId);
-        if (!$asset instanceof Asset) {
-            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
+        $element = Service::getElementById($type, $id);
+        if (!$element instanceof ElementInterface) {
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id."] doesn't exist"], 404);
         }
 
         // check for lock on non-folder items only.
-        if ('folder' !== $type && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
-            if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
-                return new JsonResponse(['success' => false, 'message' => 'asset is already locked for editing'], 403);
+        if ('folder' !== $type && ($element->isAllowed('publish', $this->user) || $element->isAllowed('delete', $this->user))) {
+            if ($assetHelper->isLocked($id, 'asset', $this->user->getId())) {
+                return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id.'] is already locked for editing'], 403);
             }
 
-            $assetHelper->lock($assetId, 'asset', $this->user->getId());
+            $assetHelper->lock($id, $type, $this->user->getId());
 
-            return new JsonResponse(['success' => true, 'message' => 'asset was just locked']);
+            return new JsonResponse(['success' => true, 'message' => $type.' with id ['.$id.'] was just locked']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$asset->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new '.$type.' in the folder: '.$element->getParent()->getRealFullPath());
     }
 
-    /**
-     * @throws \Doctrine\DBAL\Exception
-     */
-    #[Route('/unlock-asset', name: 'unlock_asset', methods: ['POST'])]
+    #[Route('/unlock-element', name: 'unlock_element', methods: ['POST'])]
     #[OA\Post(
         description: 'Method to unlock single element by type and ID.',
+        summary: 'Unlock Asset',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -387,19 +658,14 @@ class AssetController extends BaseEndpointController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
-                            property: 'total_count',
-                            description: 'Total count of available results.',
-                            type: 'integer'
+                            property: 'success',
+                            description: 'Success status.',
+                            type: 'boolean'
                         ),
                         new OA\Property(
-                            property: 'items',
-                            type: 'array',
-                            items: new OA\Items()
-                        ),
-                        new OA\Property(
-                            property: 'page_cursor',
+                            property: 'message',
+                            description: 'Message.',
                             type: 'string',
-                            description: 'Page cursor for next page.'
                         ),
                     ],
                     type: 'object'
@@ -421,37 +687,35 @@ class AssetController extends BaseEndpointController
     )]
     public function unlock(AssetHelper $assetHelper): Response
     {
-        $assetId = $this->request->query->getInt('id');
-        $type = $this->request->query->get('type');
+        $id = $this->request->query->getInt('id');
+        $type = $this->request->query->getString('type');
 
-        $asset = Asset::getById($assetId);
-        if (!$asset instanceof Asset) {
-            return new JsonResponse(['success' => false, 'message' => "asset doesn't exist"], 404);
+        $element = Service::getElementById($type, $id);
+        if (!$element instanceof ElementInterface) {
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id."] doesn't exist"], 404);
         }
 
         // check for lock on non-folder items only.
-        if ('folder' !== $type && ($asset->isAllowed('publish', $this->user) || $asset->isAllowed('delete', $this->user))) {
-            if ($assetHelper->isLocked($assetId, 'asset', $this->user->getId())) {
-                $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $assetId);
+        if ('folder' !== $type && ($element->isAllowed('publish', $this->user) || $element->isAllowed('delete', $this->user))) {
+            if ($assetHelper->isLocked($id, 'asset', $this->user->getId())) {
+                $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $id);
                 if ($unlocked) {
-                    return new JsonResponse(['success' => true, 'message' => 'asset has been unlocked for editing']);
+                    return new JsonResponse(['success' => true, 'message' => $type.' with id ['.$id.'] has been unlocked for editing']);
                 }
 
-                return new JsonResponse(['success' => true, 'message' => 'asset is locked for editing'], 403);
+                return new JsonResponse(['success' => true, 'message' => $type.' with id ['.$id.'] is locked for editing'], 403);
             }
 
-            return new JsonResponse(['success' => false, 'message' => 'asset is already unlocked for editing']);
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id.'] is already unlocked for editing']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$asset->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new '.$type.' in the folder: '.$element->getParent()->getRealFullPath());
     }
 
-    /**
-     * @throws \Doctrine\DBAL\Exception
-     */
     #[Route('/download-asset', name: 'download_asset', methods: ['GET'])]
-    #[OA\Post(
+    #[OA\Get(
         description: 'Method to download binary file by asset ID.',
+        summary: 'Download Asset',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -490,7 +754,6 @@ class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
-                content: new OA\MediaType()
             ),
             new OA\Response(
                 response: 400,
@@ -525,42 +788,41 @@ class AssetController extends BaseEndpointController
         $configuration = $this->getDataHubConfiguration();
         $reader = new ConfigReader($configuration->getConfiguration());
 
-        $id = $this->request->get('id');
-
+        $id = $this->request->query->getInt('id');
+        $type = 'asset';
         // Check if required parameters are missing
         $this->checkRequiredParameters(['id' => $id]);
 
-        $asset = Asset::getById($id);
-
-        if (!$asset instanceof Asset) {
-            throw new AssetNotFoundException(sprintf('Element with ID \'%s\' not found.', $id));
+        $element = Service::getElementById($type, $id);
+        if (!$element instanceof ElementInterface) {
+            return new JsonResponse(['success' => false, 'message' => $type.' with id ['.$id."] doesn't exist"], 404);
         }
 
         $thumbnail = $this->request->get('thumbnail');
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 
-        if (!empty($thumbnail) && ($asset instanceof Asset\Image || $asset instanceof Asset\Document)) {
+        if (!empty($thumbnail) && ($element instanceof Asset\Image || $element instanceof Asset\Document)) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $reader->getType()) {
-                if ($asset instanceof Asset\Image) {
-                    $assetFile = $asset->getThumbnail($defaultPreviewThumbnail);
+                if ($element instanceof Asset\Image) {
+                    $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
                 } else {
-                    $assetFile = $asset->getImageThumbnail($defaultPreviewThumbnail);
+                    $elementFile = $element->getImageThumbnail($defaultPreviewThumbnail);
                 }
-            } elseif ($asset instanceof Asset\Image) {
-                $assetFile = $asset->getThumbnail($thumbnail);
+            } elseif ($element instanceof Asset\Image) {
+                $elementFile = $element->getThumbnail($thumbnail);
             } else {
-                $assetFile = $asset->getImageThumbnail($thumbnail);
+                $elementFile = $element->getImageThumbnail($thumbnail);
             }
         } else {
-            $assetFile = $asset;
+            $elementFile = $element;
         }
 
         $response = new StreamedResponse();
-        $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($assetFile->getPath()));
-        $response->headers->set('Content-Type', $assetFile->getMimetype());
-        $response->headers->set('Content-Length', $assetFile->getFileSize());
+        $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($elementFile->getPath()));
+        $response->headers->set('Content-Type', $elementFile->getMimetype());
+        $response->headers->set('Content-Length', $elementFile->getFileSize());
 
-        $stream = $assetFile->getStream();
+        $stream = $elementFile->getStream();
 
         return $response->setCallback(function () use ($stream): void {
             fpassthru($stream);

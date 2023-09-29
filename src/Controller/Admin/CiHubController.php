@@ -34,7 +34,7 @@ class CiHubController extends UserAwareController
 
         return $this->jsonResponse([
             'data' => array_keys($list),
-            'success' => [] !== $list,
+            'success' => $list !== [],
         ]);
     }
 
@@ -102,6 +102,6 @@ class CiHubController extends UserAwareController
             $data = '{}';
         }
 
-        return $this->jsonResponse(json_decode((string) $data, null, 512, \JSON_THROW_ON_ERROR));
+        return $this->jsonResponse(json_decode($data, null, 512, JSON_THROW_ON_ERROR));
     }
 }

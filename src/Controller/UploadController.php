@@ -33,10 +33,11 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[Security(name: 'Bearer')]
 class UploadController extends BaseEndpointController
 {
-    final public const PART_SIZE = 1024 * 1024;
+    public const PART_SIZE = 1024 * 1024;
 
     #[OA\Post(
         description: 'Simple method to create and upload asset',
+        summary: 'Add asset',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -150,7 +151,7 @@ class UploadController extends BaseEndpointController
 
             $context = $this->request->get('context');
             if ($context) {
-                $context = json_decode((string) $context, true, 512, \JSON_THROW_ON_ERROR);
+                $context = json_decode($context, true, 512, \JSON_THROW_ON_ERROR);
                 $context = $context ?: [];
 
                 $assetHelper->validateManyToManyRelationAssetType($context, $filename, $sourcePath);
@@ -211,6 +212,7 @@ class UploadController extends BaseEndpointController
      */
     #[OA\Post(
         description: 'Creates an upload session for a new file.',
+        summary: 'Create upload session',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -227,7 +229,7 @@ class UploadController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'filename',
+                name: 'file_name',
                 description: 'The name of new file',
                 in: 'query',
                 required: true,
@@ -283,6 +285,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Get(
         description: 'Return information about an upload session.',
+        summary: 'Get upload session',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -342,6 +345,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Delete(
         description: 'Abort an upload session and discard all data uploaded.',
+        summary: 'Remove upload session',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -387,6 +391,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Post(
         description: 'Close an upload session and create a file from the uploaded chunks.',
+        summary: 'Commit upload session',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -450,6 +455,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Get(
         description: 'Return a list of the chunks uploaded to the upload session so far.',
+        summary: 'List parts',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -555,6 +561,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Put(
         description: 'Return the status of the upload.',
+        summary: 'Upload part of file',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -637,6 +644,7 @@ class UploadController extends BaseEndpointController
 
     #[OA\Get(
         description: 'Return the status of the upload.',
+        summary: 'Get upload status',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',

@@ -15,7 +15,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Installer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\expr;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->import(__DIR__.'/services/*.php');
@@ -31,6 +30,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(Installer::class)
         ->public()
-        ->arg('$bundle', expr('service(\'kernel\').getBundle(\'SimpleRESTAdapterBundle\')'))
-        ->arg('$db', service('doctrine.dbal.default_connection'));
+        ->arg('$bundle', expr('service(\'kernel\').getBundle(\'SimpleRESTAdapterBundle\')'));
 };

@@ -43,9 +43,6 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
 {
     private array $ciHubConfig = [];
 
-    /**
-     * @throws \Exception
-     */
     public function prepend(ContainerBuilder $container): void
     {
         $bundles = $container->getParameter('kernel.bundles');
@@ -133,7 +130,7 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
      */
     private function registerConfiguration(ContainerBuilder $container, array $config): void
     {
-        if ([] !== $this->ciHubConfig) {
+        if ($this->ciHubConfig !== []) {
             $config = array_merge($config, ...$this->ciHubConfig);
         }
 

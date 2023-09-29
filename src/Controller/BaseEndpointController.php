@@ -84,7 +84,7 @@ abstract class BaseEndpointController extends FrontendController
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
-        $filter = json_decode((string) $this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
+        $filter = json_decode($this->request->get('filter'), true, 512, JSON_THROW_ON_ERROR);
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
             \FILTER_VALIDATE_BOOLEAN
@@ -94,7 +94,7 @@ abstract class BaseEndpointController extends FrontendController
             $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
-        if (\is_array($filter) && [] !== $filter) {
+        if (\is_array($filter) && $filter !== []) {
             $this->buildQueryConditions($search, $filter);
         }
 
@@ -223,7 +223,7 @@ abstract class BaseEndpointController extends FrontendController
                             continue;
                         }
 
-                        $aggs[$field]['buckets'] = array_map(static fn (array $bucket): array => [
+                        $aggs[$field]['buckets'] = array_map(static fn(array $bucket): array => [
                             'key' => $bucket['key'],
                             'element_count' => $bucket['doc_count'],
                         ], $aggregation['buckets']);
@@ -262,7 +262,7 @@ abstract class BaseEndpointController extends FrontendController
             $required[] = $key;
         }
 
-        if ([] !== $required) {
+        if ($required !== []) {
             throw new InvalidParameterException($required);
         }
     }

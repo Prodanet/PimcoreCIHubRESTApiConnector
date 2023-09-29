@@ -92,7 +92,7 @@ final class DatahubUploadSession extends AbstractModel
     public function setParts(string|array $parts): self
     {
         if (\is_string($parts)) {
-            $parts = json_decode($parts, true, 512, \JSON_THROW_ON_ERROR);
+            $parts = json_decode($parts, true, 512, JSON_THROW_ON_ERROR);
         }
 
         $this->parts = new UploadParts($parts);

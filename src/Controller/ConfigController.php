@@ -114,7 +114,7 @@ class ConfigController extends AdminAbstractController
         }
 
         $reader = new ConfigReader($configuration->getConfiguration());
-        $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName), ...array_map(static fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $configName), $reader->getObjectClassNames())];
+        $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName), ...array_map(static fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $configName), $reader->getObjectClassNames())];
 
         $labels = $labelExtractor->extractLabels($indices);
 
@@ -132,7 +132,7 @@ class ConfigController extends AdminAbstractController
         try {
             $data = $request->get('data');
             $modificationDate = $request->get('modificationDate', 0);
-            $newConfigReader = new ConfigReader(json_decode((string) $data, true, 512, \JSON_THROW_ON_ERROR));
+            $newConfigReader = new ConfigReader(json_decode($data, true, 512, JSON_THROW_ON_ERROR));
 
             $name = $newConfigReader->getName();
             $configuration = $configRepository->findOneByName($name);
@@ -179,7 +179,7 @@ class ConfigController extends AdminAbstractController
 
         $configList = new Thumbnail\Config\Listing();
         $thumbnails = array_map(
-            static fn ($config): array => ['name' => $config->getName()],
+            static fn($config): array => ['name' => $config->getName()],
             $configList->load()
         );
 

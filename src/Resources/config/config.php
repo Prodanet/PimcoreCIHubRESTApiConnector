@@ -34,7 +34,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             'info' => [
                 'title' => 'Pimcore DataHub REST Adapter',
                 'description' => 'Endpoints provided by the REST Adapter Bundle.',
-                'version' => '2.1.0',
+                'version' => \Composer\InstalledVersions::getPrettyVersion('ci-hub/rest-adapter-bundle'),
                 'license' => [
                     'name' => 'GPL 3.0',
                     'url' => 'https://www.gnu.org/licenses/gpl-3.0.html',

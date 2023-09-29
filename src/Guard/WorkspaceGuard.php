@@ -23,13 +23,13 @@ final class WorkspaceGuard implements WorkspaceGuardInterface
         $workspace = WorkspaceSorter::sort($reader->getWorkspace($elementType), WorkspaceSorter::HIGHEST_SPECIFICITY);
 
         // No workspace configuration found for element type
-        if ([] === $workspace) {
+        if ($workspace === []) {
             return false;
         }
 
         foreach ($workspace as $config) {
             // Check if element is within folder
-            if (!str_contains($element->getFullPath(), (string) $config['cpath'])) {
+            if (!str_contains($element->getFullPath(), $config['cpath'])) {
                 continue;
             }
 

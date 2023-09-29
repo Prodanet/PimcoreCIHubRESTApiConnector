@@ -25,7 +25,7 @@ class AssetProvider implements ProviderInterface
     /**
      * This thumbnail needs to be passed with every image and document, so CI HUB can display a preview for it.
      */
-    final public const CIHUB_PREVIEW_THUMBNAIL = 'galleryThumbnail';
+    public const CIHUB_PREVIEW_THUMBNAIL = 'galleryThumbnail';
 
     public function __construct(private array $defaultPreviewThumbnail, private RouterInterface $router)
     {
@@ -44,14 +44,14 @@ class AssetProvider implements ProviderInterface
         ];
 
         if (!$element instanceof Asset\Folder) {
-            $data = [...$data, ...array_filter([
+            $data = array_merge($data, array_filter([
                 'binaryData' => $this->getBinaryDataValues($element, $reader),
                 'metaData' => $this->getMetaDataValues($element),
-            ])];
+            ]));
         }
 
         if ($element instanceof Asset\Image) {
-            $data = [...$data, ...array_filter([
+            $data = array_merge($data, array_filter([
                 'dimensionData' => [
                     'width' => $element->getWidth(),
                     'height' => $element->getHeight(),
@@ -59,7 +59,7 @@ class AssetProvider implements ProviderInterface
                 'xmpData' => $element->getXMPData() ?: null,
                 'exifData' => $element->getEXIFData() ?: null,
                 'iptcData' => $element->getIPTCData() ?: null,
-            ])];
+            ]));
         }
 
         return $data;
@@ -243,7 +243,11 @@ class AssetProvider implements ProviderInterface
                 $checksum = null;
             }
 
-            $data = [...$data, 'checksum' => $checksum, 'mimeType' => $asset->getMimetype(), 'fileSize' => $asset->getFileSize()];
+            $data = array_merge($data, [
+                'checksum' => $checksum,
+                'mimeType' => $asset->getMimetype(),
+                'fileSize' => $asset->getFileSize(),
+            ]);
         }
 
         return $data;

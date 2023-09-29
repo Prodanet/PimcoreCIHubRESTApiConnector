@@ -98,7 +98,7 @@ class ConfigModificationListener implements EventSubscriberInterface
         // DataObject Classes
         foreach ($objectClasses as $class) {
             $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(mb_strtolower((string) $class['name']), $endpointName),
+                $this->indexManager->getIndexName(mb_strtolower($class['name']), $endpointName),
                 $this->objectMapping->generate($class)
             );
         }

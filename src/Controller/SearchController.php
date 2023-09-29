@@ -37,6 +37,7 @@ class SearchController extends BaseEndpointController
     #[Route('/search', name: 'search', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to search for elements, returns elements of all types. For paging use link provided in link header of response.',
+        summary: 'Search for elements',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -167,7 +168,7 @@ class SearchController extends BaseEndpointController
         if ($reader->isObjectIndexingEnabled()) {
             $indices = array_merge(
                 $indices,
-                array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())
+                array_map(fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())
             );
         }
 
@@ -184,13 +185,13 @@ class SearchController extends BaseEndpointController
     }
 
     /**
-     * @throws \Doctrine\DBAL\Exception
      * @throws ClientResponseException
      * @throws ServerResponseException
      */
     #[Route('/tree-items', name: 'tree_items', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
+        summary: 'Get tree items',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -365,7 +366,7 @@ class SearchController extends BaseEndpointController
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
             }
         } elseif ('object' === $type && $reader->isObjectIndexingEnabled()) {
-            $indices = array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames());
+            $indices = array_map(fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames());
 
             if ($includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);

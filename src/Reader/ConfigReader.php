@@ -28,7 +28,7 @@ class ConfigReader
      */
     public function add(array $data): void
     {
-        $this->config = [...$this->config, ...$data];
+        $this->config = array_merge($this->config, $data);
     }
 
     /**
@@ -149,7 +149,7 @@ class ConfigReader
     public function getObjectClassNames(): array
     {
         return array_map(
-            static fn (array $class) => $class['name'],
+            static fn(array $class) => $class['name'],
             $this->getObjectClasses()
         );
     }
@@ -197,7 +197,7 @@ class ConfigReader
      */
     public function isObjectIndexingEnabled(): bool
     {
-        return [] !== $this->getObjectClasses();
+        return $this->getObjectClasses() !== [];
     }
 
     /**

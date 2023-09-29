@@ -93,7 +93,7 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        if ([] !== $mapping) {
+        if ($mapping !== []) {
             $params['body'] = [
                 'settings' => $this->indexSettings,
                 'mappings' => $mapping,

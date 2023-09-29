@@ -16,64 +16,66 @@ class DataObjectMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {
-        if ([] === $config) {
+        if ($config === []) {
             throw new \RuntimeException('No DataObject class configuration provided.');
         }
 
-        return [...$this->getCommonProperties(), 'properties' => [
-            'data' => [
-                'dynamic' => 'true',
-                'properties' => $this->generateDataProperties($config),
-            ],
-            'system' => [
-                'dynamic' => 'false',
-                'properties' => [
-                    'id' => [
-                        'type' => 'long',
-                    ],
-                    'key' => [
-                        'type' => 'keyword',
-                        'fields' => [
-                            'analyzed' => [
-                                'type' => 'text',
-                                'term_vector' => 'yes',
-                                'analyzer' => 'datahub_ngram_analyzer',
-                                'search_analyzer' => 'datahub_whitespace_analyzer',
+        return array_merge($this->getCommonProperties(), [
+            'properties' => [
+                'data' => [
+                    'dynamic' => 'true',
+                    'properties' => $this->generateDataProperties($config),
+                ],
+                'system' => [
+                    'dynamic' => 'false',
+                    'properties' => [
+                        'id' => [
+                            'type' => 'long',
+                        ],
+                        'key' => [
+                            'type' => 'keyword',
+                            'fields' => [
+                                'analyzed' => [
+                                    'type' => 'text',
+                                    'term_vector' => 'yes',
+                                    'analyzer' => 'datahub_ngram_analyzer',
+                                    'search_analyzer' => 'datahub_whitespace_analyzer',
+                                ],
                             ],
                         ],
-                    ],
-                    'fullPath' => [
-                        'type' => 'keyword',
-                        'fields' => [
-                            'analyzed' => [
-                                'type' => 'text',
-                                'term_vector' => 'yes',
-                                'analyzer' => 'datahub_ngram_analyzer',
-                                'search_analyzer' => 'datahub_whitespace_analyzer',
+                        'fullPath' => [
+                            'type' => 'keyword',
+                            'fields' => [
+                                'analyzed' => [
+                                    'type' => 'text',
+                                    'term_vector' => 'yes',
+                                    'analyzer' => 'datahub_ngram_analyzer',
+                                    'search_analyzer' => 'datahub_whitespace_analyzer',
+                                ],
                             ],
                         ],
-                    ],
-                    'type' => [
-                        'type' => 'constant_keyword',
-                    ],
-                    'parentId' => [
-                        'type' => 'keyword',
-                    ],
-                    'hasChildren' => [
-                        'type' => 'boolean',
-                    ],
-                    'creationDate' => [
-                        'type' => 'date',
-                    ],
-                    'modificationDate' => [
-                        'type' => 'date',
-                    ],
-                    'subtype' => [
-                        'type' => 'keyword',
+                        'type' => [
+                            'type' => 'constant_keyword',
+                        ],
+                        'parentId' => [
+                            'type' => 'keyword',
+                        ],
+                        'hasChildren' => [
+                            'type' => 'boolean',
+                        ],
+                        'creationDate' => [
+                            'type' => 'date',
+                        ],
+                        'modificationDate' => [
+                            'type' => 'date',
+                        ],
+                        'subtype' => [
+                            'type' => 'keyword',
+                        ],
                     ],
                 ],
             ],
-        ]];
+        ]);
     }
 
     /**
@@ -109,8 +111,14 @@ class DataObjectMapping extends DefaultMapping
     private function getPropertiesForFieldConfig(array $config): array
     {
         return match ($config['type']) {
-            'hotspotimage', 'image' => [...$this->getImageProperties(), 'dynamic' => 'false', 'type' => 'object'],
-            'imageGallery' => [...$this->getImageProperties(), 'dynamic' => 'false', 'type' => 'nested'],
+            'hotspotimage', 'image' => array_merge($this->getImageProperties(), [
+                'dynamic' => 'false',
+                'type' => 'object',
+            ]),
+            'imageGallery' => array_merge($this->getImageProperties(), [
+                'dynamic' => 'false',
+                'type' => 'nested',
+            ]),
             'numeric' => [
                 'type' => $config['layout']['integer'] ? 'integer' : 'float',
             ],

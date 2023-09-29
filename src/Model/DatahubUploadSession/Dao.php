@@ -49,7 +49,6 @@ class Dao extends AbstractDao
     {
         $this->model->setId($id);
         $data = $this->db->fetchAssociative('SELECT id FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
-
         return (bool) $data;
     }
 
@@ -81,10 +80,10 @@ class Dao extends AbstractDao
                 $value = (int) $value;
             }
             if (\is_array($value)) {
-                $value = json_encode($value, \JSON_THROW_ON_ERROR);
+                $value = json_encode($value, JSON_THROW_ON_ERROR);
             }
             if ($value instanceof UploadPartsInterface) {
-                $value = json_encode($value->toArray(), \JSON_THROW_ON_ERROR);
+                $value = json_encode($value->toArray(), JSON_THROW_ON_ERROR);
             }
 
             $buffer[$k] = $value;

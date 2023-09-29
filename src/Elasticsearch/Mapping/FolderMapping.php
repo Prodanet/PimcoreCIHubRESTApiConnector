@@ -16,55 +16,57 @@ class FolderMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {
-        return [...$this->getCommonProperties(), 'properties' => [
-            'system' => [
-                'dynamic' => 'false',
-                'properties' => [
-                    'id' => [
-                        'type' => 'long',
-                    ],
-                    'key' => [
-                        'type' => 'keyword',
-                        'fields' => [
-                            'analyzed' => [
-                                'type' => 'text',
-                                'term_vector' => 'yes',
-                                'analyzer' => 'datahub_ngram_analyzer',
-                                'search_analyzer' => 'datahub_whitespace_analyzer',
+        return array_merge($this->getCommonProperties(), [
+            'properties' => [
+                'system' => [
+                    'dynamic' => 'false',
+                    'properties' => [
+                        'id' => [
+                            'type' => 'long',
+                        ],
+                        'key' => [
+                            'type' => 'keyword',
+                            'fields' => [
+                                'analyzed' => [
+                                    'type' => 'text',
+                                    'term_vector' => 'yes',
+                                    'analyzer' => 'datahub_ngram_analyzer',
+                                    'search_analyzer' => 'datahub_whitespace_analyzer',
+                                ],
                             ],
                         ],
-                    ],
-                    'fullPath' => [
-                        'type' => 'keyword',
-                        'fields' => [
-                            'analyzed' => [
-                                'type' => 'text',
-                                'term_vector' => 'yes',
-                                'analyzer' => 'datahub_ngram_analyzer',
-                                'search_analyzer' => 'datahub_whitespace_analyzer',
+                        'fullPath' => [
+                            'type' => 'keyword',
+                            'fields' => [
+                                'analyzed' => [
+                                    'type' => 'text',
+                                    'term_vector' => 'yes',
+                                    'analyzer' => 'datahub_ngram_analyzer',
+                                    'search_analyzer' => 'datahub_whitespace_analyzer',
+                                ],
                             ],
                         ],
-                    ],
-                    'type' => [
-                        'type' => 'constant_keyword',
-                    ],
-                    'parentId' => [
-                        'type' => 'keyword',
-                    ],
-                    'hasChildren' => [
-                        'type' => 'boolean',
-                    ],
-                    'creationDate' => [
-                        'type' => 'date',
-                    ],
-                    'modificationDate' => [
-                        'type' => 'date',
-                    ],
-                    'subtype' => [
-                        'type' => 'constant_keyword',
+                        'type' => [
+                            'type' => 'constant_keyword',
+                        ],
+                        'parentId' => [
+                            'type' => 'keyword',
+                        ],
+                        'hasChildren' => [
+                            'type' => 'boolean',
+                        ],
+                        'creationDate' => [
+                            'type' => 'date',
+                        ],
+                        'modificationDate' => [
+                            'type' => 'date',
+                        ],
+                        'subtype' => [
+                            'type' => 'constant_keyword',
+                        ],
                     ],
                 ],
             ],
-        ]];
+        ]);
     }
 }
