@@ -440,9 +440,9 @@ final class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
     #[Route('/{id}/part', name: 'upload_part', methods: ['PUT'])]
-    public function part(string $id, UploadHelper $helper): Response
+    public function part(string $id, UploadHelper $uploadHelper): Response
     {
-        $datahubUploadSession = $helper->getSession($id);
+        $datahubUploadSession = $uploadHelper->getSession($id);
 
         /**
          * @var resource $content
@@ -458,7 +458,7 @@ final class UploadController extends BaseEndpointController
             throw new InvalidParameterException(['ordinal']);
         }
 
-        $part = $helper->uploadPart($datahubUploadSession, $content, $size, $ordinal);
+        $part = $uploadHelper->uploadPart($datahubUploadSession, $content, $size, $ordinal);
 
         return new JsonResponse([
             'part' => [

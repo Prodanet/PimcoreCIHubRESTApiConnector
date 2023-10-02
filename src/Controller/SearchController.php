@@ -130,7 +130,119 @@ final class SearchController extends BaseEndpointController
                         new OA\Property(
                             property: 'items',
                             type: 'array',
-                            items: new OA\Items()
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'system',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(
+                                                    property: 'id',
+                                                    type: 'integer',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'key',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'fullPath',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'type',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'locked',
+                                                    type: 'boolean',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'parentId',
+                                                    type: 'integer',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'hasChildren',
+                                                    type: 'boolean',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'creationDate',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'modificationDate',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'subtype',
+                                                    type: 'string',
+                                                ),
+                                            ],
+                                            type: 'object',
+                                        ),
+                                    ),
+                                    new OA\Property(
+                                        property: 'metaData',
+                                        type: 'array',
+                                        items: new OA\Items()
+                                    ),
+                                    new OA\Property(
+                                        property: 'dimensionData',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(
+                                                    property: 'width',
+                                                    type: 'integer',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'height',
+                                                    type: 'integer',
+                                                ),
+                                            ],
+                                            type: 'object',
+                                        )
+                                    ),
+                                    new OA\Property(
+                                        property: 'xmpData',
+                                        type: 'array',
+                                        items: new OA\Items()
+                                    ),
+                                    new OA\Property(
+                                        property: 'exifData',
+                                        type: 'array',
+                                        items: new OA\Items()
+                                    ),
+                                    new OA\Property(
+                                        property: 'iptcData',
+                                        type: 'array',
+                                        items: new OA\Items()
+                                    ),
+                                    new OA\Property(
+                                        property: 'binaryData',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(
+                                                    property: 'path',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'checksum',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'filename',
+                                                    type: 'string',
+                                                ),
+                                            ],
+                                            type: 'object',
+                                            uniqueItems: true
+                                        )
+                                    ),
+                                ],
+                                type: 'object',
+                            )
                         ),
                         new OA\Property(
                             property: 'page_cursor',
@@ -229,16 +341,6 @@ final class SearchController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'include_folders',
-                description: 'Define if folders should be included, default true.',
-                in: 'query',
-                required: false,
-                schema: new OA\Schema(
-                    type: 'bool',
-                    default: true
-                )
-            ),
-            new OA\Parameter(
                 name: 'size',
                 description: 'Max items of response, default 200.',
                 in: 'query',
@@ -308,12 +410,76 @@ final class SearchController extends BaseEndpointController
                         new OA\Property(
                             property: 'items',
                             type: 'array',
-                            items: new OA\Items()
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'system',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(
+                                                    property: 'id',
+                                                    type: 'integer',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'key',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'fullPath',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'type',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'locked',
+                                                    type: 'boolean',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'parentId',
+                                                    type: 'integer',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'hasChildren',
+                                                    type: 'boolean',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'creationDate',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'modificationDate',
+                                                    type: 'string',
+                                                ),
+                                                new OA\Property(
+                                                    property: 'subtype',
+                                                    type: 'string',
+                                                ),
+                                            ]
+                                        ),
+                                    ),
+                                ],
+                                type: 'object'
+                            )
                         ),
                         new OA\Property(
                             property: 'page_cursor',
                             description: 'Page cursor for next page.',
                             type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'next',
+                            description: 'Link to next page. Use this link for paging.',
+                            type: 'string',
+                            nullable: true
+                        ),
+                        new OA\Property(
+                            property: 'prev',
+                            description: 'Link to previous page. Use this link for paging.',
+                            type: 'string',
+                            nullable: true
                         ),
                     ],
                     type: 'object'
