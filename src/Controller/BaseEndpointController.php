@@ -79,13 +79,23 @@ abstract class BaseEndpointController extends FrontendController
         $this->nextPageCursor = $pageCursor + $size;
     }
 
+    /**
+     * @throws \JsonException
+     */
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
         $parentId = (int) $this->request->get('parent_id', 1);
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
-        $filter = json_decode($this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
+        /*
+         * @TODO to remove on 2.2.x
+         */
+        if ($this->request->query->has('filter')) {
+            $filter = json_decode($this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
+        } else {
+            $filter = [];
+        }
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
             \FILTER_VALIDATE_BOOLEAN
