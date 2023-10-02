@@ -535,12 +535,13 @@ final class SearchController extends BaseEndpointController
 
         $childrenList->setOrderKey($orderBy);
 
+        $pageCursor = null == $pageCursor ? 0 : $pageCursor;
         foreach ($childrenList->getItems($pageCursor, $size) as $child) {
             $result[] = $this->getChild($child);
         }
 
         $response = [];
-        if (null === $pageCursor || is_numeric($pageCursor)) {
+        if (0 === $pageCursor) {
             $pageCursor += $size;
         } else {
             $pageCursor = $size;
