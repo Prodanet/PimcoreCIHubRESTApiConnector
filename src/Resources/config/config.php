@@ -10,7 +10,7 @@
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
  */
 declare(strict_types=1);
-
+use Composer\InstalledVersions;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
@@ -34,7 +34,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             'info' => [
                 'title' => 'Pimcore DataHub REST Adapter',
                 'description' => 'Endpoints provided by the REST Adapter Bundle.',
-                'version' => \Composer\InstalledVersions::getPrettyVersion('ci-hub/rest-adapter-bundle'),
+                'version' => InstalledVersions::getPrettyVersion('ci-hub/rest-adapter-bundle'),
                 'license' => [
                     'name' => 'GPL 3.0',
                     'url' => 'https://www.gnu.org/licenses/gpl-3.0.html',

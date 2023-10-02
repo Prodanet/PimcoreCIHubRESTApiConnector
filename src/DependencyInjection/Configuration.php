@@ -15,7 +15,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
-class Configuration implements ConfigurationInterface
+final class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
@@ -28,7 +28,7 @@ class Configuration implements ConfigurationInterface
             ->defaultValue('datahub_restindex')
             ->validate()
             ->ifString()
-            ->then(static fn($value): string => rtrim(str_replace('-', '_', $value), '_'))
+            ->then(static fn ($value): string => rtrim(str_replace('-', '_', $value), '_'))
             ->end()
             ->end()
             ->scalarNode('es_client_name')

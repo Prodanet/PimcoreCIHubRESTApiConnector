@@ -14,13 +14,17 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Document;
+use Pimcore\Model\Asset\Folder;
+use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
+use Pimcore\Model\Asset\Image\Thumbnail\Config;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
 
-class AssetProvider implements ProviderInterface
+final class AssetProvider implements ProviderInterface
 {
     /**
      * This thumbnail needs to be passed with every image and document, so CI HUB can display a preview for it.
@@ -34,7 +38,7 @@ class AssetProvider implements ProviderInterface
     /**
      * @throws \Exception
      */
-    public function getIndexData(ElementInterface $element, ConfigReader $reader): array
+    public function getIndexData(ElementInterface $element, ConfigReader $configReader): array
     {
         /* @var Asset $element */
         Assert::isInstanceOf($element, Asset::class);
@@ -43,14 +47,14 @@ class AssetProvider implements ProviderInterface
             'system' => $this->getSystemValues($element),
         ];
 
-        if (!$element instanceof Asset\Folder) {
+        if (!$element instanceof Folder) {
             $data = array_merge($data, array_filter([
-                'binaryData' => $this->getBinaryDataValues($element, $reader),
+                'binaryData' => $this->getBinaryDataValues($element, $configReader),
                 'metaData' => $this->getMetaDataValues($element),
             ]));
         }
 
-        if ($element instanceof Asset\Image) {
+        if ($element instanceof Image) {
             $data = array_merge($data, array_filter([
                 'dimensionData' => [
                     'width' => $element->getWidth(),
@@ -72,7 +76,7 @@ class AssetProvider implements ProviderInterface
      *
      * @throws \Exception
      */
-    public function getBinaryDataValues(Asset $asset, ConfigReader $reader): array
+    public function getBinaryDataValues(Asset $asset, ConfigReader $configReader): array
     {
         $data = [];
 
@@ -84,14 +88,14 @@ class AssetProvider implements ProviderInterface
             $checksum = null;
         }
 
-        if ($asset instanceof Asset\Image) {
-            $thumbnails = $reader->getAssetThumbnails();
+        if ($asset instanceof Image) {
+            $thumbnails = $configReader->getAssetThumbnails();
 
-            if ($reader->isOriginalImageAllowed()) {
+            if ($configReader->isOriginalImageAllowed()) {
                 $data['original'] = [
                     'checksum' => $checksum,
                     'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
-                        'config' => $reader->getName(),
+                        'config' => $configReader->getName(),
                         'id' => $id,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
                     'filename' => $asset->getFilename(),
@@ -110,7 +114,7 @@ class AssetProvider implements ProviderInterface
                 $data[$thumbnailName] = [
                     'checksum' => $thumbChecksum,
                     'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
-                        'config' => $reader->getName(),
+                        'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => $thumbnailName,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
@@ -119,8 +123,8 @@ class AssetProvider implements ProviderInterface
             }
 
             // Make sure the preview thumbnail used by CI HUB is added to the list of thumbnails
-            if (!\array_key_exists(self::CIHUB_PREVIEW_THUMBNAIL, $data) && 'ciHub' === $reader->getType()) {
-                if (Thumbnail\Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Thumbnail\Config) {
+            if (!\array_key_exists(self::CIHUB_PREVIEW_THUMBNAIL, $data) && 'ciHub' === $configReader->getType()) {
+                if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {
                     $thumbnail = $asset->getThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
                 } else {
                     $thumbnail = $asset->getThumbnail($this->defaultPreviewThumbnail);
@@ -135,7 +139,7 @@ class AssetProvider implements ProviderInterface
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
                     'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
-                        'config' => $reader->getName(),
+                        'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
@@ -146,15 +150,15 @@ class AssetProvider implements ProviderInterface
             $data['original'] = [
                 'checksum' => $checksum,
                 'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
-                    'config' => $reader->getName(),
+                    'config' => $configReader->getName(),
                     'id' => $id,
                 ], UrlGeneratorInterface::ABSOLUTE_PATH),
                 'filename' => $asset->getFilename(),
             ];
 
             // Add the preview thumbnail for CI HUB
-            if ($asset instanceof Asset\Document && 'ciHub' === $reader->getType()) {
-                if (Thumbnail\Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Thumbnail\Config) {
+            if ($asset instanceof Document && 'ciHub' === $configReader->getType()) {
+                if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {
                     $thumbnail = $asset->getImageThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
                 } else {
                     $thumbnail = $asset->getImageThumbnail($this->defaultPreviewThumbnail);
@@ -169,7 +173,7 @@ class AssetProvider implements ProviderInterface
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
                     'path' => $this->router->generate('datahub_rest_endpoints_download_asset', [
-                        'config' => $reader->getName(),
+                        'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                     ], UrlGeneratorInterface::ABSOLUTE_PATH),
@@ -186,12 +190,12 @@ class AssetProvider implements ProviderInterface
      */
     public function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
-        $file = $asset->getLocalFile();
-        if (is_file($file)) {
+        $localFile = $asset->getLocalFile();
+        if (is_file($localFile)) {
             if ('md5' == $type) {
-                return md5_file($file);
+                return md5_file($localFile);
             } elseif ('sha1' == $type) {
-                return sha1_file($file);
+                return sha1_file($localFile);
             } else {
                 throw new \Exception("hashing algorithm '".$type."' isn't supported");
             }
@@ -210,8 +214,8 @@ class AssetProvider implements ProviderInterface
         $data = null;
         $metaData = $asset->getMetadata();
 
-        foreach ($metaData as $item) {
-            $data[$item['name']] = $item['data'];
+        foreach ($metaData as $metumData) {
+            $data[$metumData['name']] = $metumData['data'];
         }
 
         return $data;
@@ -236,7 +240,7 @@ class AssetProvider implements ProviderInterface
             'modificationDate' => $asset->getModificationDate(),
         ];
 
-        if (!$asset instanceof Asset\Folder) {
+        if (!$asset instanceof Folder) {
             try {
                 $checksum = $this->getChecksum($asset);
             } catch (\Exception) {

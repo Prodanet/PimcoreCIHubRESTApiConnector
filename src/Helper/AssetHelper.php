@@ -16,7 +16,8 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\ClassDefinition\Data\ManyToManyRelation;
 use Pimcore\Model\DataObject\Concrete;
-use Pimcore\Model\Element;
+use Pimcore\Model\Element\Editlock;
+use Pimcore\Model\Element\Service;
 use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +25,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class AssetHelper
+final class AssetHelper
 {
     public function __construct(protected AuthManager $authManager)
     {
@@ -32,10 +33,10 @@ class AssetHelper
 
     public function isLocked(int $cid, string $ctype, int $userId): bool
     {
-        if (($lock = Element\Editlock::getByElement($cid, $ctype)) instanceof \Pimcore\Model\Element\Editlock) {
+        if (($lock = Editlock::getByElement($cid, $ctype)) instanceof Editlock) {
             if ((time() - $lock->getDate()) > 3600) {
                 // lock is out of date unlock it
-                Element\Editlock::unlock($cid, $ctype);
+                Editlock::unlock($cid, $ctype);
 
                 return false;
             }
@@ -48,10 +49,10 @@ class AssetHelper
 
     public function unlockForLocker(int $userId, int $assetId): bool
     {
-        $lock = Element\Editlock::getByElement($assetId, 'asset');
+        $editlock = Editlock::getByElement($assetId, 'asset');
 
-        if ($lock->getUserId() === $userId) {
-            Element\Editlock::unlock($assetId, 'asset');
+        if ($editlock->getUserId() === $userId) {
+            Editlock::unlock($assetId, 'asset');
 
             return true;
         }
@@ -66,7 +67,7 @@ class AssetHelper
     {
         if (isset($context['containerType'], $context['objectId'], $context['fieldname'])
             && 'object' === $context['containerType']
-            && $object = Concrete::getById($context['objectId'])
+            && ($object = Concrete::getById($context['objectId'])) instanceof Concrete
         ) {
             $fieldDefinition = $object->getClass()->getFieldDefinition($context['fieldname']);
             if (!$fieldDefinition instanceof ManyToManyRelation) {
@@ -104,6 +105,8 @@ class AssetHelper
         $newType = Asset::getTypeFromMimeMapping($mimetype, $filename);
 
         if ($newType !== $asset->getType()) {
+            @unlink($sourcePath);
+
             return new JsonResponse([
                 'success' => false,
                 'message' => sprintf($translator->trans('asset_type_change_not_allowed', [], 'admin'), $asset->getType(), $newType),
@@ -119,14 +122,14 @@ class AssetHelper
         $currentFileExt = pathinfo($asset->getFilename(), \PATHINFO_EXTENSION);
         if ($newFileExt !== $currentFileExt) {
             $newFilename = preg_replace('/\.'.$currentFileExt.'$/i', '.'.$newFileExt, $asset->getFilename());
-            $newFilename = Element\Service::getSafeCopyName($newFilename, $asset->getParent());
+            $newFilename = Service::getSafeCopyName($newFilename, $asset->getParent());
             $asset->setFilename($newFilename);
         }
 
         if ($asset->isAllowed('publish', $user)) {
             $asset->save();
 
-            $response = new JsonResponse([
+            $jsonResponse = new JsonResponse([
                 'id' => $asset->getId(),
                 'path' => $asset->getRealFullPath(),
                 'success' => true,
@@ -134,23 +137,26 @@ class AssetHelper
 
             // set content-type to text/html, otherwise (when application/json is sent) chrome will complain in
             // Ext.form.Action.Submit and mark the submission as failed
-            $response->headers->set('Content-Type', 'text/html');
+            $jsonResponse->headers->set('Content-Type', 'text/html');
+            @unlink($sourcePath);
 
-            return $response;
+            return $jsonResponse;
         }
+
+        @unlink($sourcePath);
 
         throw new \Exception('missing permission');
     }
 
-    public function lock(int $cid, string $ctype, int $userId): Element\Editlock|bool
+    public function lock(int $cid, string $ctype, int $userId): Editlock|bool
     {
-        $lock = new Element\Editlock();
-        $lock->setCid($cid);
-        $lock->setCtype($ctype);
-        $lock->setDate(time());
-        $lock->setUserId($userId);
-        $lock->save();
+        $editlock = new Editlock();
+        $editlock->setCid($cid);
+        $editlock->setCtype($ctype);
+        $editlock->setDate(time());
+        $editlock->setUserId($userId);
+        $editlock->save();
 
-        return $lock;
+        return $editlock;
     }
 }

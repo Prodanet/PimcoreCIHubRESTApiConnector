@@ -19,10 +19,12 @@ use Pimcore\Model\User\Permission\Definition;
 /**
  * Class Installer.
  */
-class Installer extends SettingsStoreAwareInstaller
+final class Installer extends SettingsStoreAwareInstaller
 {
     public const PERMISSION_KEY = 'plugin_datahub_adapter';
+
     public const USER_DATAHUB_CONFIG_TABLE = 'users_datahub_config';
+
     public const UPLOAD_SESSION_TABLE = 'datahub_upload_sessions';
 
     /**
@@ -33,12 +35,12 @@ class Installer extends SettingsStoreAwareInstaller
         parent::install();
         // create backend permission
         Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
-        $db = Db::get();
+        $connection = Db::get();
 
-        if (method_exists($db, 'getSchemaManager')) {
-            $schema = $db->getSchemaManager()->createSchema();
+        if (method_exists($connection, 'getSchemaManager')) {
+            $schema = $connection->getSchemaManager()->createSchema();
         } else {
-            $schema = $db->createSchemaManager()->introspectSchema();
+            $schema = $connection->createSchemaManager()->introspectSchema();
         }
 
         // create table
@@ -56,6 +58,7 @@ class Installer extends SettingsStoreAwareInstaller
                 'fk_datahub_users'
             );
         }
+
         // create table
         if (!$schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
             $table = $schema->createTable(self::UPLOAD_SESSION_TABLE);

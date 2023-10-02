@@ -21,13 +21,13 @@ final class ImageGalleryDataCollector implements DataCollectorInterface
     {
     }
 
-    public function collect(mixed $value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $configReader): array
     {
         $data = [];
         $items = $value->getItems() ?? [];
 
         foreach ($items as $item) {
-            $data[] = $this->hotspotImageDataCollector->collect($item, $reader);
+            $data[] = $this->hotspotImageDataCollector->collect($item, $configReader);
         }
 
         return $data;

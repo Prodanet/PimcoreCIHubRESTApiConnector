@@ -14,7 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event;
 
 use Symfony\Contracts\EventDispatcher\Event;
 
-class ConfigurationEvent extends Event
+final class ConfigurationEvent extends Event
 {
     /**
      * @param array<string, array> $configuration

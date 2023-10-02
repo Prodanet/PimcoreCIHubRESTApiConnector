@@ -32,7 +32,7 @@ use Symfony\Component\Uid\Ulid;
 
 final class UploadHelper
 {
-    protected User $user;
+    private User $user;
 
     /**
      * @throws \Doctrine\DBAL\Exception
@@ -47,17 +47,17 @@ final class UploadHelper
 
     public function getSessionResponse(Request $request, string $id, string $config, int $partSize, int $processed = 0, int $totalParts = 0): array
     {
-        $response = new ChunkUploadResponse($id);
-        $response->setPartSize($partSize);
-        $response->setNumPartsProcessed($processed);
-        $response->setTotalParts($totalParts);
-        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_abort', ['config' => $config, 'id' => $id]));
-        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_commit', ['config' => $config, 'id' => $id]));
-        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_list_parts', ['config' => $config, 'id' => $id]));
-        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_status', ['config' => $config, 'id' => $id]));
-        $response->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_part', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse = new ChunkUploadResponse($id);
+        $chunkUploadResponse->setPartSize($partSize);
+        $chunkUploadResponse->setNumPartsProcessed($processed);
+        $chunkUploadResponse->setTotalParts($totalParts);
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_abort', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_commit', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_list_parts', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_status', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_part', ['config' => $config, 'id' => $id]));
 
-        return $response->toArray();
+        return $chunkUploadResponse->toArray();
     }
 
     private function generateUrl(string $route, array $parameters = []): string
@@ -79,29 +79,41 @@ final class UploadHelper
         if (!isset($fileName, $fileSize)) {
             throw new InvalidParameterException(['file_size', 'file_name']);
         }
-        $parentId = $request->request->get('parentId');
+
+        $parentId = $request->request->get('parent_id');
         $parentId = $this->getParent($parentId, $assetId);
+
+        if (0 !== $assetId) {
+            $asset = Asset::getById($assetId);
+            if ($asset instanceof Asset) {
+                if (!$asset->isAllowed('allowOverwrite', $this->user)) {
+                    throw new AccessDeniedHttpException('Missing the permission to overwrite asset: '.$asset->getId());
+                }
+            } else {
+                throw new NotFoundException('Asset with id ['.$assetId."] doesn't exist");
+            }
+        }
 
         $totalParts = ($fileSize / $partSize);
 
-        $id = new Ulid();
-        $session = new DatahubUploadSession();
-        $session->setId($id);
-        $session->setFileName($fileName);
-        $session->setAssetId($assetId);
-        $session->setParentId($parentId);
-        $session->setParts([]);
-        $session->setTotalParts($totalParts);
-        $session->setFileSize($fileSize);
-        $session->save();
+        $ulid = new Ulid();
+        $datahubUploadSession = new DatahubUploadSession();
+        $datahubUploadSession->setId($ulid);
+        $datahubUploadSession->setFileName($fileName);
+        $datahubUploadSession->setAssetId($assetId);
+        $datahubUploadSession->setParentId($parentId);
+        $datahubUploadSession->setParts([]);
+        $datahubUploadSession->setTotalParts($totalParts);
+        $datahubUploadSession->setFileSize($fileSize);
+        $datahubUploadSession->save();
 
-        return $session;
+        return $datahubUploadSession;
     }
 
     public function deleteSession(string $id): void
     {
-        $session = DatahubUploadSession::getById($id);
-        $session->delete();
+        $datahubUploadSession = DatahubUploadSession::getById($id);
+        $datahubUploadSession->delete();
     }
 
     /**
@@ -110,29 +122,48 @@ final class UploadHelper
      */
     public function commitSession(string $id): array
     {
-        $session = DatahubUploadSession::getById($id);
-        $parentId = $this->getParent($session->getParentId(), $session->getAssetId());
+        $datahubUploadSession = DatahubUploadSession::getById($id);
+        $parentId = $this->getParent($datahubUploadSession->getParentId(), $datahubUploadSession->getAssetId());
 
-        $storage = Storage::get('temp');
+        $filesystemOperator = Storage::get('temp');
 
-        $concatenate = new Concatenate($storage);
-        $storage->write($session->getTemporaryPath(), '');
+        $concatenate = new Concatenate($filesystemOperator);
+        $filesystemOperator->write($datahubUploadSession->getTemporaryPath(), '');
 
         try {
-            foreach ($session->getParts() as $part) {
-                $partTemporaryFile = $session->getTemporaryPartFilename($part->getId());
-                $concatenate->handle($session->getTemporaryPath(), $partTemporaryFile);
-                $storage->delete($partTemporaryFile);
+            foreach ($datahubUploadSession->getParts() as $part) {
+                $partTemporaryFile = $datahubUploadSession->getTemporaryPartFilename($part->getId());
+                $concatenate->handle($datahubUploadSession->getTemporaryPath(), $partTemporaryFile);
+                $filesystemOperator->delete($partTemporaryFile);
             }
-            $stream = stream_get_meta_data($storage->readStream($session->getTemporaryPath()));
-            $asset = Asset::create($parentId, [
-                'filename' => $session->getFileName(),
-                'sourcePath' => $stream['uri'],
-                'userOwner' => $this->user->getId(),
-                'userModification' => $this->user->getId(),
-            ]);
-            @unlink($session->getFileName());
-            $session->delete();
+
+            $stream = stream_get_meta_data($filesystemOperator->readStream($datahubUploadSession->getTemporaryPath()));
+            if (0 === $datahubUploadSession->getAssetId()) {
+                $asset = Asset::create($parentId, [
+                    'filename' => $datahubUploadSession->getFileName(),
+                    'sourcePath' => $stream['uri'],
+                    'userOwner' => $this->user->getId(),
+                    'userModification' => $this->user->getId(),
+                ]);
+            } else {
+                $asset = Asset::getById($datahubUploadSession->getAssetId());
+                if ($asset instanceof Asset) {
+                    if ($asset->isAllowed('allowOverwrite', $this->user)) {
+                        $asset->setFilename($datahubUploadSession->getFileName());
+                        $asset->setStream($filesystemOperator->readStream($datahubUploadSession->getTemporaryPath()));
+                        $asset->setUserOwner($this->user->getId());
+                        $asset->setUserModification($this->user->getId());
+                        $asset->save();
+                    } else {
+                        throw new AccessDeniedHttpException('Missing the permission to overwrite asset: '.$asset->getId());
+                    }
+                } else {
+                    throw new \Exception('Asset with id ['.$id."] doesn't exist");
+                }
+            }
+
+            @unlink($datahubUploadSession->getFileName());
+            $datahubUploadSession->delete();
 
             return [
                 'id' => $asset->getId(),
@@ -148,15 +179,16 @@ final class UploadHelper
 
     public function hasSession(string $id): bool
     {
-        $session = DatahubUploadSession::hasById($id);
-        return $session instanceof \CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
+        $datahubUploadSession = DatahubUploadSession::hasById($id);
+
+        return $datahubUploadSession instanceof DatahubUploadSession;
     }
 
     public function getSession(string $id): DatahubUploadSession
     {
-        $session = DatahubUploadSession::getById($id);
-        if ($session instanceof \CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession) {
-            return $session;
+        $datahubUploadSession = DatahubUploadSession::getById($id);
+        if ($datahubUploadSession instanceof DatahubUploadSession) {
+            return $datahubUploadSession;
         }
 
         throw new NotFoundException('Session not found');
@@ -166,32 +198,32 @@ final class UploadHelper
      * @throws FilesystemException
      */
     public function uploadPart(
-        DatahubUploadSession $session,
+        DatahubUploadSession $datahubUploadSession,
         #[LanguageLevelTypeAware(['7.2' => 'HashContext'], default: 'resource')]
         $content,
         int $size,
         int $ordinal
     ): UploadPart {
-        $ctx = hash_init('sha3-512');
-        hash_update_stream($ctx, $content);
-        $hash = hash_final($ctx);
+        $hashContext = hash_init('sha3-512');
+        hash_update_stream($hashContext, $content);
+        $hash = hash_final($hashContext);
 
-        $id = new Ulid();
+        $ulid = new Ulid();
 
-        $part = new UploadPart();
-        $part->setId($id);
-        $part->setHash($hash);
-        $part->setSize($size);
-        $part->setOrdinal($ordinal);
+        $uploadPart = new UploadPart();
+        $uploadPart->setId($ulid);
+        $uploadPart->setHash($hash);
+        $uploadPart->setSize($size);
+        $uploadPart->setOrdinal($ordinal);
         rewind($content);
 
         $storage = Storage::get('temp');
-        $storage->writeStream($session->getTemporaryPartFilename($id), $content);
+        $storage->writeStream($datahubUploadSession->getTemporaryPartFilename($ulid), $content);
 
-        $session->addPart($part);
-        $session->save();
+        $datahubUploadSession->addPart($uploadPart);
+        $datahubUploadSession->save();
 
-        return $part;
+        return $uploadPart;
     }
 
     /**
@@ -205,6 +237,7 @@ final class UploadHelper
             if (!$parentAsset instanceof Asset) {
                 throw new NotFoundException('Parent does not exist');
             }
+
             $parentId = $parentAsset->getId();
         } else {
             $parentId = Asset\Service::createFolderByPath($defaultUploadPath)->getId();

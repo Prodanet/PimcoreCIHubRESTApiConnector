@@ -16,27 +16,30 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Localization\LocaleService;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\AbstractObject;
+use Pimcore\Model\DataObject\Concrete;
+use Pimcore\Model\DataObject\Service;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Tool;
 use Webmozart\Assert\Assert;
 
 final class DataObjectProvider implements ProviderInterface
 {
-    public function __construct(private CompositeDataCollector $dataCollector)
+    public function __construct(private CompositeDataCollector $compositeDataCollector)
     {
     }
 
-    public function getIndexData(ElementInterface $element, ConfigReader $reader): array
+    public function getIndexData(ElementInterface $element, ConfigReader $configReader): array
     {
         /* @var DataObject\AbstractObject $element */
-        Assert::isInstanceOf($element, DataObject\AbstractObject::class);
+        Assert::isInstanceOf($element, AbstractObject::class);
 
         $data = [
             'system' => $this->getSystemValues($element),
         ];
 
-        if ($element instanceof DataObject\Concrete) {
-            $data['data'] = $this->getDataValues($element, $reader);
+        if ($element instanceof Concrete) {
+            $data['data'] = $this->getDataValues($element, $configReader);
         }
 
         return $data;
@@ -47,13 +50,13 @@ final class DataObjectProvider implements ProviderInterface
      *
      * @return array<string, mixed>
      */
-    private function getDataValues(DataObject\Concrete $object, ConfigReader $reader): array
+    private function getDataValues(Concrete $concrete, ConfigReader $configReader): array
     {
-        $objectSchema = $reader->extractObjectSchema($object->getClassName());
+        $objectSchema = $configReader->extractObjectSchema($concrete->getClassName());
         $fields = $objectSchema['columnConfig'] ?? [];
 
-        $data = DataObject\Service::getCsvDataForObject(
-            $object,
+        $data = Service::getCsvDataForObject(
+            $concrete,
             Tool::getDefaultLanguage(),
             array_keys($fields),
             $fields,
@@ -63,7 +66,7 @@ final class DataObjectProvider implements ProviderInterface
 
         // Collect data for special field types, such as images/hotspot images/image galleries
         foreach ($fields as $key => $field) {
-            $fieldValue = $this->dataCollector->collect($object, $key, $reader);
+            $fieldValue = $this->compositeDataCollector->collect($concrete, $key, $configReader);
 
             if (null === $fieldValue) {
                 continue;
@@ -80,7 +83,7 @@ final class DataObjectProvider implements ProviderInterface
      *
      * @return array<string, mixed>
      */
-    private function getSystemValues(DataObject\AbstractObject $object): array
+    private function getSystemValues(AbstractObject $object): array
     {
         return [
             'id' => $object->getId(),

@@ -21,7 +21,7 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
 {
-    public function __construct(private IndexPersistenceService $indexService)
+    public function __construct(private IndexPersistenceService $indexPersistenceService)
     {
     }
 
@@ -30,8 +30,8 @@ final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
      * @throws MissingParameterException
      * @throws ServerResponseException
      */
-    public function __invoke(DeleteIndexElementMessage $message): void
+    public function __invoke(DeleteIndexElementMessage $deleteIndexElementMessage): void
     {
-        $this->indexService->delete($message->getEntityId(), $message->getIndexName());
+        $this->indexPersistenceService->delete($deleteIndexElementMessage->getEntityId(), $deleteIndexElementMessage->getIndexName());
     }
 }

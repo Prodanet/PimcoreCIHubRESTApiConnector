@@ -22,7 +22,7 @@ use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Model\Asset;
-use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\Element\ElementInterface;
 
 final class IndexPersistenceService
@@ -30,7 +30,7 @@ final class IndexPersistenceService
     /**
      * @param array<string, string|array> $indexSettings
      */
-    public function __construct(private Client $client, private DataHubConfigurationRepository $configRepository, private AssetProvider $assetProvider, private DataObjectProvider $objectProvider, private array $indexSettings)
+    public function __construct(private Client $client, private DataHubConfigurationRepository $dataHubConfigurationRepository, private AssetProvider $assetProvider, private DataObjectProvider $dataObjectProvider, private array $indexSettings)
     {
     }
 
@@ -93,7 +93,7 @@ final class IndexPersistenceService
             'index' => $name,
         ];
 
-        if ($mapping !== []) {
+        if ([] !== $mapping) {
             $params['body'] = [
                 'settings' => $this->indexSettings,
                 'mappings' => $mapping,
@@ -267,18 +267,18 @@ final class IndexPersistenceService
      */
     public function update(ElementInterface $element, string $endpointName, string $indexName): array
     {
-        $configuration = $this->configRepository->findOneByName($endpointName);
+        $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
 
         if (!$configuration instanceof Configuration) {
             throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $endpointName));
         }
 
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
 
-        if ($element instanceof DataObject\AbstractObject) {
-            $body = $this->objectProvider->getIndexData($element, $reader);
+        if ($element instanceof AbstractObject) {
+            $body = $this->dataObjectProvider->getIndexData($element, $configReader);
         } elseif ($element instanceof Asset) {
-            $body = $this->assetProvider->getIndexData($element, $reader);
+            $body = $this->assetProvider->getIndexData($element, $configReader);
         } else {
             throw new \InvalidArgumentException('This element type is currently not supported.');
         }

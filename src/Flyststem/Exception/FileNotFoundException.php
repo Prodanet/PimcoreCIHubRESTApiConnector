@@ -14,6 +14,6 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Exception;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\EndpointExceptionInterface;
 
-class FileNotFoundException extends \Exception implements EndpointExceptionInterface
+final class FileNotFoundException extends \Exception implements EndpointExceptionInterface
 {
 }

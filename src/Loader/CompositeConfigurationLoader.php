@@ -21,7 +21,7 @@ final class CompositeConfigurationLoader
     /**
      * @param iterable<ConfigurationLoaderInterface> $loaders
      */
-    public function __construct(private DataHubConfigurationRepository $configRepository, private iterable $loaders)
+    public function __construct(private DataHubConfigurationRepository $dataHubConfigurationRepository, private iterable $loaders)
     {
     }
 
@@ -30,7 +30,7 @@ final class CompositeConfigurationLoader
      */
     public function loadConfigs(): array
     {
-        return $this->configRepository->getList($this->getConfigTypes());
+        return $this->dataHubConfigurationRepository->getList($this->getConfigTypes());
     }
 
     /**

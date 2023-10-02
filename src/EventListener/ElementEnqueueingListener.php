@@ -23,14 +23,16 @@ use Pimcore\Event\DataObjectEvents;
 use Pimcore\Event\Model\AssetEvent;
 use Pimcore\Event\Model\DataObjectEvent;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-class ElementEnqueueingListener implements EventSubscriberInterface
+final class ElementEnqueueingListener implements EventSubscriberInterface
 {
-    public function __construct(private CompositeConfigurationLoader $configLoader, private IndexManager $indexManager, private MessageBusInterface $messageBus, private WorkspaceGuardInterface $workspaceGuard)
+    public function __construct(private CompositeConfigurationLoader $compositeConfigurationLoader, private IndexManager $indexManager, private MessageBusInterface $messageBus, private WorkspaceGuardInterface $workspaceGuard)
     {
     }
 
@@ -46,12 +48,12 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         ];
     }
 
-    public function enqueueAsset(AssetEvent $event): void
+    public function enqueueAsset(AssetEvent $assetEvent): void
     {
         $type = 'asset';
-        $asset = $event->getAsset();
+        $asset = $assetEvent->getAsset();
 
-        $configurations = $this->configLoader->loadConfigs();
+        $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
             $name = $configuration->getName();
@@ -66,7 +68,7 @@ class ElementEnqueueingListener implements EventSubscriberInterface
                 $this->messageBus->dispatch(new UpdateIndexElementMessage($asset->getId(), $type, $name));
 
                 // Index all folders above the asset
-                $this->enqueueParentFolders($asset->getParent(), Asset\Folder::class, $type, $name);
+                $this->enqueueParentFolders($asset->getParent(), Folder::class, $type, $name);
             } else {
                 $this->messageBus->dispatch(
                     new DeleteIndexElementMessage(
@@ -79,16 +81,16 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    public function enqueueObject(DataObjectEvent $event): void
+    public function enqueueObject(DataObjectEvent $dataObjectEvent): void
     {
         $type = 'object';
-        $object = $event->getObject();
+        $object = $dataObjectEvent->getObject();
 
-        if (!$object instanceof DataObject\Concrete) {
+        if (!$object instanceof Concrete) {
             return;
         }
 
-        $configurations = $this->configLoader->loadConfigs();
+        $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
             $name = $configuration->getName();
@@ -117,12 +119,12 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    public function removeAsset(AssetEvent $event): void
+    public function removeAsset(AssetEvent $assetEvent): void
     {
         $type = 'asset';
-        $asset = $event->getAsset();
+        $asset = $assetEvent->getAsset();
 
-        $configurations = $this->configLoader->loadConfigs();
+        $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
             $name = $configuration->getName();
@@ -145,16 +147,16 @@ class ElementEnqueueingListener implements EventSubscriberInterface
         }
     }
 
-    public function removeObject(DataObjectEvent $event): void
+    public function removeObject(DataObjectEvent $dataObjectEvent): void
     {
         $type = 'object';
-        $object = $event->getObject();
+        $object = $dataObjectEvent->getObject();
 
-        if (!$object instanceof DataObject\Concrete) {
+        if (!$object instanceof Concrete) {
             return;
         }
 
-        $configurations = $this->configLoader->loadConfigs();
+        $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
             $name = $configuration->getName();
@@ -179,14 +181,14 @@ class ElementEnqueueingListener implements EventSubscriberInterface
     }
 
     private function enqueueParentFolders(
-        ?ElementInterface $parent,
+        ?ElementInterface $element,
         string $folderClass,
         string $type,
         string $name
     ): void {
-        while ($parent instanceof $folderClass && 1 !== $parent->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($parent->getId(), $type, $name));
-            $parent = $parent->getParent();
+        while ($element instanceof $folderClass && 1 !== $element->getId()) {
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
+            $element = $element->getParent();
         }
     }
 }

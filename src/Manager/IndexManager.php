@@ -20,16 +20,20 @@ use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element\ElementInterface;
 
-class IndexManager
+final class IndexManager
 {
     public const INDEX_ASSET = 'asset';
+
     public const INDEX_ASSET_FOLDER = 'assetfolder';
+
     public const INDEX_OBJECT_FOLDER = 'objectfolder';
 
-    public function __construct(private string $indexNamePrefix, private IndexPersistenceService $indexService)
+    public function __construct(private string $indexNamePrefix, private IndexPersistenceService $indexPersistenceService)
     {
     }
 
@@ -44,7 +48,7 @@ class IndexManager
     {
         $mapping = $this->getIndexMapping($indexName);
 
-        if ($mapping === []) {
+        if ([] === $mapping) {
             throw new \RuntimeException(sprintf('Could not clear index data. No mapping found for "%s"', $indexName));
         }
 
@@ -63,12 +67,12 @@ class IndexManager
      */
     public function createOrUpdateIndex(string $indexName, array $mapping): void
     {
-        if ($this->indexService->aliasExists($indexName)) {
+        if ($this->indexPersistenceService->aliasExists($indexName)) {
             $this->updateMapping($indexName, $mapping);
         } else {
             $evenIndexName = sprintf('%s-even', $indexName);
-            $this->indexService->createIndex($evenIndexName, $mapping);
-            $this->indexService->createAlias($evenIndexName, $indexName);
+            $this->indexPersistenceService->createIndex($evenIndexName, $mapping);
+            $this->indexPersistenceService->createAlias($evenIndexName, $indexName);
         }
     }
 
@@ -82,7 +86,7 @@ class IndexManager
     public function deleteAllIndices(string $endpointName): void
     {
         $endpointIndices = sprintf('%s__%s*', $this->indexNamePrefix, $endpointName);
-        $this->indexService->deleteIndex($endpointIndices);
+        $this->indexPersistenceService->deleteIndex($endpointIndices);
     }
 
     /**
@@ -95,7 +99,7 @@ class IndexManager
      */
     public function findIndexNameByAlias(string $aliasName): string
     {
-        $aliases = $this->indexService->getAlias($aliasName);
+        $aliases = $this->indexPersistenceService->getAlias($aliasName);
 
         foreach ($aliases as $index => $aliasMapping) {
             if (\array_key_exists($aliasName, $aliasMapping['aliases'])) {
@@ -111,20 +115,20 @@ class IndexManager
      *
      * @return array<int, string>
      */
-    public function getAllIndexNames(ConfigReader $reader): array
+    public function getAllIndexNames(ConfigReader $configReader): array
     {
         $indices = [];
-        $endpointName = $reader->getName();
+        $endpointName = $configReader->getName();
 
-        if ($reader->isAssetIndexingEnabled()) {
+        if ($configReader->isAssetIndexingEnabled()) {
             $indices[] = $this->getIndexName(self::INDEX_ASSET, $endpointName);
             $indices[] = $this->getIndexName(self::INDEX_ASSET_FOLDER, $endpointName);
         }
 
-        if ($reader->isObjectIndexingEnabled()) {
+        if ($configReader->isObjectIndexingEnabled()) {
             $indices[] = $this->getIndexName(self::INDEX_OBJECT_FOLDER, $endpointName);
 
-            foreach ($reader->getObjectClassNames() as $className) {
+            foreach ($configReader->getObjectClassNames() as $className) {
                 $indices[] = $this->getIndexName(mb_strtolower($className), $endpointName);
             }
         }
@@ -146,14 +150,14 @@ class IndexManager
     public function getIndexMapping(string $indexName): array
     {
         if (!str_ends_with($indexName, '-odd') && !str_ends_with($indexName, '-even')) {
-            if (!$this->indexService->aliasExists($indexName)) {
+            if (!$this->indexPersistenceService->aliasExists($indexName)) {
                 throw new \RuntimeException(sprintf('Could not get index mapping. No alias found for "%s"', $indexName));
             }
 
             $indexName = $this->findIndexNameByAlias($indexName);
         }
 
-        $indexMapping = $this->indexService->getMapping($indexName);
+        $indexMapping = $this->indexPersistenceService->getMapping($indexName);
 
         return $indexMapping[$indexName]['mappings'] ?? [];
     }
@@ -169,13 +173,13 @@ class IndexManager
         $indexName = $value;
 
         if ($value instanceof ElementInterface) {
-            if ($value instanceof Asset\Folder) {
+            if ($value instanceof Folder) {
                 $indexName = self::INDEX_ASSET_FOLDER;
             } elseif ($value instanceof Asset) {
                 $indexName = self::INDEX_ASSET;
             } elseif ($value instanceof DataObject\Folder) {
                 $indexName = self::INDEX_OBJECT_FOLDER;
-            } elseif ($value instanceof DataObject\Concrete) {
+            } elseif ($value instanceof Concrete) {
                 $indexName = mb_strtolower($value->getClassName());
             }
         }
@@ -201,10 +205,10 @@ class IndexManager
     {
         $currentMapping = $this->getIndexMapping($indexName);
 
-        return array_merge(
+        return [] !== array_merge(
             DiffArray::diffAssocRecursive($mapping, $currentMapping),
             DiffArray::diffAssocRecursive($currentMapping, $mapping)
-        ) !== [];
+        );
     }
 
     /**
@@ -215,13 +219,14 @@ class IndexManager
         $assetWorkspace = $reader->getWorkspace('asset');
         $priorAssetWorkspace = $priorReader->getWorkspace('asset');
 
-        if (DiffArray::diffAssocRecursive($assetWorkspace, $priorAssetWorkspace) !== []) {
+        if ([] !== DiffArray::diffAssocRecursive($assetWorkspace, $priorAssetWorkspace)) {
             return true;
         }
 
         $objectWorkspace = $reader->getWorkspace('object');
         $priorObjectWorkspace = $priorReader->getWorkspace('object');
-        return DiffArray::diffAssocRecursive($objectWorkspace, $priorObjectWorkspace) !== [];
+
+        return [] !== DiffArray::diffAssocRecursive($objectWorkspace, $priorObjectWorkspace);
     }
 
     /**
@@ -237,7 +242,7 @@ class IndexManager
         $oddIndexName = sprintf('%s-odd', $indexName);
         $evenIndexName = sprintf('%s-even', $indexName);
 
-        if ($this->indexService->indexExists($oddIndexName)) {
+        if ($this->indexPersistenceService->indexExists($oddIndexName)) {
             $source = $oddIndexName;
             $target = $evenIndexName;
         } else {
@@ -247,33 +252,33 @@ class IndexManager
 
         if ($force || $this->hasMappingChanged($source, $mapping)) {
             // Create a new target index with mapping
-            $indexResponse = $this->indexService->createIndex($target, $mapping);
+            $indexResponse = $this->indexPersistenceService->createIndex($target, $mapping);
             if (!isset($indexResponse['acknowledged']) || true !== $indexResponse['acknowledged']) {
                 throw new ESClientException(sprintf('Could not create index "%s"', $target));
             }
 
             if ($reindexData) {
                 // Refresh source index before re-indexing the data
-                $refreshResponse = $this->indexService->refreshIndex($source);
+                $refreshResponse = $this->indexPersistenceService->refreshIndex($source);
                 if (!isset($refreshResponse['_shards']['failed']) || $refreshResponse['_shards']['failed'] > 0) {
                     throw new ESClientException(sprintf('Could not refresh index "%s"', $source));
                 }
 
                 // Reindex the data from the source to the target index
-                $reIndexResponse = $this->indexService->reindex($source, $target);
+                $reIndexResponse = $this->indexPersistenceService->reindex($source, $target);
                 if (!isset($reIndexResponse['failures']) || !empty($reIndexResponse['failures'])) {
                     throw new ESClientException(sprintf('Could not reindex data from "%s" to "%s"', $source, $target));
                 }
             }
 
             // Create the alias for the new target index
-            $aliasResponse = $this->indexService->createAlias($target, $indexName);
+            $aliasResponse = $this->indexPersistenceService->createAlias($target, $indexName);
             if (!isset($aliasResponse['acknowledged']) || true !== $aliasResponse['acknowledged']) {
                 throw new ESClientException(sprintf('Could not create alias for "%s"', $target));
             }
 
             // Delete the old source index
-            $this->indexService->deleteIndex($source);
+            $this->indexPersistenceService->deleteIndex($source);
         }
     }
 }

@@ -12,11 +12,11 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
-class DataObjectMapping extends DefaultMapping
+final class DataObjectMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {
-        if ($config === []) {
+        if ([] === $config) {
             throw new \RuntimeException('No DataObject class configuration provided.');
         }
 

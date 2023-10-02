@@ -29,7 +29,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(path: ['/datahub/rest/{config}', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_')]
 #[Security(name: 'Bearer')]
 #[OA\Tag(name: 'Search')]
-class SearchController extends BaseEndpointController
+final class SearchController extends BaseEndpointController
 {
     /**
      * @throws \Exception
@@ -154,39 +154,40 @@ class SearchController extends BaseEndpointController
         // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
         $size = $this->request->get('size', 200);
         $pageCursor = $this->request->get('page_cursor', null);
         $pageCursor = $pageCursor ?: 0;
 
         $indices = [];
 
-        if ($reader->isAssetIndexingEnabled()) {
+        if ($configReader->isAssetIndexingEnabled()) {
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config)];
         }
 
-        if ($reader->isObjectIndexingEnabled()) {
+        if ($configReader->isObjectIndexingEnabled()) {
             $indices = array_merge(
                 $indices,
-                array_map(fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames())
+                array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames())
             );
         }
 
         $search = $indexService->createSearch($request);
         $this->applySearchSettings($search);
-        $this->applyQueriesAndAggregations($search, $reader);
+        $this->applyQueriesAndAggregations($search, $configReader);
 
         $search->setSize($size);
         $search->setFrom($pageCursor * $size);
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
-        return $this->json($this->buildResponse($result, $reader));
+        return $this->json($this->buildResponse($result, $configReader));
     }
 
     /**
      * @throws ClientResponseException
      * @throws ServerResponseException
+     * @throws \JsonException
      */
     #[Route('/tree-items', name: 'tree_items', methods: ['GET'])]
     #[OA\Get(
@@ -336,18 +337,19 @@ class SearchController extends BaseEndpointController
         // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
 
         $id = 1;
         if ($request->get('id')) {
             $id = (int) $request->get('id');
         }
+
         $type = $this->request->get('type');
         // Check if required parameters are missing
         $this->checkRequiredParameters(['type' => $type]);
 
         $root = Service::getElementById($type, $id);
-        if (!$root->isAllowed('list')) {
+        if (!$root->isAllowed('list', $this->user)) {
             throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
 
@@ -359,14 +361,14 @@ class SearchController extends BaseEndpointController
 
         $indices = [];
 
-        if ('asset' === $type && $reader->isAssetIndexingEnabled()) {
+        if ('asset' === $type && $configReader->isAssetIndexingEnabled()) {
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config)];
 
             if ($includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
             }
-        } elseif ('object' === $type && $reader->isObjectIndexingEnabled()) {
-            $indices = array_map(fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $reader->getObjectClassNames());
+        } elseif ('object' === $type && $configReader->isObjectIndexingEnabled()) {
+            $indices = array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames());
 
             if ($includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
@@ -375,11 +377,11 @@ class SearchController extends BaseEndpointController
 
         $search = $indexService->createSearch($request);
         $this->applySearchSettings($search);
-        $this->applyQueriesAndAggregations($search, $reader);
+        $this->applyQueriesAndAggregations($search, $configReader);
         $search->addQuery(new MatchQuery('system.parentId', $parentId));
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
-        return $this->json($this->buildResponse($result, $reader));
+        return $this->json($this->buildResponse($result, $configReader));
     }
 }

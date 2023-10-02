@@ -34,7 +34,7 @@ final class DiffArray
                     $difference[$key] = $value;
                 } else {
                     $new_diff = self::diffAssocRecursive($value, $array2[$key]);
-                    if ($new_diff !== []) {
+                    if ([] !== $new_diff) {
                         $difference[$key] = $new_diff;
                     }
                 }

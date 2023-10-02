@@ -12,6 +12,6 @@
 
 namespace SimpleRESTAdapterBundle\Manager;
 
-class UploadManager
+final class UploadManager
 {
 }

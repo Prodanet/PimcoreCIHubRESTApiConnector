@@ -14,10 +14,10 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Image;
 use Symfony\Component\Routing\RouterInterface;
 
-class ImageDataCollector implements DataCollectorInterface
+final class ImageDataCollector implements DataCollectorInterface
 {
     public function __construct(RouterInterface $router, private AssetProvider $assetProvider)
     {
@@ -26,22 +26,22 @@ class ImageDataCollector implements DataCollectorInterface
     /**
      * @throws \Exception
      */
-    public function collect(mixed $value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $configReader): array
     {
         $id = $value->getId();
-        $reader->getAssetThumbnails();
+        $configReader->getAssetThumbnails();
 
         $data = [
             'id' => $id,
             'type' => 'asset',
         ];
-        $data['binaryData'] = $this->assetProvider->getBinaryDataValues($value, $reader);
+        $data['binaryData'] = $this->assetProvider->getBinaryDataValues($value, $configReader);
 
         return $data;
     }
 
     public function supports(mixed $value): bool
     {
-        return $value instanceof Asset\Image;
+        return $value instanceof Image;
     }
 }

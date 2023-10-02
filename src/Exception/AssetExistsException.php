@@ -10,15 +10,8 @@
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
  */
 
-namespace CIHub\Bundle\SimpleRESTAdapterBundle\Guard;
+namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Pimcore\Model\Element\ElementInterface;
-
-interface WorkspaceGuardInterface
+final class AssetExistsException extends \RuntimeException implements EndpointExceptionInterface
 {
-    /**
-     * Checks if the element is allowed for the configured workspaces.
-     */
-    public function isGranted(ElementInterface $element, string $elementType, ConfigReader $configReader): bool;
 }

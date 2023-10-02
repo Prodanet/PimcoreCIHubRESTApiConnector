@@ -14,7 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model;
 
 final class UploadParts implements UploadPartsInterface
 {
-    protected array $parts = [];
+    private array $parts = [];
 
     public function __construct(array $parts = [])
     {
@@ -29,12 +29,12 @@ final class UploadParts implements UploadPartsInterface
 
     public function toArray(): array
     {
-        return array_map(fn(UploadPartInterface $part): array => $part->toArray(), $this->parts);
+        return array_map(static fn (UploadPartInterface $uploadPart): array => $uploadPart->toArray(), $this->parts);
     }
 
-    public function add(UploadPartInterface $part): UploadPartsInterface
+    public function add(UploadPartInterface $uploadPart): UploadPartsInterface
     {
-        $this->parts[] = $part;
+        $this->parts[] = $uploadPart;
 
         return $this;
     }

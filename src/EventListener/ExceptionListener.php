@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-class ExceptionListener implements EventSubscriberInterface
+final class ExceptionListener implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
@@ -27,17 +27,17 @@ class ExceptionListener implements EventSubscriberInterface
         ];
     }
 
-    public function onKernelException(ExceptionEvent $event): void
+    public function onKernelException(ExceptionEvent $exceptionEvent): void
     {
-        $throwable = $event->getThrowable();
+        $throwable = $exceptionEvent->getThrowable();
 
         if ($throwable instanceof EndpointExceptionInterface) {
-            $response = new JsonResponse([
+            $jsonResponse = new JsonResponse([
                 'status' => $throwable->getCode(),
                 'message' => $throwable->getMessage(),
             ], 400);
 
-            $event->setResponse($response);
+            $exceptionEvent->setResponse($jsonResponse);
         }
     }
 }

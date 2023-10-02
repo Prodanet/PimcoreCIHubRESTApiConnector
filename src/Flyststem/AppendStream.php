@@ -58,6 +58,7 @@ final class AppendStream
 
         $anonymous = new class($this->streams, $this->chunkSize) extends \php_user_filter {
             private static array $streams = [];
+
             private static int $maxLength;
 
             public function __construct(array $streams = [], int $maxLength = 8192)
@@ -74,7 +75,7 @@ final class AppendStream
              */
             public function filter($in, $out, &$consumed, bool $closing): int
             {
-                while ($bucket = stream_bucket_make_writeable($in)) {
+                while (($bucket = stream_bucket_make_writeable($in)) instanceof \stdClass) {
                     stream_bucket_append($out, $bucket);
                 }
 

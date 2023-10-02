@@ -18,7 +18,7 @@ use League\Flysystem\FilesystemOperator;
 
 final class Concatenate
 {
-    public function __construct(private FilesystemOperator $filesystem)
+    public function __construct(private FilesystemOperator $filesystemOperator)
     {
     }
 
@@ -29,18 +29,18 @@ final class Concatenate
      */
     public function handle(string $target, string $file): bool
     {
-        if (!$this->filesystem->fileExists($file)) {
+        if (!$this->filesystemOperator->fileExists($file)) {
             throw new FileNotFoundException($file);
         }
 
         $tmpFile = tmpfile();
-        $targetFile = $this->filesystem->readStream($target);
-        $handle = $this->filesystem->readStream($file);
+        $targetFile = $this->filesystemOperator->readStream($target);
+        $handle = $this->filesystemOperator->readStream($file);
         foreach ([$targetFile, $handle] as $item) {
             stream_copy_to_stream($item, $tmpFile);
         }
 
-        $this->filesystem->writeStream($target, $tmpFile);
+        $this->filesystemOperator->writeStream($target, $tmpFile);
         @unlink(stream_get_meta_data($tmpFile)['uri']);
 
         return true;

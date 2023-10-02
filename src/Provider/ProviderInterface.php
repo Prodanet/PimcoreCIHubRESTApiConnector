@@ -22,5 +22,5 @@ interface ProviderInterface
      *
      * @return array<string, array>
      */
-    public function getIndexData(ElementInterface $element, ConfigReader $reader): array;
+    public function getIndexData(ElementInterface $element, ConfigReader $configReader): array;
 }

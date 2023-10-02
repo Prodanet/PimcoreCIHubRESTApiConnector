@@ -65,7 +65,7 @@ final class IndexQueryService
             'body' => $query,
         ];
 
-        if ($params !== []) {
+        if ([] !== $params) {
             $requestParams = array_merge($requestParams, $params);
         }
 

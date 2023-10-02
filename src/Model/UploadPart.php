@@ -14,14 +14,17 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model;
 
 final class UploadPart implements UploadPartInterface
 {
-    protected string $id;
-    protected int $size;
-    protected string $hash;
-    protected int $ordinal = 0;
+    private string $id;
+
+    private int $size;
+
+    private string $hash;
+
+    private int $ordinal = 0;
 
     public function __construct(array $part = [])
     {
-        if ($part !== []) {
+        if ([] !== $part) {
             $this->setId($part['id']);
             $this->setSize($part['size'] ?? 0);
             $this->setHash($part['hash'] ?? '');
@@ -80,10 +83,10 @@ final class UploadPart implements UploadPartInterface
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
-            'size' => $this->getSize(),
-            'hash' => $this->getHash(),
-            'ordinal' => $this->getOrdinal(),
+            'id' => $this->id,
+            'size' => $this->size,
+            'hash' => $this->hash,
+            'ordinal' => $this->ordinal,
         ];
     }
 }

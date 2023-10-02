@@ -46,13 +46,14 @@ abstract class BaseEndpointController extends FrontendController
     protected int $nextPageCursor = 200;
 
     protected Request $request;
+
     protected User $user;
 
     /**
      * @throws Exception
      */
     public function __construct(
-        private DataHubConfigurationRepository $configRepository,
+        private DataHubConfigurationRepository $dataHubConfigurationRepository,
         private LabelExtractorInterface $labelExtractor,
         private RequestStack $requestStack,
         protected AuthManager $authManager
@@ -78,13 +79,13 @@ abstract class BaseEndpointController extends FrontendController
         $this->nextPageCursor = $pageCursor + $size;
     }
 
-    protected function applyQueriesAndAggregations(Search $search, ConfigReader $reader): void
+    protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
         $parentId = (int) $this->request->get('parent_id', 1);
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
-        $filter = json_decode($this->request->get('filter'), true, 512, JSON_THROW_ON_ERROR);
+        $filter = json_decode($this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
             \FILTER_VALIDATE_BOOLEAN
@@ -94,12 +95,12 @@ abstract class BaseEndpointController extends FrontendController
             $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
-        if (\is_array($filter) && $filter !== []) {
+        if (\is_array($filter) && [] !== $filter) {
             $this->buildQueryConditions($search, $filter);
         }
 
         if ($this->includeAggregations) {
-            $labels = $reader->getLabelSettings();
+            $labels = $configReader->getLabelSettings();
 
             foreach ($labels as $label) {
                 if (!isset($label['useInAggs']) || !$label['useInAggs']) {
@@ -137,6 +138,7 @@ abstract class BaseEndpointController extends FrontendController
                 ];
             }
         }
+
         $sort[] = [
             'system.id' => [
                 'order' => 'asc',
@@ -189,13 +191,13 @@ abstract class BaseEndpointController extends FrontendController
      *
      * @return array<string, string|array>
      */
-    protected function buildResponse(array $result, ConfigReader $reader): array
+    protected function buildResponse(array $result, ConfigReader $configReader): array
     {
         $response = [];
 
         if (isset($result['hits']['hits'])) {
-            $hitIndices = $items = [];
-
+            $hitIndices = [];
+            $items = [];
             foreach ($result['hits']['hits'] as $hit) {
                 if (!\in_array($hit['_index'], $hitIndices, true)) {
                     $hitIndices[] = $hit['_index'];
@@ -223,7 +225,7 @@ abstract class BaseEndpointController extends FrontendController
                             continue;
                         }
 
-                        $aggs[$field]['buckets'] = array_map(static fn(array $bucket): array => [
+                        $aggs[$field]['buckets'] = array_map(static fn (array $bucket): array => [
                             'key' => $bucket['key'],
                             'element_count' => $bucket['doc_count'],
                         ], $aggregation['buckets']);
@@ -234,14 +236,14 @@ abstract class BaseEndpointController extends FrontendController
 
                 // Labels
                 $labels = $this->labelExtractor->extractLabels($hitIndices);
-                $response['labels'] = $reader->filterLabelSettings($labels);
+                $response['labels'] = $configReader->filterLabelSettings($labels);
             }
         } elseif (isset($result['_index'], $result['_source'])) {
             $response = $result['_source'];
 
             // Labels
             $labels = $this->labelExtractor->extractLabels([$result['_index']]);
-            $response['labels'] = $reader->filterLabelSettings($labels);
+            $response['labels'] = $configReader->filterLabelSettings($labels);
         }
 
         return $response;
@@ -262,14 +264,14 @@ abstract class BaseEndpointController extends FrontendController
             $required[] = $key;
         }
 
-        if ($required !== []) {
+        if ([] !== $required) {
             throw new InvalidParameterException($required);
         }
     }
 
     protected function getDataHubConfiguration(): Configuration
     {
-        $configuration = $this->configRepository->findOneByName($this->config);
+        $configuration = $this->dataHubConfigurationRepository->findOneByName($this->config);
 
         if (!$configuration instanceof Configuration) {
             throw new ConfigurationNotFoundException($this->config);

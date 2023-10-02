@@ -18,6 +18,6 @@ final class ConfigurationNotFoundException extends \RuntimeException implements 
 {
     public function __construct(string $configName, int $code = Response::HTTP_NOT_FOUND)
     {
-        parent::__construct(sprintf('Invalid or unknown config name \'%s\'.', $configName), $code);
+        parent::__construct(sprintf("Invalid or unknown config name '%s'.", $configName), $code);
     }
 }

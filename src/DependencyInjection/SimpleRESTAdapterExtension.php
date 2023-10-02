@@ -33,93 +33,103 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
-use Symfony\Component\DependencyInjection\Loader;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Routing\RouterInterface;
 
-class SimpleRESTAdapterExtension extends Extension implements PrependExtensionInterface
+final class SimpleRESTAdapterExtension extends Extension implements PrependExtensionInterface
 {
     private array $ciHubConfig = [];
 
-    public function prepend(ContainerBuilder $container): void
+    /**
+     * @throws \Exception
+     */
+    public function prepend(ContainerBuilder $containerBuilder): void
     {
-        $bundles = $container->getParameter('kernel.bundles');
+        $bundles = $containerBuilder->getParameter('kernel.bundles');
 
         if (isset($bundles['PimcoreCIHubAdapterBundle'])) {
-            $this->ciHubConfig = $container->getExtensionConfig('ci_hub_adapter');
+            $this->ciHubConfig = $containerBuilder->getExtensionConfig('ci_hub_adapter');
         }
-        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('config.php');
-        if ($container->hasExtension('doctrine_migrations')) {
-            $loader->load('doctrine_migrations.php');
+
+        $phpFileLoader = new PhpFileLoader($containerBuilder, new FileLocator(__DIR__.'/../Resources/config'));
+        $phpFileLoader->load('config.php');
+        if ($containerBuilder->hasExtension('doctrine_migrations')) {
+            $phpFileLoader->load('doctrine_migrations.php');
         }
     }
 
     /**
      * @throws \Exception
      */
-    public function load(array $configs, ContainerBuilder $container): void
+    public function load(array $configs, ContainerBuilder $containerBuilder): void
     {
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $this->registerConfiguration($container, $config);
+        $this->registerConfiguration($containerBuilder, $config);
 
-        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('services.php');
+        $phpFileLoader = new PhpFileLoader($containerBuilder, new FileLocator(__DIR__.'/../Resources/config'));
+        $phpFileLoader->load('services.php');
 
         $definition = new Definition(IndexManager::class);
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
-        $definition->setArgument('$indexService', new Reference(IndexPersistenceService::class));
-        $container->addDefinitions([IndexManager::class => $definition]);
+        $definition->setArgument('$indexPersistenceService', new Reference(IndexPersistenceService::class));
+
+        $containerBuilder->addDefinitions([IndexManager::class => $definition]);
 
         $definition = new Definition(LabelExtractor::class);
         $definition->setArgument('$indexManager', new Reference(IndexManager::class));
-        $container->addDefinitions([LabelExtractor::class => $definition]);
+
+        $containerBuilder->addDefinitions([LabelExtractor::class => $definition]);
 
         $definition = new Definition(AssetHelper::class);
         $definition->setArgument('$authManager', new Reference(AuthManager::class));
-        $container->addDefinitions([AssetHelper::class => $definition]);
+
+        $containerBuilder->addDefinitions([AssetHelper::class => $definition]);
 
         $definition = new Definition(UploadHelper::class);
         $definition->setArgument('$pimcoreConfig', new Reference(Config::class));
         $definition->setArgument('$router', new Reference(RouterInterface::class));
         $definition->setArgument('$authManager', new Reference(AuthManager::class));
-        $container->addDefinitions([UploadHelper::class => $definition]);
 
-        $container->setAlias(LabelExtractorInterface::class, LabelExtractor::class);
-        $container->setAlias(RenderOpenApi::class, 'nelmio_api_doc.render_docs');
+        $containerBuilder->addDefinitions([UploadHelper::class => $definition]);
+
+        $containerBuilder->setAlias(LabelExtractorInterface::class, LabelExtractor::class);
+        $containerBuilder->setAlias(RenderOpenApi::class, 'nelmio_api_doc.render_docs');
 
         $definition = new Definition(DataHubConfigurationRepository::class);
-        $container->addDefinitions([DataHubConfigurationRepository::class => $definition]);
+        $containerBuilder->addDefinitions([DataHubConfigurationRepository::class => $definition]);
 
         $definition = new Definition(AuthManager::class);
-        $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
+        $definition->setArgument('$dataHubConfigurationRepository', new Reference(DataHubConfigurationRepository::class));
         $definition->setArgument('$requestStack', new Reference(RequestStack::class));
-        $container->addDefinitions([AuthManager::class => $definition]);
+
+        $containerBuilder->addDefinitions([AuthManager::class => $definition]);
 
         $definition = new Definition(IndexPersistenceService::class);
         $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX.$config['es_client_name']));
-        $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
-        $definition->setArgument('$configRepository', new Reference(DataHubConfigurationRepository::class));
+        $definition->setArgument('$dataHubConfigurationRepository', new Reference(DataHubConfigurationRepository::class));
         $definition->setArgument('$assetProvider', new Reference(AssetProvider::class));
-        $definition->setArgument('$objectProvider', new Reference(DataObjectProvider::class));
+        $definition->setArgument('$dataObjectProvider', new Reference(DataObjectProvider::class));
         $definition->setArgument('$indexSettings', $config['index_settings']);
-        $container->addDefinitions([IndexPersistenceService::class => $definition]);
+
+        $containerBuilder->addDefinitions([IndexPersistenceService::class => $definition]);
 
         $definition = new Definition(IndexQueryService::class);
         $definition->setArgument('$client', new Reference(PimcoreElasticsearchClientExtension::CLIENT_SERVICE_PREFIX.$config['es_client_name']));
         $definition->setArgument('$indexNamePrefix', $config['index_name_prefix']);
-        $container->addDefinitions([IndexQueryService::class => $definition]);
+
+        $containerBuilder->addDefinitions([IndexQueryService::class => $definition]);
 
         $definition = new Definition(AssetMapping::class);
-        $container->addDefinitions([AssetMapping::class => $definition]);
+        $containerBuilder->addDefinitions([AssetMapping::class => $definition]);
         $definition = new Definition(DataObjectMapping::class);
-        $container->addDefinitions([DataObjectMapping::class => $definition]);
+        $containerBuilder->addDefinitions([DataObjectMapping::class => $definition]);
         $definition = new Definition(FolderMapping::class);
-        $container->addDefinitions([FolderMapping::class => $definition]);
+        $containerBuilder->addDefinitions([FolderMapping::class => $definition]);
     }
 
     /**
@@ -127,14 +137,14 @@ class SimpleRESTAdapterExtension extends Extension implements PrependExtensionIn
      *
      * @param array<string, string|array> $config
      */
-    private function registerConfiguration(ContainerBuilder $container, array $config): void
+    private function registerConfiguration(ContainerBuilder $containerBuilder, array $config): void
     {
-        if ($this->ciHubConfig !== []) {
+        if ([] !== $this->ciHubConfig) {
             $config = array_merge($config, ...$this->ciHubConfig);
         }
 
-        $container->setParameter('datahub_rest_adapter.index_name_prefix', $config['index_name_prefix']);
-        $container->setParameter('datahub_rest_adapter.index_settings', $config['index_settings']);
-        $container->setParameter('datahub_rest_adapter.default_preview_thumbnail', $config['default_preview_thumbnail'] ?? []);
+        $containerBuilder->setParameter('datahub_rest_adapter.index_name_prefix', $config['index_name_prefix']);
+        $containerBuilder->setParameter('datahub_rest_adapter.index_settings', $config['index_settings']);
+        $containerBuilder->setParameter('datahub_rest_adapter.default_preview_thumbnail', $config['default_preview_thumbnail'] ?? []);
     }
 }

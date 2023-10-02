@@ -30,5 +30,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(Installer::class)
         ->public()
-        ->arg('$bundle', expr('service(\'kernel\').getBundle(\'SimpleRESTAdapterBundle\')'));
+        ->arg('$bundle', expr("service('kernel').getBundle('SimpleRESTAdapterBundle')"));
 };

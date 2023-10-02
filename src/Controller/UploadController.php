@@ -13,206 +13,26 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\UploadHelper;
+use League\Flysystem\FilesystemException;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
-use Pimcore\Config;
-use Pimcore\Event\AssetEvents;
-use Pimcore\Event\Model\Asset\ResolveUploadTargetEvent;
-use Pimcore\Model\Asset;
-use Pimcore\Model\Element\Service;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[Route(path: ['/datahub/rest/{config}/asset', '/pimcore-datahub-webservices/simplerest/{config}/asset'], name: 'datahub_rest_endpoints_asset_')]
+#[Route(path: ['/datahub/rest/{config}/upload', '/pimcore-datahub-webservices/simplerest/{config}/asset'], name: 'datahub_rest_endpoints_upload_')]
 #[Security(name: 'Bearer')]
-class UploadController extends BaseEndpointController
+final class UploadController extends BaseEndpointController
 {
     public const PART_SIZE = 1024 * 1024;
-
-    #[OA\Post(
-        description: 'Simple method to create and upload asset',
-        summary: 'Add asset',
-        parameters: [
-            new OA\Parameter(
-                name: 'Authorization',
-                description: 'Bearer (in Swagger UI use authorize feature to set header)',
-                in: 'header'
-            ),
-            new OA\Parameter(
-                name: 'config',
-                description: 'Name of the config.',
-                in: 'path',
-                required: true,
-                schema: new OA\Schema(
-                    type: 'string'
-                )
-            ),
-            new OA\Parameter(
-                name: 'type',
-                description: 'Type of elements – asset or object.',
-                in: 'query',
-                required: true,
-                schema: new OA\Schema(
-                    type: 'string',
-                    enum: ['asset', 'object']
-                )
-            ),
-            new OA\RequestBody(
-                content: new OA\MediaType(
-                    mediaType: 'multipart/form-data',
-                    schema: new OA\Schema(
-                        properties: [
-                            new OA\Property(
-                                property: 'file',
-                                type: 'string',
-                                format: 'binary'
-                            ),
-                        ],
-                        type: 'file'
-                    )
-                )
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Successful operation.',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(
-                            property: 'id',
-                            description: 'Asset ID',
-                            type: 'integer'
-                        ),
-                        new OA\Property(
-                            property: 'path',
-                            description: 'Asset path',
-                            type: 'string'
-                        ),
-                        new OA\Property(
-                            property: 'success',
-                            description: 'Succes response',
-                            type: 'boolean'
-                        ),
-                    ],
-                    type: 'object'
-                )
-            ),
-            new OA\Response(
-                response: 400,
-                description: 'Not found'
-            ),
-            new OA\Response(
-                response: 401,
-                description: 'Access denied'
-            ),
-            new OA\Response(
-                response: 500,
-                description: 'Server error'
-            ),
-        ],
-    )]
-    #[OA\Tag(name: 'Uploads')]
-    #[Route('/add-asset', name: 'upload_asset', methods: ['POST'])]
-    public function add(
-        Config $pimcoreConfig,
-        TranslatorInterface $translator,
-        AssetHelper $assetHelper
-    ): Response {
-        try {
-            $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
-
-            /** @var UploadedFile $uploadedFile */
-            $uploadedFile = $this->request->files->get('file');
-            $sourcePath = $uploadedFile->getRealPath();
-            $filename = $uploadedFile->getClientOriginalName();
-            $filename = Service::getValidKey($filename, 'asset');
-
-            if ('' === $filename) {
-                throw new \Exception('The filename of the asset is empty');
-            }
-
-            if ($this->request->query->has('parentId')) {
-                $parentAsset = Asset::getById((int) $this->request->query->get('parentId'));
-                if (!$parentAsset instanceof Asset) {
-                    throw new \Exception('Parent does not exist');
-                }
-                $parentId = $parentAsset->getId();
-            } else {
-                $parentId = Asset\Service::createFolderByPath($defaultUploadPath)->getId();
-                $parentAsset = Asset::getById($parentId);
-            }
-
-            $context = $this->request->get('context');
-            if ($context) {
-                $context = json_decode($context, true, 512, \JSON_THROW_ON_ERROR);
-                $context = $context ?: [];
-
-                $assetHelper->validateManyToManyRelationAssetType($context, $filename, $sourcePath);
-
-                $event = new ResolveUploadTargetEvent($parentId, $filename, $context);
-                \Pimcore::getEventDispatcher()->dispatch($event, AssetEvents::RESOLVE_UPLOAD_TARGET);
-                $filename = Service::getValidKey($event->getFilename(), 'asset');
-                $parentId = $event->getParentId();
-                $parentAsset = Asset::getById($parentId);
-            }
-
-            if (is_file($sourcePath) && filesize($sourcePath) < 1) {
-                throw new \Exception('File is empty!');
-            } elseif (!is_file($sourcePath)) {
-                throw new \Exception('Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.');
-            }
-
-            if ($this->request->query->has('id')) {
-                $asset = Asset::getById((int) $this->request->get('id'));
-
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
-            } elseif (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$filename)) {
-                $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$filename);
-
-                return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
-            } else {
-                if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
-                    throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
-                }
-                $asset = Asset::create($parentAsset->getId(), [
-                    'filename' => $filename,
-                    'sourcePath' => $sourcePath,
-                    'userOwner' => $this->user->getId(),
-                    'userModification' => $this->user->getId(),
-                ]);
-            }
-
-            @unlink($sourcePath);
-
-            return new JsonResponse([
-                'success' => true,
-                'asset' => [
-                    'id' => $asset->getId(),
-                    'path' => $asset->getFullPath(),
-                    'type' => $asset->getType(),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
 
     /**
      * @throws \Exception
      */
     #[OA\Post(
-        description: 'Creates an upload session for a new file.',
-        summary: 'Create upload session',
+        description: 'Creates an upload session for a new or existing asset.',
+        summary: 'Create an upload session for a new or existing asset',
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -249,10 +69,20 @@ class UploadController extends BaseEndpointController
                 example: '104857600'
             ),
             new OA\Parameter(
-                name: 'folder_id',
-                description: 'The size of new file',
+                name: 'parent_id',
+                description: 'Parent ID of asset.',
                 in: 'query',
                 required: true,
+                schema: new OA\Schema(
+                    type: 'integer'
+                ),
+                example: '0'
+            ),
+            new OA\Parameter(
+                name: 'asset_id',
+                description: 'Asset ID of asset. When entered, this function updates an existing asset.',
+                in: 'query',
+                required: false,
                 schema: new OA\Schema(
                     type: 'integer'
                 ),
@@ -267,19 +97,19 @@ class UploadController extends BaseEndpointController
         ],
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
-    #[Route('/upload/start', name: 'upload_start', methods: ['POST'])]
-    public function start(UploadHelper $helper): Response
+    #[Route('/start', name: 'upload_start', methods: ['POST'])]
+    public function start(UploadHelper $uploadHelper): Response
     {
         $this->request->get('filesize');
-        $session = $helper->createSession($this->request, self::PART_SIZE);
+        $datahubUploadSession = $uploadHelper->createSession($this->request, self::PART_SIZE);
 
-        return new JsonResponse($helper->getSessionResponse(
+        return new JsonResponse($uploadHelper->getSessionResponse(
             $this->request,
-            $session->getId(),
+            $datahubUploadSession->getId(),
             $this->config,
             self::PART_SIZE,
             0,
-            $session->getTotalParts()
+            $datahubUploadSession->getTotalParts()
         ));
     }
 
@@ -321,14 +151,14 @@ class UploadController extends BaseEndpointController
         ],
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
-    #[Route('/upload/start', name: 'upload_start_get', methods: ['GET'])]
-    public function startGet(UploadHelper $helper): Response
+    #[Route('/start', name: 'upload_start_get', methods: ['GET'])]
+    public function startGet(UploadHelper $uploadHelper): Response
     {
         $id = $this->request->get('id');
         $this->checkRequiredParameters(['id' => $id]);
-        if ($helper->hasSession($id)) {
-            $session = $helper->getSession($id);
-            $response = $helper->getSessionResponse(
+        if ($uploadHelper->hasSession($id)) {
+            $session = $uploadHelper->getSession($id);
+            $response = $uploadHelper->getSessionResponse(
                 $this->request,
                 $id,
                 $this->config,
@@ -382,13 +212,16 @@ class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
     #[Route('/{id}', name: 'upload_abort', methods: ['DELETE'])]
-    public function abort(string $id, UploadHelper $helper): Response
+    public function abort(string $id, UploadHelper $uploadHelper): Response
     {
-        $helper->deleteSession($id);
+        $uploadHelper->deleteSession($id);
 
         return new JsonResponse([], 204);
     }
 
+    /**
+     * @throws FilesystemException
+     */
     #[OA\Post(
         description: 'Close an upload session and create a file from the uploaded chunks.',
         summary: 'Commit upload session',
@@ -419,16 +252,6 @@ class UploadController extends BaseEndpointController
                 example: '01HAPEWC2QAD29AMJC9RM17CAH'
             ),
             new OA\Parameter(
-                name: 'assetId',
-                description: 'The ID of the asset.',
-                in: 'query',
-                required: true,
-                schema: new OA\Schema(
-                    type: 'integer'
-                ),
-                example: '0'
-            ),
-            new OA\Parameter(
                 name: 'parts',
                 description: 'The list details for the uploaded parts',
                 in: 'query',
@@ -448,9 +271,9 @@ class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
     #[Route('/{id}/commit', name: 'upload_commit', methods: ['POST'])]
-    public function commit(string $id, UploadHelper $helper): Response
+    public function commit(string $id, UploadHelper $uploadHelper): Response
     {
-        return new JsonResponse($helper->commitSession($id));
+        return new JsonResponse($uploadHelper->commitSession($id));
     }
 
     #[OA\Get(
@@ -551,14 +374,17 @@ class UploadController extends BaseEndpointController
     #[Route('/{id}/parts', name: 'upload_list_parts', methods: ['GET'])]
     public function parts(string $id, UploadHelper $helper): Response
     {
-        $session = $helper->getSession($id);
+        $datahubUploadSession = $helper->getSession($id);
 
         return new JsonResponse([
-            'entries' => $session->getParts()->toArray(),
-            'total' => $session->getPartsCount(),
+            'entries' => $datahubUploadSession->getParts()->toArray(),
+            'total' => $datahubUploadSession->getPartsCount(),
         ]);
     }
 
+    /**
+     * @throws FilesystemException
+     */
     #[OA\Put(
         description: 'Return the status of the upload.',
         summary: 'Upload part of file',
@@ -616,7 +442,7 @@ class UploadController extends BaseEndpointController
     #[Route('/{id}/part', name: 'upload_part', methods: ['PUT'])]
     public function part(string $id, UploadHelper $helper): Response
     {
-        $session = $helper->getSession($id);
+        $datahubUploadSession = $helper->getSession($id);
 
         /**
          * @var resource $content
@@ -627,11 +453,12 @@ class UploadController extends BaseEndpointController
         if (0 === $size) {
             throw new InvalidParameterException(['Content-Length']);
         }
+
         if (0 === $ordinal) {
             throw new InvalidParameterException(['ordinal']);
         }
 
-        $part = $helper->uploadPart($session, $content, $size, $ordinal);
+        $part = $helper->uploadPart($datahubUploadSession, $content, $size, $ordinal);
 
         return new JsonResponse([
             'part' => [

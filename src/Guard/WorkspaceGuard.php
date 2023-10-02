@@ -18,12 +18,12 @@ use Pimcore\Model\Element\ElementInterface;
 
 final class WorkspaceGuard implements WorkspaceGuardInterface
 {
-    public function isGranted(ElementInterface $element, string $elementType, ConfigReader $reader): bool
+    public function isGranted(ElementInterface $element, string $elementType, ConfigReader $configReader): bool
     {
-        $workspace = WorkspaceSorter::sort($reader->getWorkspace($elementType), WorkspaceSorter::HIGHEST_SPECIFICITY);
+        $workspace = WorkspaceSorter::sort($configReader->getWorkspace($elementType), WorkspaceSorter::HIGHEST_SPECIFICITY);
 
         // No workspace configuration found for element type
-        if ($workspace === []) {
+        if ([] === $workspace) {
             return false;
         }
 

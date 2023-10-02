@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Exception;
 
-class InvalidStreamException extends \RuntimeException
+final class InvalidStreamException extends \RuntimeException
 {
     public function __construct(mixed $variable)
     {

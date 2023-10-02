@@ -27,13 +27,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
-class AuthManager
+final class AuthManager
 {
-    protected string $config;
+    private string $config;
+
     private Request $request;
 
     public function __construct(
-        private DataHubConfigurationRepository $configRepository,
+        private DataHubConfigurationRepository $dataHubConfigurationRepository,
         private RequestStack $requestStack
     ) {
         $this->request = $this->requestStack->getMainRequest();
@@ -43,25 +44,25 @@ class AuthManager
     public function isAllowed(Asset $asset, string $type, User $user): bool
     {
         $configuration = $this->getDataHubConfiguration();
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
         $isAllowed = false;
-        foreach ($reader->getPermissions() as $permission) {
+        foreach ($configReader->getPermissions() as $permission) {
             $permissionType = $permission[$type] ?? false;
             if ($permission['id'] === $user->getId() && true === $permissionType) {
                 $isAllowed = true;
             }
         }
 
-        $event = new ElementEvent($asset, ['isAllowed' => $isAllowed, 'permissionType' => $type, 'user' => $user]);
-        \Pimcore::getEventDispatcher()->dispatch($event, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
+        $elementEvent = new ElementEvent($asset, ['isAllowed' => $isAllowed, 'permissionType' => $type, 'user' => $user]);
+        \Pimcore::getEventDispatcher()->dispatch($elementEvent, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
 
-        return (bool) $event->getArgument('isAllowed');
+        return (bool) $elementEvent->getArgument('isAllowed');
     }
 
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();
-        if (!$user instanceof \Pimcore\Model\User) {
+        if (!$user instanceof User) {
             throw new AccessDeniedException();
         }
     }
@@ -80,10 +81,10 @@ class AuthManager
         throw new AuthenticationException('Failed to authenticate with username and token');
     }
 
-    protected function getUserByToken(): ?User
+    private function getUserByToken(): ?User
     {
         $configuration = $this->getDataHubConfiguration();
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
 
         if (!$this->request->headers->has('Authorization')
             || !str_starts_with($this->request->headers->get('Authorization'), 'Bearer ')) {
@@ -95,7 +96,7 @@ class AuthManager
 
         $db = Db::get();
         $userId = $db->fetchOne('SELECT userId FROM `users_datahub_config` WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
-        foreach ($reader->getPermissions() as $permission) {
+        foreach ($configReader->getPermissions() as $permission) {
             if ($permission['id'] === $userId) {
                 return User::getById($userId);
             }
@@ -109,9 +110,9 @@ class AuthManager
         return $user instanceof User && $user->isActive() && $user->getId();
     }
 
-    protected function getDataHubConfiguration(): Configuration
+    private function getDataHubConfiguration(): Configuration
     {
-        $configuration = $this->configRepository->findOneByName($this->config);
+        $configuration = $this->dataHubConfigurationRepository->findOneByName($this->config);
 
         if (!$configuration instanceof Configuration) {
             throw new ConfigurationNotFoundException($this->config);

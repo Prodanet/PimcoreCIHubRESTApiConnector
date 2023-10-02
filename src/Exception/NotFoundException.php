@@ -12,6 +12,6 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
-class NotFoundException extends \RuntimeException implements EndpointExceptionInterface
+final class NotFoundException extends \RuntimeException implements EndpointExceptionInterface
 {
 }

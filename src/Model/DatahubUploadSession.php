@@ -23,14 +23,19 @@ use Pimcore\Model\Exception\NotFoundException;
 final class DatahubUploadSession extends AbstractModel
 {
     public $data;
+
     public string $id;
 
     public UploadParts $parts;
 
     public int $totalParts = 0;
+
     public int $fileSize = 0;
+
     public int $assetId = 0;
+
     public int $parentId = 0;
+
     public string $fileName;
 
     /**
@@ -39,12 +44,12 @@ final class DatahubUploadSession extends AbstractModel
     public static function getById(string $id): ?self
     {
         try {
-            $obj = new self();
-            $obj->getDao()->getById($id);
+            $self = new self();
+            $self->getDao()->getById($id);
 
-            return $obj;
+            return $self;
         } catch (NotFoundException) {
-            throw new \CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException("Upload Session with id $id not found");
+            throw new \CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException(sprintf('Upload Session with id %s not found', $id));
         }
     }
 
@@ -54,12 +59,12 @@ final class DatahubUploadSession extends AbstractModel
     public static function hasById(string $id): ?self
     {
         try {
-            $obj = new self();
-            $obj->getDao()->hasById($id);
+            $self = new self();
+            $self->getDao()->hasById($id);
 
-            return $obj;
+            return $self;
         } catch (NotFoundException) {
-            Logger::warn("Upload Session with id $id not found");
+            Logger::warn(sprintf('Upload Session with id %s not found', $id));
         }
 
         return null;
@@ -82,9 +87,9 @@ final class DatahubUploadSession extends AbstractModel
         return $this->parts;
     }
 
-    public function addPart(UploadPart $part): self
+    public function addPart(UploadPart $uploadPart): self
     {
-        $this->parts->add($part);
+        $this->parts->add($uploadPart);
 
         return $this;
     }
@@ -92,7 +97,7 @@ final class DatahubUploadSession extends AbstractModel
     public function setParts(string|array $parts): self
     {
         if (\is_string($parts)) {
-            $parts = json_decode($parts, true, 512, JSON_THROW_ON_ERROR);
+            $parts = json_decode($parts, true, 512, \JSON_THROW_ON_ERROR);
         }
 
         $this->parts = new UploadParts($parts);
@@ -215,7 +220,7 @@ final class DatahubUploadSession extends AbstractModel
 
     public function getTemporaryPath(): string
     {
-        return sprintf('tmp-%s-%s', $this->getParentId(), $this->getFileName());
+        return sprintf('tmp-%s-%s', $this->parentId, $this->fileName);
     }
 
     public function getTemporaryPartExpression(): string

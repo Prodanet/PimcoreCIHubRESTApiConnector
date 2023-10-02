@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
@@ -10,15 +9,8 @@
  * @copyright  Copyright (c) 2021 CI HUB GmbH (https://ci-hub.com)
  */
 
-namespace CIHub\Bundle\SimpleRESTAdapterBundle\Guard;
+namespace CIHub\Bundle\SimpleRESTAdapterBundle\Exception;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Pimcore\Model\Element\ElementInterface;
-
-interface WorkspaceGuardInterface
+final class FolderLockedException extends \RuntimeException implements EndpointExceptionInterface
 {
-    /**
-     * Checks if the element is allowed for the configured workspaces.
-     */
-    public function isGranted(ElementInterface $element, string $elementType, ConfigReader $configReader): bool;
 }

@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
-class FolderMapping extends DefaultMapping
+final class FolderMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {

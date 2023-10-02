@@ -13,10 +13,10 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Image;
 use Pimcore\Model\DataObject\Data\Hotspotimage;
 
-class HotspotImageDataCollector implements DataCollectorInterface
+final class HotspotImageDataCollector implements DataCollectorInterface
 {
     public function __construct(private ImageDataCollector $imageDataCollector)
     {
@@ -25,15 +25,15 @@ class HotspotImageDataCollector implements DataCollectorInterface
     /**
      * @throws \Exception
      */
-    public function collect(mixed $value, ConfigReader $reader): array
+    public function collect(mixed $value, ConfigReader $configReader): array
     {
         $image = $value->getImage();
 
-        if (!$image instanceof Asset\Image) {
+        if (!$image instanceof Image) {
             return [];
         }
 
-        return $this->imageDataCollector->collect($image, $reader);
+        return $this->imageDataCollector->collect($image, $configReader);
     }
 
     public function supports(mixed $value): bool

@@ -24,9 +24,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-class ConfigModificationListener implements EventSubscriberInterface
+final class ConfigModificationListener implements EventSubscriberInterface
 {
-    public function __construct(private IndexManager $indexManager, private MessageBusInterface $messageBus, private AssetMapping $assetMapping, private DataObjectMapping $objectMapping, private FolderMapping $folderMapping)
+    public function __construct(private IndexManager $indexManager, private MessageBusInterface $messageBus, private AssetMapping $assetMapping, private DataObjectMapping $dataObjectMapping, private FolderMapping $folderMapping)
     {
     }
 
@@ -38,37 +38,37 @@ class ConfigModificationListener implements EventSubscriberInterface
         ];
     }
 
-    public function onPreDelete(ConfigurationEvent $event): void
+    public function onPreDelete(ConfigurationEvent $configurationEvent): void
     {
-        $reader = new ConfigReader($event->getConfiguration());
-        $this->indexManager->deleteAllIndices($reader->getName());
+        $configReader = new ConfigReader($configurationEvent->getConfiguration());
+        $this->indexManager->deleteAllIndices($configReader->getName());
     }
 
     /**
      * @throws \RuntimeException
      * @throws ESClientException
      */
-    public function onPostSave(ConfigurationEvent $event): void
+    public function onPostSave(ConfigurationEvent $configurationEvent): void
     {
-        $reader = new ConfigReader($event->getConfiguration());
+        $configReader = new ConfigReader($configurationEvent->getConfiguration());
 
         // Handle asset indices
-        if ($reader->isAssetIndexingEnabled()) {
-            $this->handleAssetIndices($reader);
+        if ($configReader->isAssetIndexingEnabled()) {
+            $this->handleAssetIndices($configReader);
         }
 
         // Handle object indices
-        if ($reader->isObjectIndexingEnabled()) {
-            $this->handleObjectIndices($reader);
+        if ($configReader->isObjectIndexingEnabled()) {
+            $this->handleObjectIndices($configReader);
         }
 
         // Initialize endpoint
-        $this->initializeEndpoint($reader);
+        $this->initializeEndpoint($configReader);
     }
 
-    private function handleAssetIndices(ConfigReader $reader): void
+    private function handleAssetIndices(ConfigReader $configReader): void
     {
-        $endpointName = $reader->getName();
+        $endpointName = $configReader->getName();
 
         // Asset Folders
         $this->indexManager->createOrUpdateIndex(
@@ -79,13 +79,13 @@ class ConfigModificationListener implements EventSubscriberInterface
         // Assets
         $this->indexManager->createOrUpdateIndex(
             $this->indexManager->getIndexName(IndexManager::INDEX_ASSET, $endpointName),
-            $this->assetMapping->generate($reader->toArray())
+            $this->assetMapping->generate($configReader->toArray())
         );
     }
 
-    private function handleObjectIndices(ConfigReader $reader): void
+    private function handleObjectIndices(ConfigReader $configReader): void
     {
-        $endpointName = $reader->getName();
+        $endpointName = $configReader->getName();
 
         // DataObject Folders
         $this->indexManager->createOrUpdateIndex(
@@ -93,13 +93,13 @@ class ConfigModificationListener implements EventSubscriberInterface
             $this->folderMapping->generate()
         );
 
-        $objectClasses = $reader->getObjectClasses();
+        $objectClasses = $configReader->getObjectClasses();
 
         // DataObject Classes
-        foreach ($objectClasses as $class) {
+        foreach ($objectClasses as $objectClass) {
             $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(mb_strtolower($class['name']), $endpointName),
-                $this->objectMapping->generate($class)
+                $this->indexManager->getIndexName(mb_strtolower($objectClass['name']), $endpointName),
+                $this->dataObjectMapping->generate($objectClass)
             );
         }
     }
@@ -108,15 +108,15 @@ class ConfigModificationListener implements EventSubscriberInterface
      * @throws \RuntimeException
      * @throws ESClientException
      */
-    private function initializeEndpoint(ConfigReader $reader): void
+    private function initializeEndpoint(ConfigReader $configReader): void
     {
-        $indices = $this->indexManager->getAllIndexNames($reader);
+        $indices = $this->indexManager->getAllIndexNames($configReader);
 
         // Clear index data
         foreach ($indices as $index) {
             $this->indexManager->clearIndexData($index);
         }
 
-        $this->messageBus->dispatch(new InitializeEndpointMessage($reader->getName()));
+        $this->messageBus->dispatch(new InitializeEndpointMessage($configReader->getName()));
     }
 }

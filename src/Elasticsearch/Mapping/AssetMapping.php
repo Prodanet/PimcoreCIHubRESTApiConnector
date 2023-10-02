@@ -14,11 +14,11 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
-class AssetMapping extends DefaultMapping
+final class AssetMapping extends DefaultMapping
 {
     public function generate(array $config = []): array
     {
-        if ($config === []) {
+        if ([] === $config) {
             throw new \RuntimeException('No configuration provided.');
         }
 
@@ -125,15 +125,15 @@ class AssetMapping extends DefaultMapping
     {
         $properties = [];
 
-        $reader = new ConfigReader($config);
-        $thumbnails = $reader->getAssetThumbnails();
+        $configReader = new ConfigReader($config);
+        $thumbnails = $configReader->getAssetThumbnails();
         $binaryMapping = [
             'dynamic' => 'false',
             'type' => 'object',
             'properties' => $this->getBinaryDataProperties(),
         ];
 
-        if ($reader->isOriginalImageAllowed()) {
+        if ($configReader->isOriginalImageAllowed()) {
             $properties['original'] = $binaryMapping;
         }
 

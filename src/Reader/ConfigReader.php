@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Reader;
 
-class ConfigReader
+final class ConfigReader
 {
     /**
      * @param array<string, array> $config
@@ -59,16 +59,16 @@ class ConfigReader
         $labelSettings = $this->getLabelSettings();
 
         $data = [];
-        foreach ($labelSettings as $setting) {
-            $id = $setting['id'];
+        foreach ($labelSettings as $labelSetting) {
+            $id = $labelSetting['id'];
 
             if (!\in_array($id, $labels, true)) {
                 continue;
             }
 
-            unset($setting['id'], $setting['useInAggs']);
+            unset($labelSetting['id'], $labelSetting['useInAggs']);
 
-            $data[$id] = array_filter($setting);
+            $data[$id] = array_filter($labelSetting);
         }
 
         return $data;
@@ -149,7 +149,7 @@ class ConfigReader
     public function getObjectClassNames(): array
     {
         return array_map(
-            static fn(array $class) => $class['name'],
+            static fn (array $class) => $class['name'],
             $this->getObjectClasses()
         );
     }
@@ -197,7 +197,7 @@ class ConfigReader
      */
     public function isObjectIndexingEnabled(): bool
     {
-        return $this->getObjectClasses() !== [];
+        return [] !== $this->getObjectClasses();
     }
 
     /**

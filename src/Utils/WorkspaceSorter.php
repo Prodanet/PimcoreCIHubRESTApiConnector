@@ -15,6 +15,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Utils;
 final class WorkspaceSorter
 {
     public const LOWEST_SPECIFICITY = 0;
+
     public const HIGHEST_SPECIFICITY = 1;
 
     /**
@@ -26,7 +27,7 @@ final class WorkspaceSorter
      */
     public static function sort(array $workspace, int $sortFlag = self::LOWEST_SPECIFICITY): array
     {
-        usort($workspace, static fn(array $left, array $right): int => mb_substr_count($left['cpath'], '/') - mb_substr_count($right['cpath'], '/'));
+        usort($workspace, static fn (array $left, array $right): int => mb_substr_count($left['cpath'], '/') - mb_substr_count($right['cpath'], '/'));
 
         return self::LOWEST_SPECIFICITY === $sortFlag ? $workspace : array_reverse($workspace);
     }

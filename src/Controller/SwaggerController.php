@@ -22,7 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_PIMCORE_USER')]
 #[Route('/admin/datahub/rest', defaults: ['area' => 'cihub'])]
-class SwaggerController extends FrontendController
+final class SwaggerController extends FrontendController
 {
     #[Route('/swagger', name: 'datahub_rest_adapter_swagger_ui', methods: ['GET'])]
     public function userInterfaceAction(Request $request, RenderOpenApi $renderOpenApi, array $options = []): Response
@@ -34,7 +34,7 @@ class SwaggerController extends FrontendController
 
         return $this->renderTemplate('@SimpleRESTAdapter/Swagger/index.html.twig', [
             'configUrl' => $this->generateUrl('datahub_rest_adapter_swagger_config'),
-            'swagger_data' => ['spec' => json_decode($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'), true, 512, JSON_THROW_ON_ERROR)],
+            'swagger_data' => ['spec' => json_decode($renderOpenApi->renderFromRequest($request, RenderOpenApi::JSON, 'ci_hub'), true, 512, \JSON_THROW_ON_ERROR)],
             'assets_mode' => $options['assets_mode'],
             'swagger_ui_config' => $options['swagger_ui_config'],
         ]);

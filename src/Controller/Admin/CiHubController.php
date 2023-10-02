@@ -18,12 +18,13 @@ use Pimcore\Controller\Traits\JsonHelperTrait;
 use Pimcore\Controller\UserAwareController;
 use Pimcore\Db;
 use Pimcore\Model\User;
+use Pimcore\Model\User\UserRole;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/admin/ci-hub')]
-class CiHubController extends UserAwareController
+final class CiHubController extends UserAwareController
 {
     use JsonHelperTrait;
 
@@ -34,7 +35,7 @@ class CiHubController extends UserAwareController
 
         return $this->jsonResponse([
             'data' => array_keys($list),
-            'success' => $list !== [],
+            'success' => [] !== $list,
         ]);
     }
 
@@ -44,30 +45,30 @@ class CiHubController extends UserAwareController
     #[Route('/config/update', name: 'admin_ci_hub_user_config_update', options: ['expose' => true])]
     public function update(Request $request): Response
     {
-        /** @var User|User\Role|null $user */
-        $user = User\UserRole::getById($request->request->getInt('id'));
+        /** @var User|User\Role|null $userRole */
+        $userRole = UserRole::getById($request->request->getInt('id'));
         $currentUserIsAdmin = $this->getPimcoreUser()->isAdmin();
 
-        if (!$user) {
+        if (!$userRole instanceof UserRole) {
             throw $this->createNotFoundException();
         }
 
-        if ($user instanceof User && $user->isAdmin() && !$currentUserIsAdmin) {
+        if ($userRole instanceof User && $userRole->isAdmin() && !$currentUserIsAdmin) {
             throw $this->createAccessDeniedHttpException('Only admin users are allowed to modify admin users');
         }
 
         if ($request->get('data')) {
             $db = Db::get();
 
-            $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$user->getId());
+            $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$userRole->getId());
             if ($data) {
                 $db->update('users_datahub_config', [
                     'data' => $request->get('data'),
-                ], ['userId' => $user->getId()]);
+                ], ['userId' => $userRole->getId()]);
             } else {
                 $db->insert('users_datahub_config', [
                     'data' => $request->get('data'),
-                    'userId' => $user->getId(),
+                    'userId' => $userRole->getId(),
                 ]);
             }
         }
@@ -88,7 +89,7 @@ class CiHubController extends UserAwareController
 
         $user = User::getById($userId);
 
-        if (!$user instanceof \Pimcore\Model\User) {
+        if (!$user instanceof User) {
             throw $this->createNotFoundException();
         }
 
@@ -102,6 +103,6 @@ class CiHubController extends UserAwareController
             $data = '{}';
         }
 
-        return $this->jsonResponse(json_decode($data, null, 512, JSON_THROW_ON_ERROR));
+        return $this->jsonResponse(json_decode($data, null, 512, \JSON_THROW_ON_ERROR));
     }
 }

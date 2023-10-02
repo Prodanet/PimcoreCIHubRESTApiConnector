@@ -16,12 +16,17 @@ use Symfony\Component\Uid\Ulid;
 
 final class ChunkUploadResponse implements ApiResponseInterface
 {
-    protected string $id;
-    protected int $numPartsProcessed = 0;
-    protected int $partSize = 0;
-    protected array $endpoints = [];
-    protected int $totalParts = 0;
-    protected string $sessionExpiresAt;
+    private string $id;
+
+    private int $numPartsProcessed = 0;
+
+    private int $partSize = 0;
+
+    private array $endpoints = [];
+
+    private int $totalParts = 0;
+
+    private string $sessionExpiresAt;
 
     public function __construct(string $id)
     {
@@ -77,7 +82,7 @@ final class ChunkUploadResponse implements ApiResponseInterface
             'session_expires_at' => $this->sessionExpiresAt,
             'total_parts' => $this->totalParts,
         ];
-        if ($this->endpoints !== []) {
+        if ([] !== $this->endpoints) {
             $response['endpoints'] = $this->endpoints;
         }
 

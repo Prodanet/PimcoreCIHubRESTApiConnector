@@ -21,7 +21,7 @@ interface DataCollectorInterface
      *
      * @return array<int|string, mixed>
      */
-    public function collect(mixed $value, ConfigReader $reader): array;
+    public function collect(mixed $value, ConfigReader $configReader): array;
 
     /**
      * Checks if the current data collector supports the provided value.

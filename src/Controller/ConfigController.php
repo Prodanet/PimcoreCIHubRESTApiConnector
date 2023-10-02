@@ -23,7 +23,7 @@ use Pimcore\Bundle\AdminBundle\Controller\AdminAbstractController;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Bundle\DataHubBundle\Controller\ConfigController as BaseConfigController;
 use Pimcore\Bundle\DataHubBundle\WorkspaceHelper;
-use Pimcore\Model\Asset\Image\Thumbnail;
+use Pimcore\Model\Asset\Image\Thumbnail\Config\Listing;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,7 +31,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[Route('/admin/rest/config', name: 'datahub_rest_adapter_config_', options: ['expose' => true])]
-class ConfigController extends AdminAbstractController
+final class ConfigController extends AdminAbstractController
 {
     #[Route('/delete', name: 'delete', methods: ['GET'])]
     public function deleteAction(
@@ -60,8 +60,8 @@ class ConfigController extends AdminAbstractController
             $eventDispatcher->dispatch($postDeleteEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_DELETE);
 
             return $this->json(['success' => true]);
-        } catch (\Exception $e) {
-            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Exception $exception) {
+            return $this->json(['success' => false, 'message' => $exception->getMessage()]);
         }
     }
 
@@ -78,8 +78,8 @@ class ConfigController extends AdminAbstractController
         }
 
         // Add endpoint routes to current config
-        $reader = new ConfigReader($configuration->getConfiguration());
-        $reader->add([
+        $configReader = new ConfigReader($configuration->getConfiguration());
+        $configReader->add([
             'swaggerUrl' => $this->getEndpoint('datahub_rest_adapter_swagger_ui'),
             'treeItemsUrl' => $this->getEndpoint('datahub_rest_endpoints_tree_items', ['config' => $configName]),
             'searchUrl' => $this->getEndpoint('datahub_rest_endpoints_get_element', ['config' => $configName]),
@@ -88,7 +88,7 @@ class ConfigController extends AdminAbstractController
 
         return $this->json([
             'name' => $configName,
-            'configuration' => $reader->toArray(),
+            'configuration' => $configReader->toArray(),
             'userPermissions' => [
                 'update' => $configuration->isAllowed('update'),
                 'delete' => $configuration->isAllowed('delete'),
@@ -113,8 +113,8 @@ class ConfigController extends AdminAbstractController
             throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $configName));
         }
 
-        $reader = new ConfigReader($configuration->getConfiguration());
-        $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName), ...array_map(static fn($className): string => $indexManager->getIndexName(mb_strtolower($className), $configName), $reader->getObjectClassNames())];
+        $configReader = new ConfigReader($configuration->getConfiguration());
+        $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName), ...array_map(static fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $configName), $configReader->getObjectClassNames())];
 
         $labels = $labelExtractor->extractLabels($indices);
 
@@ -132,7 +132,7 @@ class ConfigController extends AdminAbstractController
         try {
             $data = $request->get('data');
             $modificationDate = $request->get('modificationDate', 0);
-            $newConfigReader = new ConfigReader(json_decode($data, true, 512, JSON_THROW_ON_ERROR));
+            $newConfigReader = new ConfigReader(json_decode($data, true, 512, \JSON_THROW_ON_ERROR));
 
             $name = $newConfigReader->getName();
             $configuration = $configRepository->findOneByName($name);
@@ -140,6 +140,7 @@ class ConfigController extends AdminAbstractController
             if (!$configuration instanceof Configuration) {
                 throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $name));
             }
+
             $reader = new ConfigReader($configuration->getConfiguration());
             $savedModificationDate = $reader->getModificationDate();
             if ($modificationDate < $savedModificationDate) {
@@ -155,20 +156,21 @@ class ConfigController extends AdminAbstractController
             $newConfig = $newConfigReader->toArray();
             $newConfig['general']['modificationDate'] = time();
 
-            $preSaveEvent = new GetModifiedConfigurationEvent($newConfig, $oldConfig);
+            $getModifiedConfigurationEvent = new GetModifiedConfigurationEvent($newConfig, $oldConfig);
 
-            $eventDispatcher->dispatch($preSaveEvent, SimpleRESTAdapterEvents::CONFIGURATION_PRE_SAVE);
+            $eventDispatcher->dispatch($getModifiedConfigurationEvent, SimpleRESTAdapterEvents::CONFIGURATION_PRE_SAVE);
 
             if ($configuration->isAllowed('read') && $configuration->isAllowed('update')) {
                 $configuration->setConfiguration($newConfig);
                 $configuration->save();
             }
-            $postSaveEvent = new ConfigurationEvent($newConfig, $oldConfig);
-            $eventDispatcher->dispatch($postSaveEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_SAVE);
+
+            $configurationEvent = new ConfigurationEvent($newConfig, $oldConfig);
+            $eventDispatcher->dispatch($configurationEvent, SimpleRESTAdapterEvents::CONFIGURATION_POST_SAVE);
 
             return $this->json(['success' => true, 'modificationDate' => $configRepository->getModificationDate()]);
-        } catch (\Exception $e) {
-            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Exception $exception) {
+            return $this->json(['success' => false, 'message' => $exception->getMessage()]);
         }
     }
 
@@ -177,10 +179,10 @@ class ConfigController extends AdminAbstractController
     {
         $this->checkPermission('thumbnails');
 
-        $configList = new Thumbnail\Config\Listing();
+        $listing = new Listing();
         $thumbnails = array_map(
-            static fn($config): array => ['name' => $config->getName()],
-            $configList->load()
+            static fn ($config): array => ['name' => $config->getName()],
+            $listing->load()
         );
 
         return $this->json(['data' => $thumbnails]);

@@ -19,9 +19,9 @@ use Pimcore\Model\Dao\AbstractDao;
 use Pimcore\Model\Exception\NotFoundException;
 use Pimcore\Tool\Storage;
 
-class Dao extends AbstractDao
+final class Dao extends AbstractDao
 {
-    protected string $tableName = 'datahub_upload_sessions';
+    private string $tableName = 'datahub_upload_sessions';
 
     /**
      * get vote by id.
@@ -49,6 +49,7 @@ class Dao extends AbstractDao
     {
         $this->model->setId($id);
         $data = $this->db->fetchAssociative('SELECT id FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
+
         return (bool) $data;
     }
 
@@ -79,11 +80,13 @@ class Dao extends AbstractDao
             if (\is_bool($value)) {
                 $value = (int) $value;
             }
+
             if (\is_array($value)) {
-                $value = json_encode($value, JSON_THROW_ON_ERROR);
+                $value = json_encode($value, \JSON_THROW_ON_ERROR);
             }
+
             if ($value instanceof UploadPartsInterface) {
-                $value = json_encode($value->toArray(), JSON_THROW_ON_ERROR);
+                $value = json_encode($value->toArray(), \JSON_THROW_ON_ERROR);
             }
 
             $buffer[$k] = $value;
@@ -104,13 +107,13 @@ class Dao extends AbstractDao
     public function delete(): void
     {
         /**
-         * @var Filesystem $storage
+         * @var Filesystem $filesystemOperator
          */
-        $storage = Storage::get('temp');
+        $filesystemOperator = Storage::get('temp');
 
         foreach ($this->model->getParts() as $part) {
             try {
-                $storage->delete($this->model->getTemporaryPartFilename($part->getId()));
+                $filesystemOperator->delete($this->model->getTemporaryPartFilename($part->getId()));
             } catch (\Exception $ignore) {
                 Logger::error($ignore->getMessage());
             }

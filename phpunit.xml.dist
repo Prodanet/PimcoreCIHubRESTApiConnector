@@ -15,6 +15,9 @@
       <file>src/SimpleRESTAdapterBundle/SimpleRESTAdapterBundle.php</file>
     </exclude>
   </coverage>
+  <extensions>
+    <extension class="Hook\BypassFinalHook" />
+  </extensions>
   <testsuites>
     <testsuite name="Unit Tests">
       <directory suffix="Test.php">tests/</directory>

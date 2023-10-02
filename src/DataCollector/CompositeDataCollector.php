@@ -31,7 +31,7 @@ final class CompositeDataCollector
      *
      * @return array<int|string, mixed>|null
      */
-    public function collect(Concrete $concrete, string $fieldName, ConfigReader $reader): ?array
+    public function collect(Concrete $concrete, string $fieldName, ConfigReader $configReader): ?array
     {
         $value = $concrete->getValueForFieldName($fieldName);
 
@@ -42,7 +42,7 @@ final class CompositeDataCollector
                 continue;
             }
 
-            return $collector->collect($value, $reader);
+            return $collector->collect($value, $configReader);
         }
 
         return null;

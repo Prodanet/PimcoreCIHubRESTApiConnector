@@ -17,6 +17,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 final class LabelExtractor implements LabelExtractorInterface
 {
     public const ALLOWED_PROPERTIES = ['data', 'dimensionData', 'metaData', 'system'];
+
     public const ALLOWED_SYSTEM_PROPERTIES = ['id', 'key', 'mimeType', 'subtype', 'type'];
 
     public function __construct(private IndexManager $indexManager)
@@ -30,7 +31,7 @@ final class LabelExtractor implements LabelExtractorInterface
         foreach ($indices as $index) {
             $mapping = $this->indexManager->getIndexMapping($index);
 
-            if ($mapping === []) {
+            if ([] === $mapping) {
                 continue;
             }
 
@@ -40,10 +41,10 @@ final class LabelExtractor implements LabelExtractorInterface
                 }
 
                 $labels[] = array_map(
-                    static fn($item): string => sprintf('%s.%s', $property, $item),
+                    static fn ($item): string => sprintf('%s.%s', $property, $item),
                     array_filter(
                         array_keys($definition['properties'] ?? []),
-                        static fn($key): bool => 'system' !== $property
+                        static fn ($key): bool => 'system' !== $property
                             || \in_array($key, self::ALLOWED_SYSTEM_PROPERTIES, true)
                     )
                 );

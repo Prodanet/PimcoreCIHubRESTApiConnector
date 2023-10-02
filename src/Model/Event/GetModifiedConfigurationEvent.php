@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event;
 
-class GetModifiedConfigurationEvent extends ConfigurationEvent
+final class GetModifiedConfigurationEvent extends ConfigurationEvent
 {
     /**
      * @var array<string, array>

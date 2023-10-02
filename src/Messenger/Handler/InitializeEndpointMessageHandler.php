@@ -18,7 +18,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Utils\WorkspaceSorter;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\PDO\Statement;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -26,7 +25,9 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final class InitializeEndpointMessageHandler implements MessageHandlerInterface
 {
     private const CONDITION_DISTINCT = 'distinct';
+
     private const CONDITION_INCLUSIVE = 'inclusive';
+
     private const CONDITION_EXCLUSIVE = 'exclusive';
 
     /**
@@ -39,27 +40,27 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private array $params = [];
 
-    public function __construct(private DataHubConfigurationRepository $configRepository, private Connection $connection, private MessageBusInterface $messageBus)
+    public function __construct(private DataHubConfigurationRepository $dataHubConfigurationRepository, private Connection $connection, private MessageBusInterface $messageBus)
     {
     }
 
-    public function __invoke(InitializeEndpointMessage $message): void
+    public function __invoke(InitializeEndpointMessage $initializeEndpointMessage): void
     {
-        $endpointName = $message->getEndpointName();
-        $configuration = $this->configRepository->findOneByName($endpointName);
+        $endpointName = $initializeEndpointMessage->getEndpointName();
+        $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
 
         if (!$configuration instanceof Configuration) {
             return;
         }
 
-        $reader = new ConfigReader($configuration->getConfiguration());
+        $configReader = new ConfigReader($configuration->getConfiguration());
 
         // Initialize assets
-        if ($reader->isAssetIndexingEnabled()) {
-            $workspace = WorkspaceSorter::sort($reader->getWorkspace('asset'));
+        if ($configReader->isAssetIndexingEnabled()) {
+            $workspace = WorkspaceSorter::sort($configReader->getWorkspace('asset'));
             $this->buildConditions($workspace, 'filename', 'path');
 
-            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && $this->params !== []) {
+            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && [] !== $this->params) {
                 $ids = $this->fetchIdsFromDatabaseTable('assets', 'id');
 
                 foreach ($ids as $id) {
@@ -70,15 +71,16 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
             }
 
             // Reset conditions and params
-            $this->conditions = $this->params = [];
+            $this->conditions = [];
+            $this->params = [];
         }
 
         // Initialize objects
-        if ($reader->isObjectIndexingEnabled()) {
-            $workspace = WorkspaceSorter::sort($reader->getWorkspace('object'));
+        if ($configReader->isObjectIndexingEnabled()) {
+            $workspace = WorkspaceSorter::sort($configReader->getWorkspace('object'));
             $this->buildConditions($workspace, 'o_key', 'o_path');
 
-            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && $this->params !== []) {
+            if (isset($this->conditions[self::CONDITION_INCLUSIVE]) && [] !== $this->params) {
                 $ids = $this->fetchIdsFromDatabaseTable('objects', 'o_id');
 
                 foreach ($ids as $id) {
@@ -157,22 +159,22 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private function fetchIdsFromDatabaseTable(string $from, string $select): array
     {
-        $qb = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select($select)
             ->from($from)
             ->where(implode(' OR ', $this->conditions[self::CONDITION_INCLUSIVE]))
             ->setParameters($this->params);
 
         if (isset($this->conditions[self::CONDITION_DISTINCT])) {
-            $qb->orWhere(implode(' OR ', $this->conditions[self::CONDITION_DISTINCT]));
+            $queryBuilder->orWhere(implode(' OR ', $this->conditions[self::CONDITION_DISTINCT]));
         }
 
         if (isset($this->conditions[self::CONDITION_EXCLUSIVE])) {
-            $qb->andWhere(implode(' OR ', $this->conditions[self::CONDITION_EXCLUSIVE]));
+            $queryBuilder->andWhere(implode(' OR ', $this->conditions[self::CONDITION_EXCLUSIVE]));
         }
 
         try {
-            $ids = $qb->fetchFirstColumn();
+            $ids = $queryBuilder->fetchFirstColumn();
         } catch (\Exception) {
             $ids = [];
         }

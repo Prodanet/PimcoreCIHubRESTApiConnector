@@ -16,24 +16,24 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceSer
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use Pimcore\Model\Asset;
-use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
 {
-    public function __construct(private IndexManager $indexManager, private IndexPersistenceService $indexService)
+    public function __construct(private IndexManager $indexManager, private IndexPersistenceService $indexPersistenceService)
     {
     }
 
     /**
      * @throws \Exception
      */
-    public function __invoke(UpdateIndexElementMessage $message): void
+    public function __invoke(UpdateIndexElementMessage $updateIndexElementMessage): void
     {
-        $element = match ($message->getEntityType()) {
-            'asset' => Asset::getById($message->getEntityId()),
-            'object' => DataObject\AbstractObject::getById($message->getEntityId()),
+        $element = match ($updateIndexElementMessage->getEntityType()) {
+            'asset' => Asset::getById($updateIndexElementMessage->getEntityId()),
+            'object' => AbstractObject::getById($updateIndexElementMessage->getEntityId()),
             default => null,
         };
 
@@ -41,10 +41,10 @@ final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
             return;
         }
 
-        $this->indexService->update(
+        $this->indexPersistenceService->update(
             $element,
-            $message->getEndpointName(),
-            $this->indexManager->getIndexName($element, $message->getEndpointName())
+            $updateIndexElementMessage->getEndpointName(),
+            $this->indexManager->getIndexName($element, $updateIndexElementMessage->getEndpointName())
         );
     }
 }
