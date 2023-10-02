@@ -372,9 +372,9 @@ final class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
     #[Route('/{id}/parts', name: 'upload_list_parts', methods: ['GET'])]
-    public function parts(string $id, UploadHelper $helper): Response
+    public function parts(string $id, UploadHelper $uploadHelper): Response
     {
-        $datahubUploadSession = $helper->getSession($id);
+        $datahubUploadSession = $uploadHelper->getSession($id);
 
         return new JsonResponse([
             'entries' => $datahubUploadSession->getParts()->toArray(),

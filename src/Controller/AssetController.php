@@ -14,6 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Config;
@@ -35,6 +36,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[OA\Tag(name: 'Asset')]
 final class AssetController extends BaseEndpointController
 {
+    use RestHelperTrait;
+
     #[OA\Post(
         description: 'Simple method to create and upload asset',
         summary: 'Add asset',
@@ -135,8 +138,6 @@ final class AssetController extends BaseEndpointController
         $parentId = $this->request->query->getInt('parentId');
         $this->checkRequiredParameters(['parentId' => $parentId]);
         try {
-            $defaultUploadPath = $pimcoreConfig['assets']['default_upload_path'] ?? '/';
-
             /** @var UploadedFile $uploadedFile */
             $uploadedFile = $this->request->files->get('file');
             $sourcePath = $uploadedFile->getRealPath();
@@ -158,7 +159,7 @@ final class AssetController extends BaseEndpointController
                 throw new \Exception('Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.');
             }
 
-            if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
+            if (!$parentAsset->isAllowed('create', $this->user)) {
                 throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
             }
 
@@ -291,7 +292,7 @@ final class AssetController extends BaseEndpointController
         try {
             $asset = Asset::getById($id);
             if ($asset instanceof Asset) {
-                if ($asset->isAllowed('allowOverwrite', $this->user)) {
+                if ($asset->isAllowed('create', $this->user)) {
                     /** @var UploadedFile $uploadedFile */
                     $uploadedFile = $this->request->files->get('file');
                     $sourcePath = $uploadedFile->getRealPath();
@@ -405,6 +406,10 @@ final class AssetController extends BaseEndpointController
         // Check if required parameters are missing
         $this->checkRequiredParameters(['id' => $id]);
         $element = $this->getElementByIdType();
+        if (!$element->isAllowed('view', $this->user)) {
+            throw new AccessDeniedHttpException('Your request to create a folder has been blocked due to missing permissions');
+        }
+
         $thumbnail = $this->request->get('thumbnail');
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 

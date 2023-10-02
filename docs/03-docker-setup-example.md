@@ -7,12 +7,11 @@ First, download and install the bundles:
 ```
 # 1. Datahub
 docker compose exec php-fpm composer require pimcore/data-hub
-docker compose exec php-fpm php bin/console pimcore:bundle:enable PimcoreDataHubBundle
 docker compose exec php-fpm php bin/console pimcore:bundle:install PimcoreDataHubBundle
 
 # 2. SimpleRESTAdapterBundle
 docker compose exec php-fpm composer require ci-hub/simple-rest-adapter-bundle
-docker compose exec php-fpm bin/console pimcore:bundle:enable SimpleRESTAdapterBundle
+docker compose exec php-fpm bin/console pimcore:bundle:install SimpleRESTAdapterBundle
 ```
 
 Next, we need to add an Elasticsearch service so that the SimpleRESTAdapter can index

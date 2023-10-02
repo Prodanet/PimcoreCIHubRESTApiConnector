@@ -18,7 +18,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\DataObject\Service;
+use Pimcore\Model\Document;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\Version;
@@ -204,5 +206,32 @@ trait RestHelperTrait
         if ([] !== $required) {
             throw new InvalidParameterException($required);
         }
+    }
+
+    public function getChild(ElementInterface $element): array
+    {
+        $subtype = null;
+        if ($element instanceof Asset || $element instanceof Document) {
+            $subtype = $element->getType();
+        } elseif ($element instanceof Concrete) {
+            $subtype = $element->getClassName();
+        } elseif ($element instanceof DataObject\Folder) {
+            $subtype = 'folder';
+        }
+
+        return [
+            'system' => [
+                'id' => $element->getId(),
+                'key' => $element->getKey(),
+                'fullPath' => $element->getFullPath(),
+                'type' => $element->getType(),
+                'locked' => $element->isLocked(),
+                'parentId' => $element->getParentId(),
+                'hasChildren' => $element->hasChildren(),
+                'creationDate' => $element->getCreationDate(),
+                'modificationDate' => $element->getModificationDate(),
+                'subtype' => $subtype,
+            ],
+        ];
     }
 }

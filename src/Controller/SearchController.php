@@ -13,24 +13,30 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Exception\ServerResponseException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\ListingFilterTrait;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
-use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
+use Pimcore\Model\Asset\Listing;
+use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\Service;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[Route(path: ['/datahub/rest/{config}', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_')]
 #[Security(name: 'Bearer')]
 #[OA\Tag(name: 'Search')]
 final class SearchController extends BaseEndpointController
 {
+    use ListingFilterTrait;
+    use RestHelperTrait;
+
     /**
      * @throws \Exception
      */
@@ -184,11 +190,6 @@ final class SearchController extends BaseEndpointController
         return $this->json($this->buildResponse($result, $configReader));
     }
 
-    /**
-     * @throws ClientResponseException
-     * @throws ServerResponseException
-     * @throws \JsonException
-     */
     #[Route('/tree-items', name: 'tree_items', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
@@ -332,20 +333,15 @@ final class SearchController extends BaseEndpointController
             ),
         ],
     )]
-    public function treeItemsAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
+    public function treeItemsAction(): JsonResponse
     {
-        // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-
         $id = 1;
-        if ($request->get('id')) {
-            $id = (int) $request->get('id');
+        if ($this->request->query->has('id')) {
+            $id = $this->request->query->getInt('id');
         }
 
-        $type = $this->request->get('type');
-        // Check if required parameters are missing
+        $type = $this->request->query->getString('type');
         $this->checkRequiredParameters(['type' => $type]);
 
         $root = Service::getElementById($type, $id);
@@ -353,35 +349,57 @@ final class SearchController extends BaseEndpointController
             throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
 
-        $parentId = $this->request->get('parent_id', '1');
-        $includeFolders = filter_var(
-            $this->request->get('include_folders', true),
-            \FILTER_VALIDATE_BOOLEAN
-        );
+        $size = $this->request->query->getInt('size', 200);
+        $orderBy = $this->request->query->getString('order_by', 'id');
+        $pageCursor = $this->request->query->get('page_cursor', null);
 
-        $indices = [];
+        $result = [];
+        $childrenList = match ($type) {
+            'asset' => new Listing(),
+            'object' => new DataObject\Listing(),
+            default => throw new InvalidParameterException('Type ['.$type.'] is not supported'),
+        };
 
-        if ('asset' === $type && $configReader->isAssetIndexingEnabled()) {
-            $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config)];
+        $childrenList->addConditionParam('parentId = ?', [$root->getId()]);
 
-            if ($includeFolders) {
-                $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
+        $conditionParam = $this->filterAccessibleByUser($this->user, $root);
+        if ($conditionParam) {
+            $childrenList = $childrenList->addConditionParam($conditionParam);
+        }
+
+        $childrenList->setOrderKey($orderBy);
+
+        foreach ($childrenList->getItems($pageCursor, $size) as $child) {
+            $result[] = $this->getChild($child);
+        }
+
+        $response = [];
+        if (null === $pageCursor || is_numeric($pageCursor)) {
+            $pageCursor += $size;
+        } else {
+            $pageCursor = $size;
+        }
+
+        if (\count($result) == $size) {
+            $requestParameters = $this->request->query->all();
+            $requestParameters['config'] = $this->request->get('config');
+            if ($pageCursor < $childrenList->getTotalCount()) {
+                $requestParameters['page_cursor'] = $pageCursor;
+                $response['next'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
             }
-        } elseif ('object' === $type && $configReader->isObjectIndexingEnabled()) {
-            $indices = array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames());
 
-            if ($includeFolders) {
-                $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
+            $requestParameters['page_cursor'] = ($pageCursor - ($size * 2));
+            if ($requestParameters['page_cursor'] > 0) {
+                $response['prev'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
             }
         }
 
-        $search = $indexService->createSearch($request);
-        $this->applySearchSettings($search);
-        $this->applyQueriesAndAggregations($search, $configReader);
-        $search->addQuery(new MatchQuery('system.parentId', $parentId));
+        $response = array_merge([
+            'total_count' => $childrenList->getTotalCount(),
+            'items' => $result,
+            'page_cursor' => $pageCursor,
+        ], $response);
 
-        $result = $indexService->search(implode(',', $indices), $search->toArray());
-
-        return $this->json($this->buildResponse($result, $configReader));
+        return new JsonResponse($response);
     }
 }

@@ -96,6 +96,7 @@ abstract class BaseEndpointController extends FrontendController
         } else {
             $filter = [];
         }
+
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
             \FILTER_VALIDATE_BOOLEAN
