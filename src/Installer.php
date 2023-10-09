@@ -32,15 +32,15 @@ final class Installer extends SettingsStoreAwareInstaller
      */
     public function install(): void
     {
-        parent::install();
         // create backend permission
         Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
-        $connection = Db::get();
-
-        if (method_exists($connection, 'getSchemaManager')) {
-            $schema = $connection->getSchemaManager()->createSchema();
+        $db = Db::get();
+        if (method_exists($db, 'getSchemaManager')) {
+            $schema = $db->getSchemaManager()->createSchema();
+            $currentSchema = $db->getSchemaManager()->createSchema();
         } else {
-            $schema = $connection->createSchemaManager()->introspectSchema();
+            $schema = $db->createSchemaManager()->introspectSchema();
+            $currentSchema = $db->createSchemaManager()->createSchema();
         }
 
         // create table
@@ -54,8 +54,7 @@ final class Installer extends SettingsStoreAwareInstaller
                 'users',
                 ['userId'],
                 ['id'],
-                ['onDelete' => 'CASCADE'],
-                'fk_datahub_users'
+                ['onDelete' => 'CASCADE']
             );
         }
 
@@ -72,5 +71,40 @@ final class Installer extends SettingsStoreAwareInstaller
             $table->addColumn('fileName', 'string', ['length' => 700, 'notnull' => true]);
             $table->setPrimaryKey(['id']);
         }
+
+        $sqlStatements = $currentSchema->getMigrateToSql($schema, $db->getDatabasePlatform()); // @phpstan-ignore-line
+        if (!empty($sqlStatements)) {
+            $db->exec(implode(';', $sqlStatements));
+        }
+
+        parent::install();
+    }
+
+    public function uninstall(): void
+    {
+        $db =Db::get();
+        if (method_exists($db, 'getSchemaManager')) {
+            $schema = $db->getSchemaManager()->createSchema();
+            $currentSchema = $db->getSchemaManager()->createSchema();
+        } else {
+            $schema = $db->createSchemaManager()->introspectSchema();
+            $currentSchema = $db->createSchemaManager()->createSchema();
+        }
+        if($schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
+            $schema->dropTable(self::USER_DATAHUB_CONFIG_TABLE);
+        }
+        if($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
+            $schema->dropTable(self::UPLOAD_SESSION_TABLE);
+        }
+
+        $sqlStatements = $currentSchema->getMigrateToSql($schema, $db->getDatabasePlatform()); // @phpstan-ignore-line
+        if (!empty($sqlStatements)) {
+            $db->exec(implode(';', $sqlStatements));
+        }
+    }
+
+    public function canBeInstalled(): bool
+    {
+        return true;
     }
 }
