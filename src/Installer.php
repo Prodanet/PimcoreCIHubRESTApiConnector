@@ -34,13 +34,13 @@ final class Installer extends SettingsStoreAwareInstaller
     {
         // create backend permission
         Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
-        $db = Db::get();
-        if (method_exists($db, 'getSchemaManager')) {
-            $schema = $db->getSchemaManager()->createSchema();
-            $currentSchema = $db->getSchemaManager()->createSchema();
+        $connection = Db::get();
+        if (method_exists($connection, 'getSchemaManager')) {
+            $schema = $connection->getSchemaManager()->createSchema();
+            $currentSchema = $connection->getSchemaManager()->createSchema();
         } else {
-            $schema = $db->createSchemaManager()->introspectSchema();
-            $currentSchema = $db->createSchemaManager()->createSchema();
+            $schema = $connection->createSchemaManager()->introspectSchema();
+            $currentSchema = $connection->createSchemaManager()->createSchema();
         }
 
         // create table
@@ -72,9 +72,9 @@ final class Installer extends SettingsStoreAwareInstaller
             $tableSession->setPrimaryKey(['id']);
         }
 
-        $sqlStatements = $currentSchema->getMigrateToSql($schema, $db->getDatabasePlatform()); // @phpstan-ignore-line
+        $sqlStatements = $currentSchema->getMigrateToSql($schema, $connection->getDatabasePlatform()); // @phpstan-ignore-line
         if (!empty($sqlStatements)) {
-            $db->exec(implode(';', $sqlStatements));
+            $connection->exec(implode(';', $sqlStatements));
         }
 
         parent::install();
@@ -82,34 +82,36 @@ final class Installer extends SettingsStoreAwareInstaller
 
     public function uninstall(): void
     {
-        $db = Db::get();
-        if (method_exists($db, 'getSchemaManager')) {
-            $schema = $db->getSchemaManager()->createSchema();
-            $currentSchema = $db->getSchemaManager()->createSchema();
+        $connection = Db::get();
+        if (method_exists($connection, 'getSchemaManager')) {
+            $schema = $connection->getSchemaManager()->createSchema();
+            $currentSchema = $connection->getSchemaManager()->createSchema();
         } else {
-            $schema = $db->createSchemaManager()->introspectSchema();
-            $currentSchema = $db->createSchemaManager()->createSchema();
+            $schema = $connection->createSchemaManager()->introspectSchema();
+            $currentSchema = $connection->createSchemaManager()->createSchema();
         }
+
         if ($schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
             $schema->dropTable(self::USER_DATAHUB_CONFIG_TABLE);
         }
+
         if ($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
             $schema->dropTable(self::UPLOAD_SESSION_TABLE);
         }
 
-        $sqlStatements = $currentSchema->getMigrateToSql($schema, $db->getDatabasePlatform()); // @phpstan-ignore-line
+        $sqlStatements = $currentSchema->getMigrateToSql($schema, $connection->getDatabasePlatform()); // @phpstan-ignore-line
         if (!empty($sqlStatements)) {
-            $db->exec(implode(';', $sqlStatements));
+            $connection->exec(implode(';', $sqlStatements));
         }
     }
 
     public function isInstalled(): bool
     {
-        $db = Db::get();
-        if (method_exists($db, 'getSchemaManager')) {
-            $schema = $db->getSchemaManager()->createSchema();
+        $connection = Db::get();
+        if (method_exists($connection, 'getSchemaManager')) {
+            $schema = $connection->getSchemaManager()->createSchema();
         } else {
-            $schema = $db->createSchemaManager()->introspectSchema();
+            $schema = $connection->createSchemaManager()->introspectSchema();
         }
 
         return $schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE) && $schema->hasTable(self::UPLOAD_SESSION_TABLE);

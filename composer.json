@@ -80,6 +80,9 @@
       "php-http/discovery": true
     }
   },
+  "replace": {
+    "ci-hub/simple-rest-adapter-bundle": "*"
+  },
   "extra": {
     "branch-alias": {
       "dev-master": "2.0-dev"
