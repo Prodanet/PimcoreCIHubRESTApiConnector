@@ -27,6 +27,80 @@ final class FilterController extends BaseEndpointController
     use TagsFilterTrait;
 
     #[Route(path: '/filter', name: 'get', methods: ['GET'])]
+    #[OA\Get(
+        description: 'Method to load all filters for given config.',
+        summary: 'Get filters tree',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count of available results.',
+                            type: 'integer'
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(
+                                        property: 'label',
+                                        type: 'string',
+                                    ),
+                                    new OA\Property(
+                                        property: 'items',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            properties: [
+                                                new OA\Property(
+                                                    property: 'label',
+                                                    type: 'string',
+                                                ),
+                                            ],
+                                            type: 'object'
+                                        )
+                                    ),
+                                ],
+                                type: 'object'
+                            )
+                        ),
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Not found'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            ),
+        ],
+    )]
     public function get(): JsonResponse
     {
         $listing = new Listing();
@@ -39,6 +113,9 @@ final class FilterController extends BaseEndpointController
         $tagRoot = array_map(fn (Tag $tag): array => $this->convertTagToArray($tag), $tagRoot);
         $tagRoot = array_filter($tagRoot, static fn (array $item): bool => isset($item['items']));
 
-        return new JsonResponse($this->mergeTopLevelItems($tagRoot));
+        return new JsonResponse([
+            'total_count' => \count($tagRoot),
+            'items' => $this->mergeTopLevelItems($tagRoot),
+        ]);
     }
 }
