@@ -12,7 +12,9 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
+use Pimcore\Bundle\DataHubBundle\PimcoreDataHubBundle;
 use Pimcore\Db;
+use Pimcore\Extension\Bundle\Installer\Exception\InstallationException;
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
 use Pimcore\Model\User\Permission\Definition;
 
@@ -27,11 +29,19 @@ final class Installer extends SettingsStoreAwareInstaller
 
     public const UPLOAD_SESSION_TABLE = 'datahub_upload_sessions';
 
+    public function needsReloadAfterInstall(): bool
+    {
+        return true;
+    }
+
     /**
      * @throws \Exception
      */
     public function install(): void
     {
+        if (!PimcoreDataHubBundle::isInstalled()) {
+            throw new InstallationException('Install PimcoreDataHubBundle first');
+        }
         // create backend permission
         Definition::create(self::PERMISSION_KEY)->setCategory(\Pimcore\Bundle\DataHubBundle\Installer::DATAHUB_PERMISSION_CATEGORY)->save();
         $connection = Db::get();
