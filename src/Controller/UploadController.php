@@ -508,13 +508,13 @@ final class UploadController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Uploads (Chunked)')]
     #[Route('/{id}/status', name: 'upload_status', methods: ['GET'])]
-    public function status(string $id, UploadHelper $helper): Response
+    public function status(string $id, UploadHelper $uploadHelper): Response
     {
-        if ($helper->hasSession($id)) {
-            $session = $helper->getSession($id);
+        if ($uploadHelper->hasSession($id)) {
+            $session = $uploadHelper->getSession($id);
         }
 
-        $response = $helper->getSessionResponse($this->request, $id, $this->config, self::PART_SIZE, $session->getPartsCount(), $session->getTotalParts());
+        $response = $uploadHelper->getSessionResponse($this->request, $id, $this->config, self::PART_SIZE, $session->getPartsCount(), $session->getTotalParts());
         $response['file_size'] = $session->getFileSize();
 
         return new JsonResponse($response);

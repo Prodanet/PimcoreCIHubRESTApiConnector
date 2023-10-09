@@ -82,8 +82,8 @@ final class ConfigController extends AdminAbstractController
         $configReader->add([
             'swaggerUrl' => $this->getEndpoint('datahub_rest_adapter_swagger_ui'),
             'treeItemsUrl' => $this->getEndpoint('datahub_rest_endpoints_tree_items', ['config' => $configName]),
-            'searchUrl' => $this->getEndpoint('datahub_rest_endpoints_get_element', ['config' => $configName]),
-            'getElementByIdUrl' => $this->getEndpoint('datahub_rest_endpoints_get_element', ['config' => $configName]),
+            'searchUrl' => $this->getEndpoint('datahub_rest_endpoints_element_get', ['config' => $configName]),
+            'getElementByIdUrl' => $this->getEndpoint('datahub_rest_endpoints_element_get', ['config' => $configName]),
         ]);
 
         return $this->json([
