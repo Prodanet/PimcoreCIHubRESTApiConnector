@@ -45,12 +45,12 @@ final class Installer extends SettingsStoreAwareInstaller
 
         // create table
         if (!$schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
-            $table = $schema->createTable(self::USER_DATAHUB_CONFIG_TABLE);
-            $table->addColumn('id', 'integer', ['length' => 11, 'autoincrement' => true, 'notnull' => true]);
-            $table->addColumn('data', 'text', ['notnull' => false]);
-            $table->addColumn('userId', 'integer', ['length' => 11, 'notnull' => true]);
-            $table->setPrimaryKey(['id']);
-            $table->addForeignKeyConstraint(
+            $tableConfig = $schema->createTable(self::USER_DATAHUB_CONFIG_TABLE);
+            $tableConfig->addColumn('id', 'integer', ['length' => 11, 'autoincrement' => true, 'notnull' => true, 'unsigned' => true]);
+            $tableConfig->addColumn('data', 'text', ['notnull' => false]);
+            $tableConfig->addColumn('userId', 'integer', ['length' => 11, 'notnull' => true, 'unsigned' => true]);
+            $tableConfig->setPrimaryKey(['id']);
+            $tableConfig->addForeignKeyConstraint(
                 'users',
                 ['userId'],
                 ['id'],
@@ -60,16 +60,16 @@ final class Installer extends SettingsStoreAwareInstaller
 
         // create table
         if (!$schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
-            $table = $schema->createTable(self::UPLOAD_SESSION_TABLE);
-            $table->addColumn('id', 'string', ['length' => 255, 'notnull' => false]);
-            $table->addUniqueIndex(['id']);
-            $table->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
-            $table->addColumn('totalParts', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('fileSize', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('assetId', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('parentId', 'integer', ['length' => 11, 'notnull' => false]);
-            $table->addColumn('fileName', 'string', ['length' => 700, 'notnull' => true]);
-            $table->setPrimaryKey(['id']);
+            $tableSession = $schema->createTable(self::UPLOAD_SESSION_TABLE);
+            $tableSession->addColumn('id', 'string', ['length' => 255, 'notnull' => false]);
+            $tableSession->addUniqueIndex(['id']);
+            $tableSession->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
+            $tableSession->addColumn('totalParts', 'integer', ['length' => 11, 'notnull' => false]);
+            $tableSession->addColumn('fileSize', 'integer', ['length' => 11, 'notnull' => false]);
+            $tableSession->addColumn('assetId', 'integer', ['length' => 11, 'notnull' => false]);
+            $tableSession->addColumn('parentId', 'integer', ['length' => 11, 'notnull' => false]);
+            $tableSession->addColumn('fileName', 'string', ['length' => 700, 'notnull' => true]);
+            $tableSession->setPrimaryKey(['id']);
         }
 
         $sqlStatements = $currentSchema->getMigrateToSql($schema, $db->getDatabasePlatform()); // @phpstan-ignore-line
@@ -82,7 +82,7 @@ final class Installer extends SettingsStoreAwareInstaller
 
     public function uninstall(): void
     {
-        $db =Db::get();
+        $db = Db::get();
         if (method_exists($db, 'getSchemaManager')) {
             $schema = $db->getSchemaManager()->createSchema();
             $currentSchema = $db->getSchemaManager()->createSchema();
@@ -90,10 +90,10 @@ final class Installer extends SettingsStoreAwareInstaller
             $schema = $db->createSchemaManager()->introspectSchema();
             $currentSchema = $db->createSchemaManager()->createSchema();
         }
-        if($schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
+        if ($schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE)) {
             $schema->dropTable(self::USER_DATAHUB_CONFIG_TABLE);
         }
-        if($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
+        if ($schema->hasTable(self::UPLOAD_SESSION_TABLE)) {
             $schema->dropTable(self::UPLOAD_SESSION_TABLE);
         }
 
@@ -103,8 +103,25 @@ final class Installer extends SettingsStoreAwareInstaller
         }
     }
 
+    public function isInstalled(): bool
+    {
+        $db = Db::get();
+        if (method_exists($db, 'getSchemaManager')) {
+            $schema = $db->getSchemaManager()->createSchema();
+        } else {
+            $schema = $db->createSchemaManager()->introspectSchema();
+        }
+
+        return $schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE) && $schema->hasTable(self::UPLOAD_SESSION_TABLE);
+    }
+
     public function canBeInstalled(): bool
     {
-        return true;
+        return !$this->isInstalled();
+    }
+
+    public function canBeUninstalled(): bool
+    {
+        return $this->isInstalled();
     }
 }
