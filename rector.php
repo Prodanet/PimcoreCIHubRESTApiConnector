@@ -17,6 +17,7 @@ use Rector\PHPUnit\CodeQuality\Rector\Class_\AddSeeTestAnnotationRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\Set\PHPUnitLevelSetList;
 use Rector\PHPUnit\Set\PHPUnitSetList;
+use Rector\Privatization\Rector\Class_\FinalizeClassesWithoutChildrenRector;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
 use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromStrictConstructorRector;
@@ -57,5 +58,6 @@ return static function (RectorConfig $rectorConfig): void {
         CountOnNullRector::class,
         AddSeeTestAnnotationRector::class,
         PreferPHPUnitThisCallRector::class,
+        FinalizeClassesWithoutChildrenRector::class,
     ]);
 };
