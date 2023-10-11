@@ -40,7 +40,9 @@ This Code of Conduct applies when an individual is representing the project or i
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by first contacting the project team at engcom@adobe.com. Oversight of Adobe projects is handled by the Adobe Open Source Office, which has final say in any violations and enforcement of this Code of Conduct and can be reached at Grp-opensourceoffice@adobe.com. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by first contacting the project team at support@brandoriented.io. 
+Oversight of projects is handled by the Brand Oriented, which has final say in any violations and enforcement of this Code of Conduct and can be reached at support@brandoriented.io. 
+All complaints will be reviewed and investigated promptly and fairly.
 
 The project team must respect the privacy and security of the reporter of any incident.
 
