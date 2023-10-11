@@ -13,15 +13,14 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AssetNotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Element\Service;
+use Pimcore\Model\Element\Tag;
 use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -81,19 +80,34 @@ final class ElementController extends BaseEndpointController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(
-                            property: 'total_count',
-                            description: 'Total count of available results.',
+                            property: 'id',
+                            description: 'Element ID',
                             type: 'integer'
                         ),
                         new OA\Property(
-                            property: 'items',
-                            type: 'array',
-                            items: new OA\Items()
+                            property: 'Parent ID',
+                            description: 'Parent ID',
+                            type: 'integer',
                         ),
                         new OA\Property(
-                            property: 'page_cursor',
-                            description: 'Page cursor for next page.',
+                            property: 'name',
+                            description: 'Element name',
                             type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'type',
+                            description: 'Type of element',
+                            type: 'string'
+                        ),
+                        new OA\Property(
+                            property: 'locked',
+                            description: 'Element is locked?',
+                            type: 'boolean'
+                        ),
+                        new OA\Property(
+                            property: 'tags',
+                            description: 'Tags assigned to element',
+                            type: 'array'
                         ),
                     ],
                     type: 'object'
@@ -113,47 +127,27 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function getElementAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
+    public function getElementAction(): JsonResponse
     {
-        $configuration = $this->getDataHubConfiguration();
-        // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-
-        $root = $this->getElementByIdType();
-        if (!$root->isAllowed('view', $this->user)) {
-            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
+        $element = $this->getElementByIdType();
+        if (!$element->isAllowed('view', $this->user)) {
+            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$element->getRealFullPath());
         }
+        $tags = Tag::getTagsForElement('asset', $element->getId());
 
-        $indices = [];
-
-        if ('asset' === $root->getType() && $configReader->isAssetIndexingEnabled()) {
-            $indices = [
-                $indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config),
-                $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config),
-            ];
-        } elseif ('object' === $root->getType() && $configReader->isObjectIndexingEnabled()) {
-            $indices = [$indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config), ...array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames())];
-        }
-
-        $result = [];
-        foreach ($indices as $index) {
-            try {
-                $result = $indexService->get($root->getId(), $index);
-            } catch (\Exception) {
-                $result = [];
-            }
-
-            if (isset($result['found']) && true === $result['found']) {
-                break;
-            }
-        }
-
-        if ([] === $result || false === $result['found']) {
-            throw new AssetNotFoundException(sprintf("Element with type '%s' and ID '%s' not found.", $root->getType(), $root->getId()));
-        }
-
-        return $this->json($this->buildResponse($result, $configReader));
+        return $this->json([
+            'id' => $element->getId(),
+            'parentId' => $element->getParentId(),
+            'name' => $element->getKey(),
+            'type' => $element->getType(),
+            'locked' => $element->isLocked(),
+            'tags' => array_map(function (Tag $tag) {
+                return [
+                    'label' => $tag->getName(),
+                ];
+            }, $tags),
+        ]);
     }
 
     #[Route('', name: 'delete', methods: ['DELETE'])]
