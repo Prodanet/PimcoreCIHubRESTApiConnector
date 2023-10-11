@@ -46,8 +46,7 @@ All complaints will be reviewed and investigated promptly and fairly.
 
 The project team must respect the privacy and security of the reporter of any incident.
 
-Project maintainers who do not follow or enforce the Code of Conduct may face temporary or permanent repercussions as determined by other members of the project's leadership or the Adobe Open Source Office.
-
+Project maintainers who do not follow or enforce the Code of Conduct may face temporary or permanent repercussions as determined by other members of the project's leadership or the Brand Oriented.
 
 ## Enforcement Guidelines
 
