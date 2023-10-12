@@ -12,9 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
@@ -107,7 +105,8 @@ final class ElementController extends BaseEndpointController
                         new OA\Property(
                             property: 'tags',
                             description: 'Tags assigned to element',
-                            type: 'array'
+                            type: 'array',
+                            items: new OA\Items(type: 'string'),
                         ),
                     ],
                     type: 'object'
