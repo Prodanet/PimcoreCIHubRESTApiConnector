@@ -16,6 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundExceptio
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
@@ -56,11 +57,17 @@ abstract class BaseEndpointController extends FrontendController
         private DataHubConfigurationRepository $dataHubConfigurationRepository,
         private LabelExtractorInterface $labelExtractor,
         private RequestStack $requestStack,
-        protected AuthManager $authManager
+        protected AuthManager $authManager,
+        private AssetProvider $assetProvider
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
         $this->user = $this->authManager->authenticate();
+    }
+
+    public function getAssetProvider(): AssetProvider
+    {
+        return $this->assetProvider;
     }
 
     public function applySearchSettings(Search $search): void

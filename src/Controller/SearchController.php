@@ -302,6 +302,9 @@ final class SearchController extends BaseEndpointController
         return $this->json($this->buildResponse($result, $configReader));
     }
 
+    /**
+     * @throws \Exception
+     */
     #[Route('/tree-items', name: 'tree_items', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to load all elements of a tree level. For paging use link provided in link header of response.',
@@ -502,6 +505,8 @@ final class SearchController extends BaseEndpointController
     public function treeItemsAction(): JsonResponse
     {
         $this->authManager->checkAuthentication();
+        $configuration = $this->getDataHubConfiguration();
+        $configReader = new ConfigReader($configuration->getConfiguration());
         $id = 1;
         if ($this->request->query->has('id')) {
             $id = $this->request->query->getInt('id');
@@ -537,7 +542,7 @@ final class SearchController extends BaseEndpointController
 
         $pageCursor = null == $pageCursor ? 0 : $pageCursor;
         foreach ($childrenList->getItems($pageCursor, $size) as $child) {
-            $result[] = $this->getChild($child);
+            $result[] = $this->getChild($child, $configReader);
         }
 
         $response = [];
