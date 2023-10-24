@@ -16,6 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\GetModifiedConfigurationEvent;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
@@ -33,11 +34,15 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 #[Route('/admin/rest/config', name: 'datahub_rest_adapter_config_', options: ['expose' => true])]
 final class ConfigController extends AdminAbstractController
 {
+    public function __construct(
+        private AssetProvider $assetProvider)
+    {
+    }
     #[Route('/delete', name: 'delete', methods: ['GET'])]
     public function deleteAction(
         DataHubConfigurationRepository $configRepository,
         EventDispatcherInterface $eventDispatcher,
-        Request $request
+        Request $request,
     ): JsonResponse {
         $this->checkPermission(BaseConfigController::CONFIG_NAME);
 
@@ -97,6 +102,9 @@ final class ConfigController extends AdminAbstractController
         ]);
     }
 
+    /**
+     * @throws \Exception
+     */
     #[Route('/label-list', name: 'label_list', methods: ['GET'])]
     public function labelListAction(
         DataHubConfigurationRepository $configRepository,
@@ -114,9 +122,21 @@ final class ConfigController extends AdminAbstractController
         }
 
         $configReader = new ConfigReader($configuration->getConfiguration());
-        $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName), ...array_map(static fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $configName), $configReader->getObjectClassNames())];
+        $childrenList = new \Pimcore\Model\Asset\Listing();
+        $result = [];
+        foreach ($childrenList->getItems(0, 1000) as $child) {
 
-        $labels = $labelExtractor->extractLabels($indices);
+            $result[] = $this->assetProvider->getIndexData($child, $configReader);
+        }
+
+        $labels = [];
+        foreach ($result as $item) {
+            foreach ($item as $dataKey => $dataList) {
+                foreach ($dataList as $subDataKey => $dataElement) {
+                    $labels[] = $dataKey.'.'.$subDataKey;
+                }
+            }
+        }
 
         return $this->json(['success' => true, 'labelList' => $labels]);
     }

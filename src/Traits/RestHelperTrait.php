@@ -19,6 +19,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Service;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\ValidationException;
@@ -212,6 +213,12 @@ trait RestHelperTrait
      */
     public function getChild(ElementInterface $element, ConfigReader $configReader): array
     {
-        return $this->getAssetProvider()->getIndexData($element, $configReader);
+        if ($element instanceof AbstractObject) {
+            return $this->getDataObjectProvider()->getIndexData($element, $configReader);
+        } elseif ($element instanceof Asset) {
+            return $this->getAssetProvider()->getIndexData($element, $configReader);
+        } else {
+            throw new \InvalidArgumentException('This element type is currently not supported.');
+        }
     }
 }
