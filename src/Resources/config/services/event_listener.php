@@ -17,7 +17,6 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ConfigModificationListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ElementEnqueueingListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ExceptionListener;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Guard\WorkspaceGuardInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -42,7 +41,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CompositeConfigurationLoader::class),
             service(IndexManager::class),
             service('messenger.default_bus'),
-            service(WorkspaceGuardInterface::class),
         ])
         ->tag('kernel.event_subscriber');
 

@@ -30,8 +30,12 @@ final class IndexPersistenceService
     /**
      * @param array<string, string|array> $indexSettings
      */
-    public function __construct(private Client $client, private DataHubConfigurationRepository $dataHubConfigurationRepository, private AssetProvider $assetProvider, private DataObjectProvider $dataObjectProvider, private array $indexSettings)
-    {
+    public function __construct(private Client $client,
+        private DataHubConfigurationRepository $dataHubConfigurationRepository,
+        private AssetProvider $assetProvider,
+        private DataObjectProvider $dataObjectProvider,
+        private array $indexSettings
+    ) {
     }
 
     /**

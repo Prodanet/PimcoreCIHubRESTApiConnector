@@ -12,7 +12,6 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Guard\WorkspaceGuardInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
@@ -22,7 +21,6 @@ use Pimcore\Event\AssetEvents;
 use Pimcore\Event\DataObjectEvents;
 use Pimcore\Event\Model\AssetEvent;
 use Pimcore\Event\Model\DataObjectEvent;
-use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\Concrete;
@@ -32,8 +30,10 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ElementEnqueueingListener implements EventSubscriberInterface
 {
-    public function __construct(private CompositeConfigurationLoader $compositeConfigurationLoader, private IndexManager $indexManager, private MessageBusInterface $messageBus, private WorkspaceGuardInterface $workspaceGuard)
-    {
+    public function __construct(private CompositeConfigurationLoader $compositeConfigurationLoader,
+        private IndexManager $indexManager,
+        private MessageBusInterface $messageBus
+    ) {
     }
 
     public static function getSubscribedEvents(): array
@@ -64,20 +64,8 @@ final class ElementEnqueueingListener implements EventSubscriberInterface
                 continue;
             }
 
-            if ($this->workspaceGuard->isGranted($asset, $type, $reader)) {
-                $this->messageBus->dispatch(new UpdateIndexElementMessage($asset->getId(), $type, $name));
-
-                // Index all folders above the asset
-                $this->enqueueParentFolders($asset->getParent(), Folder::class, $type, $name);
-            } else {
-                $this->messageBus->dispatch(
-                    new DeleteIndexElementMessage(
-                        $asset->getId(),
-                        $type,
-                        $this->indexManager->getIndexName($asset, $name)
-                    )
-                );
-            }
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($asset->getId(), $type, $name));
+            $this->enqueueParentFolders($asset->getParent(), Folder::class, $type, $name);
         }
     }
 
@@ -102,20 +90,10 @@ final class ElementEnqueueingListener implements EventSubscriberInterface
                 continue;
             }
 
-            if ($this->workspaceGuard->isGranted($object, $type, $reader)) {
-                $this->messageBus->dispatch(new UpdateIndexElementMessage($object->getId(), $type, $name));
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($object->getId(), $type, $name));
 
-                // Index all folders above the object
-                $this->enqueueParentFolders($object->getParent(), DataObject\Folder::class, $type, $name);
-            } else {
-                $this->messageBus->dispatch(
-                    new DeleteIndexElementMessage(
-                        $object->getId(),
-                        $type,
-                        $this->indexManager->getIndexName($object, $name)
-                    )
-                );
-            }
+            // Index all folders above the object
+            $this->enqueueParentFolders($object->getParent(), DataObject\Folder::class, $type, $name);
         }
     }
 
@@ -135,15 +113,13 @@ final class ElementEnqueueingListener implements EventSubscriberInterface
                 continue;
             }
 
-            if ($this->workspaceGuard->isGranted($asset, $type, $reader)) {
-                $this->messageBus->dispatch(
-                    new DeleteIndexElementMessage(
-                        $asset->getId(),
-                        $type,
-                        $this->indexManager->getIndexName($asset, $name)
-                    )
-                );
-            }
+            $this->messageBus->dispatch(
+                new DeleteIndexElementMessage(
+                    $asset->getId(),
+                    $type,
+                    $this->indexManager->getIndexName($asset, $name)
+                )
+            );
         }
     }
 
@@ -168,15 +144,13 @@ final class ElementEnqueueingListener implements EventSubscriberInterface
                 continue;
             }
 
-            if ($this->workspaceGuard->isGranted($object, $type, $reader)) {
-                $this->messageBus->dispatch(
-                    new DeleteIndexElementMessage(
-                        $object->getId(),
-                        $type,
-                        $this->indexManager->getIndexName($object, $name)
-                    )
-                );
-            }
+            $this->messageBus->dispatch(
+                new DeleteIndexElementMessage(
+                    $object->getId(),
+                    $type,
+                    $this->indexManager->getIndexName($object, $name)
+                )
+            );
         }
     }
 

@@ -12,15 +12,24 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
+use Carbon\Carbon;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
+use Pimcore\Db;
+use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Folder;
+use Pimcore\Model\DataObject;
+use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -47,6 +56,7 @@ final class ConfigModificationListener implements EventSubscriberInterface
     /**
      * @throws \RuntimeException
      * @throws ESClientException
+     * @throws Exception
      */
     public function onPostSave(ConfigurationEvent $configurationEvent): void
     {
@@ -64,6 +74,56 @@ final class ConfigModificationListener implements EventSubscriberInterface
 
         // Initialize endpoint
         $this->initializeEndpoint($configReader);
+        $this->initIndex($configReader);
+    }
+
+    protected function getDb(): Connection
+    {
+        return Db::get();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function initIndex(ConfigReader $configReader): void
+    {
+        $assets = $this->getDb()->executeQuery('SELECT id, parentId FROM assets')->fetchAllAssociative();
+        foreach ($assets as $asset) {
+            $name = $configReader->getName();
+
+            // Check if assets are enabled
+            if (!$configReader->isAssetIndexingEnabled()) {
+                continue;
+            }
+
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($asset['id'], 'asset', $name));
+            $this->enqueueParentFolders(Asset::getById($asset['parentId']), Folder::class, 'asset', $name);
+        }
+
+        $objects = $this->getDb()->executeQuery('SELECT id, parentId FROM objects')->fetchAllAssociative();
+        foreach ($objects as $object) {
+            $name = $configReader->getName();
+
+            // Check if assets are enabled
+            if (!$configReader->isAssetIndexingEnabled()) {
+                continue;
+            }
+
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($object['id'], 'object', $name));
+            $this->enqueueParentFolders(DataObject::getById($object['parentId']), \Pimcore\Model\DataObject\Folder::class, 'object', $name);
+        }
+    }
+
+    private function enqueueParentFolders(
+        ?ElementInterface $element,
+        string $folderClass,
+        string $type,
+        string $name
+    ): void {
+        while ($element instanceof $folderClass && 1 !== $element->getId()) {
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
+            $element = $element->getParent();
+        }
     }
 
     private function handleAssetIndices(ConfigReader $configReader): void
