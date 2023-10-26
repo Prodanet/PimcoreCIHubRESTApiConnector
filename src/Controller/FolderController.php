@@ -62,12 +62,21 @@ final class FolderController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'id',
-                description: 'ID of element.',
+                name: 'parentId',
+                description: 'ID of parent element.',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
                     type: 'integer'
+                )
+            ),
+            new OA\Parameter(
+                name: 'name',
+                description: 'Name of folder.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
                 )
             ),
         ],
@@ -126,9 +135,6 @@ final class FolderController extends BaseEndpointController
         ]);
     }
 
-    /**
-     * @throws \Exception
-     */
     #[Route('', name: 'folder_delete', methods: ['DELETE'])]
     #[OA\Delete(
         description: 'Method to delete folder by type and ID.',

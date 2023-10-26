@@ -80,7 +80,7 @@ final class UploadHelper
             throw new InvalidParameterException(['file_size', 'file_name']);
         }
 
-        $parentId = $request->request->get('parent_id');
+        $parentId = $request->request->get('parentId');
         $parentId = $this->getParent($parentId, $assetId);
 
         if (0 !== $assetId) {

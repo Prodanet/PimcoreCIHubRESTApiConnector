@@ -335,7 +335,7 @@ final class SearchController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'parent_id',
+                name: 'parentId',
                 description: 'ID of parent element.',
                 in: 'query',
                 required: false,
@@ -508,8 +508,8 @@ final class SearchController extends BaseEndpointController
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
         $id = 1;
-        if ($this->request->query->has('id')) {
-            $id = $this->request->query->getInt('id');
+        if ($this->request->query->has('parentId')) {
+            $id = $this->request->query->getInt('parentId');
         }
 
         $type = $this->request->query->getString('type');

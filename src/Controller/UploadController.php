@@ -69,7 +69,7 @@ final class UploadController extends BaseEndpointController
                 example: '104857600'
             ),
             new OA\Parameter(
-                name: 'parent_id',
+                name: 'parentId',
                 description: 'Parent ID of asset.',
                 in: 'query',
                 required: true,
