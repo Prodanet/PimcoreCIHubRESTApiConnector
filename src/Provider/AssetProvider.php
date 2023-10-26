@@ -13,6 +13,7 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\LockedTrait;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Document;
 use Pimcore\Model\Asset\Folder;
@@ -26,6 +27,7 @@ use Webmozart\Assert\Assert;
 
 final class AssetProvider implements ProviderInterface
 {
+    use LockedTrait;
     /**
      * This thumbnail needs to be passed with every image and document, so CI HUB can display a preview for it.
      */
@@ -238,6 +240,7 @@ final class AssetProvider implements ProviderInterface
             'hasChildren' => $asset->hasChildren(),
             'creationDate' => $asset->getCreationDate(),
             'modificationDate' => $asset->getModificationDate(),
+            'locked' => $this->isLocked($asset->getId(), 'asset'),
         ];
 
         if (!$asset instanceof Folder) {

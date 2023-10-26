@@ -14,6 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Provider;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\LockedTrait;
 use Pimcore\Localization\LocaleService;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\AbstractObject;
@@ -25,6 +26,7 @@ use Webmozart\Assert\Assert;
 
 final class DataObjectProvider implements ProviderInterface
 {
+    use LockedTrait;
     public function __construct(private CompositeDataCollector $compositeDataCollector)
     {
     }
@@ -95,6 +97,7 @@ final class DataObjectProvider implements ProviderInterface
             'hasChildren' => $object->hasChildren(),
             'creationDate' => $object->getCreationDate(),
             'modificationDate' => $object->getModificationDate(),
+            'locked' => $this->isLocked($object->getId(), 'object'),
         ];
     }
 }

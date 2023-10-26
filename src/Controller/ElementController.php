@@ -13,6 +13,7 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
@@ -23,6 +24,7 @@ use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(path: ['/datahub/rest/{config}/element', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_element_')]
@@ -649,7 +651,7 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function lock(AssetHelper $assetHelper): Response
+    public function lock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
         $element = $this->getElementByIdType();
 
@@ -662,6 +664,7 @@ final class ElementController extends BaseEndpointController
             }
 
             $assetHelper->lock($element->getId(), $element->getType(), $this->user->getId());
+            $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $element->getType(), $this->request->get('config')));
 
             return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] was just locked']);
         }
@@ -742,7 +745,7 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function unlock(AssetHelper $assetHelper): Response
+    public function unlock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
         $element = $this->getElementByIdType();
 
@@ -753,6 +756,7 @@ final class ElementController extends BaseEndpointController
                 if ($unlocked) {
                     return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] has been unlocked for editing']);
                 }
+                $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $element->getType(), $this->request->get('config')));
 
                 return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] is locked for editing'], 403);
             }
