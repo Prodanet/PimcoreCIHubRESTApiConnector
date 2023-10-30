@@ -21,6 +21,7 @@ use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Service;
+use Pimcore\Model\Element\DuplicateFullPathException;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\Version;
@@ -69,7 +70,11 @@ trait RestHelperTrait
 
     public function getParent(): Asset|DataObject
     {
-        $type = $this->request->request->getString('type');
+        if ($this->request->request->has('type')) {
+            $type = $this->request->request->getString('type');
+        } else {
+            $type = $this->request->query->getString('type');
+        }
 
         return match ($type) {
             'asset' => $this->getAssetParent(),
@@ -82,15 +87,17 @@ trait RestHelperTrait
     {
         if ($this->request->query->has('parentId')) {
             $parentId = $this->request->query->getInt('parentId');
-            $parentAsset = Asset::getById($parentId);
-            if (!$parentAsset instanceof Asset) {
-                throw new NotFoundException(sprintf('Parent [%s] does not exist', $parentId));
-            }
-
-            return $parentAsset;
+        } elseif ($this->request->request->has('parentId')) {
+            $parentId = $this->request->request->getInt('parentId');
+        } else {
+            throw new NotFoundException('ParentId is required');
+        }
+        $parentAsset = Asset::getById($parentId);
+        if (!$parentAsset instanceof Asset) {
+            throw new NotFoundException(sprintf('Parent [%s] does not exist', $parentId));
         }
 
-        throw new NotFoundException('ParentId is required');
+        return $parentAsset;
     }
 
     /**
@@ -111,18 +118,37 @@ trait RestHelperTrait
         throw new AccessDeniedHttpException('Your request to delete a folder has been blocked due to missing permissions');
     }
 
+    public function getElementNameFromRequest(): string
+    {
+        if ($this->request->query->has('name')) {
+            $name = $this->request->query->getString('name');
+        } elseif ($this->request->request->has('name')) {
+            $name = $this->request->request->getString('name');
+        } else {
+            throw new AssetExistsException('Name is required');
+        }
+
+        return $name;
+    }
+
     public function createAssetFolder(Asset $asset): Asset
     {
-        $name = $this->request->query->getString('name');
+        $name = $this->getElementNameFromRequest();
         $equalAsset = Asset::getByPath($asset->getRealFullPath().'/'.$name);
         if ($asset->isAllowed('create', $this->user)) {
             if (!$equalAsset instanceof Asset) {
-                return Asset::create($asset->getId(), [
-                    'filename' => $name,
-                    'type' => 'folder',
-                    'userOwner' => $this->user->getId(),
-                    'userModification' => $this->user->getId(),
-                ]);
+                try {
+                    return Asset::create($asset->getId(), [
+                        'filename' => $name,
+                        'type' => 'folder',
+                        'userOwner' => $this->user->getId(),
+                        'userModification' => $this->user->getId(),
+                    ]);
+                } catch (DuplicateFullPathException $e) {
+                    throw new AssetExistsException('Folder with this name already exists');
+                } catch (\Exception $exception) {
+                    throw new AssetExistsException($exception->getMessage());
+                }
             } else {
                 throw new AssetExistsException('Folder with this name already exists');
             }
@@ -154,17 +180,23 @@ trait RestHelperTrait
         $name = $this->request->request->getString('name');
         if ($dataObject->isAllowed('create', $this->user)) {
             if (!Service::pathExists($dataObject->getRealFullPath().'/'.$name)) {
-                $folder = DataObject\Folder::create([
-                    'parentId' => $dataObject->getId(),
-                    'creationDate' => time(),
-                    'userOwner' => $this->user->getId(),
-                    'userModification' => $this->user->getId(),
-                    'key' => $name,
-                    'published' => true,
-                ]);
-                $folder->save();
+                try {
+                    $folder = DataObject\Folder::create([
+                        'parentId' => $dataObject->getId(),
+                        'creationDate' => time(),
+                        'userOwner' => $this->user->getId(),
+                        'userModification' => $this->user->getId(),
+                        'key' => $name,
+                        'published' => true,
+                    ]);
+                    $folder->save();
 
-                return $folder;
+                    return $folder;
+                } catch (DuplicateFullPathException $e) {
+                    throw new AssetExistsException('Folder with this name already exists');
+                } catch (\Exception $exception) {
+                    throw new AssetExistsException($exception->getMessage());
+                }
             } else {
                 throw new AssetExistsException('Folder with this name already exists');
             }
