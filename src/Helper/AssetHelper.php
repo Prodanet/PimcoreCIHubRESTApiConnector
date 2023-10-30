@@ -34,7 +34,7 @@ final class AssetHelper
     public function isLocked(int $cid, string $ctype, int $userId): bool
     {
         if (($lock = Editlock::getByElement($cid, $ctype)) instanceof Editlock) {
-            if ((time() - $lock->getDate()) > 3600) {
+            if ((time() - $lock->getDate()) > 3600 && $lock->getUser()->getId() == $userId) {
                 // lock is out of date unlock it
                 Editlock::unlock($cid, $ctype);
 
@@ -153,7 +153,7 @@ final class AssetHelper
         $editlock = new Editlock();
         $editlock->setCid($cid);
         $editlock->setCtype($ctype);
-        $editlock->setDate(time());
+        $editlock->setDate(time() + (60 * 10));
         $editlock->setUserId($userId);
         $editlock->save();
 

@@ -128,10 +128,11 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function getElementAction(): JsonResponse
+    public function getElementAction(AssetHelper $assetHelper): JsonResponse
     {
         $this->authManager->checkAuthentication();
         $element = $this->getElementByIdType();
+        $elementType = $element instanceof Asset ? 'asset' : 'object';
         if (!$element->isAllowed('view', $this->user)) {
             throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$element->getRealFullPath());
         }
@@ -142,7 +143,7 @@ final class ElementController extends BaseEndpointController
             'parentId' => $element->getParentId(),
             'name' => $element->getKey(),
             'type' => $element->getType(),
-            'locked' => $element->isLocked(),
+            'locked' => $assetHelper->isLocked($element->getId(), $elementType, $this->user->getId()),
             'tags' => array_map(function (Tag $tag) {
                 return [
                     'label' => $tag->getName(),
@@ -654,22 +655,22 @@ final class ElementController extends BaseEndpointController
     public function lock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
         $element = $this->getElementByIdType();
-
+        $elementType = $element instanceof Asset ? 'asset' : 'object';
         if ('folder' !== $element->getType()
             && ($element->isAllowed('publish', $this->user)
                 || $element->isAllowed('delete', $this->user))
         ) {
-            if ($assetHelper->isLocked($element->getId(), 'asset', $this->user->getId())) {
-                return new JsonResponse(['success' => false, 'message' => $element->getType().' with id ['.$element->getId().'] is already locked for editing'], 403);
+            if ($assetHelper->isLocked($element->getId(), $elementType, $this->user->getId())) {
+                return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$element->getId().'] is already locked for editing'], 403);
             }
 
-            $assetHelper->lock($element->getId(), $element->getType(), $this->user->getId());
-            $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $element->getType(), $this->request->get('config')));
+            $assetHelper->lock($element->getId(), $elementType, $this->user->getId());
+            $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $elementType, $this->request->get('config')));
 
-            return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] was just locked']);
+            return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] was just locked']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new '.$element->getType().' in the folder: '.$element->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new '.$elementType.' in the folder: '.$element->getParent()->getRealFullPath());
     }
 
     #[Route('/unlock', name: 'unlock', methods: ['POST'])]
@@ -748,22 +749,22 @@ final class ElementController extends BaseEndpointController
     public function unlock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
         $element = $this->getElementByIdType();
-
+        $elementType = $element instanceof Asset ? 'asset' : 'object';
         // check for lock on non-folder items only.
         if ('folder' !== $element->getType() && ($element->isAllowed('publish', $this->user) || $element->isAllowed('delete', $this->user))) {
-            if ($assetHelper->isLocked($element->getId(), 'asset', $this->user->getId())) {
+            if ($assetHelper->isLocked($element->getId(), $elementType, $this->user->getId())) {
                 $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $element->getId());
                 if ($unlocked) {
-                    return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] has been unlocked for editing']);
+                    return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] has been unlocked for editing']);
                 }
-                $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $element->getType(), $this->request->get('config')));
+                $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $elementType, $this->request->get('config')));
 
-                return new JsonResponse(['success' => true, 'message' => $element->getType().' with id ['.$element->getId().'] is locked for editing'], 403);
+                return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] is locked for editing'], 403);
             }
 
-            return new JsonResponse(['success' => false, 'message' => $element->getType().' with id ['.$element->getId().'] is already unlocked for editing']);
+            return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$element->getId().'] is already unlocked for editing']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new '.$element->getType().' in the folder: '.$element->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to create new '.$elementType.' in the folder: '.$element->getParent()->getRealFullPath());
     }
 }
