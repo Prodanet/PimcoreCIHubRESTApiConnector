@@ -227,17 +227,18 @@ final class ElementController extends BaseEndpointController
     )]
     public function delete(): Response
     {
+        $type = $this->request->query->getString('type');
         $element = $this->getElementByIdType();
         if ($element->isAllowed('delete', $this->user)) {
             $element->delete();
 
             return new JsonResponse([
                 'success' => true,
-                'message' => $element->getType().' in the folder: '.$element->getParent()->getRealFullPath().' was deleted',
+                'message' => $type.' in the folder: '.$element->getParent()->getRealFullPath().' was deleted',
             ]);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to remove '.$element->getType().' in the folder: '.$element->getParent()->getRealFullPath());
+        throw new AccessDeniedHttpException('Missing the permission to remove '.$type.' in the folder: '.$element->getParent()->getRealFullPath());
     }
 
     #[Route('/version', name: 'version', methods: ['GET'])]
@@ -534,6 +535,7 @@ final class ElementController extends BaseEndpointController
     )]
     public function getVersions(): Response
     {
+        $type = $this->request->query->getString('type');
         $element = $this->getElementByIdType();
 
         if ($element->isAllowed('versions', $this->user)) {
@@ -548,9 +550,10 @@ final class ElementController extends BaseEndpointController
             // only load auto-save versions from current user
             $listing = new Listing();
             $listing->setLoadAutoSave(true);
+
             $listing->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
                 $element->getId(),
-                $element->getType(),
+                $type,
                 $this->user->getId(),
             ])
                 ->setOrderKey('date')
@@ -575,7 +578,7 @@ final class ElementController extends BaseEndpointController
 
             return $this->json($versions);
         } else {
-            throw $this->createAccessDeniedException('Permission denied, '.$element->getType().' id ['.$element->getId().']');
+            throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$element->getId().']');
         }
     }
 

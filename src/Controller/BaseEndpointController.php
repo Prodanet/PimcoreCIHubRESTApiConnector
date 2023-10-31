@@ -98,7 +98,7 @@ abstract class BaseEndpointController extends FrontendController
      */
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
-        $parentId = (int) $this->request->get('parent_id', 1);
+        $parentId = (int) $this->request->get('parentId', 1);
         $type = $this->request->get('type', 'object');
         $orderBy = $this->request->get('order_by', null);
         $fulltext = $this->request->get('fulltext_search');
