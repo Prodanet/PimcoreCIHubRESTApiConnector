@@ -51,11 +51,11 @@ final class UploadHelper
         $chunkUploadResponse->setPartSize($partSize);
         $chunkUploadResponse->setNumPartsProcessed($processed);
         $chunkUploadResponse->setTotalParts($totalParts);
-        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_abort', ['config' => $config, 'id' => $id]));
-        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_commit', ['config' => $config, 'id' => $id]));
-        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_list_parts', ['config' => $config, 'id' => $id]));
-        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_status', ['config' => $config, 'id' => $id]));
-        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_asset_upload_part', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_upload_upload_abort', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_upload_upload_commit', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_upload_upload_list_parts', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_upload_upload_status', ['config' => $config, 'id' => $id]));
+        $chunkUploadResponse->addEndpoint($this->generateUrl('datahub_rest_endpoints_upload_upload_part', ['config' => $config, 'id' => $id]));
 
         return $chunkUploadResponse->toArray();
     }
