@@ -73,17 +73,17 @@ final class UploadHelper
         $fileName = $request->get('file_name');
         $fileName = Service::getValidKey($fileName, 'asset');
 
-        $fileSize = (int) $request->get('file_size');
-        $assetId = (int) $request->get('asset_id', 0);
+        $fileSize = (int) $request->get('filesize');
+        $assetId = $request->request->get('asset_id', null);
 
         if (!isset($fileName, $fileSize)) {
-            throw new InvalidParameterException(['file_size', 'file_name']);
+            throw new InvalidParameterException(['filesize', 'file_name']);
         }
 
         $parentId = $request->request->get('parentId');
         $parentId = $this->getParent($parentId, $assetId);
 
-        if (0 !== $assetId) {
+        if (null !== $assetId) {
             $asset = Asset::getById($assetId);
             if ($asset instanceof Asset) {
                 if (!$asset->isAllowed('allowOverwrite', $this->user)) {
@@ -138,7 +138,7 @@ final class UploadHelper
             }
 
             $stream = stream_get_meta_data($filesystemOperator->readStream($datahubUploadSession->getTemporaryPath()));
-            if (0 === $datahubUploadSession->getAssetId()) {
+            if (null === $datahubUploadSession->getAssetId()) {
                 $asset = Asset::create($parentId, [
                     'filename' => $datahubUploadSession->getFileName(),
                     'sourcePath' => $stream['uri'],
@@ -200,7 +200,7 @@ final class UploadHelper
     public function uploadPart(
         DatahubUploadSession $datahubUploadSession,
         #[LanguageLevelTypeAware(['7.2' => 'HashContext'], default: 'resource')]
-        $content,
+                             $content,
         int $size,
         int $ordinal
     ): UploadPart {
@@ -229,7 +229,7 @@ final class UploadHelper
     /**
      * @throws \Exception
      */
-    private function getParent(?int $parentId, int $assetId = 0): int
+    private function getParent(?int $parentId, ?int $assetId): int
     {
         $defaultUploadPath = $this->pimcoreConfig['assets']['default_upload_path'] ?? '/';
         if (null !== $parentId) {
@@ -248,7 +248,7 @@ final class UploadHelper
             throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
 
-        if (0 !== $assetId) {
+        if (null !== $assetId) {
             $asset = Asset::getById($assetId);
             if (!$asset instanceof Asset) {
                 throw new NotFoundException('Asset does not exist');

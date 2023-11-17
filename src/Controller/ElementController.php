@@ -14,18 +14,25 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
+use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Image;
+use Pimcore\Model\Element\AbstractElement;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Element\Tag;
+use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use function array_key_exists;
 
 #[Route(path: ['/datahub/rest/{config}/element', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_element_')]
 #[Security(name: 'Bearer')]
@@ -34,6 +41,9 @@ final class ElementController extends BaseEndpointController
 {
     use RestHelperTrait;
 
+    /**
+     * @throws Exception
+     */
     #[Route('', name: 'get', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to get one single element by type and ID.',
@@ -128,9 +138,11 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function getElementAction(AssetHelper $assetHelper): JsonResponse
+    public function getElementAction(AssetHelper $assetHelper, AssetProvider $assetProvider): JsonResponse
     {
         $this->authManager->checkAuthentication();
+        $configuration = $this->getDataHubConfiguration();
+        $configReader = new ConfigReader($configuration->getConfiguration());
         $element = $this->getElementByIdType();
         $elementType = $element instanceof Asset ? 'asset' : 'object';
         if (!$element->isAllowed('view', $this->user)) {
@@ -138,7 +150,7 @@ final class ElementController extends BaseEndpointController
         }
         $tags = Tag::getTagsForElement('asset', $element->getId());
 
-        return $this->json([
+        $result = [
             'id' => $element->getId(),
             'parentId' => $element->getParentId(),
             'name' => $element->getKey(),
@@ -149,7 +161,10 @@ final class ElementController extends BaseEndpointController
                     'label' => $tag->getName(),
                 ];
             }, $tags),
-        ]);
+        ];
+        $result = $this->getAssetMetaData($element, $result);
+
+        return $this->json($result);
     }
 
     #[Route('', name: 'delete', methods: ['DELETE'])]
@@ -406,6 +421,9 @@ final class ElementController extends BaseEndpointController
         return new JsonResponse(['success' => true, 'data' => $response]);
     }
 
+    /**
+     * @throws Exception
+     */
     #[Route('/versions', name: 'versions', methods: ['GET'])]
     #[OA\Get(
         description: 'Method to get all versions of the element by type and ID.',
@@ -571,12 +589,17 @@ final class ElementController extends BaseEndpointController
                 }
 
                 $version['scheduled'] = null;
-                if (\array_key_exists($version['id'], $schedules)) {
+                if (array_key_exists($version['id'], $schedules)) {
                     $version['scheduled'] = $schedules[$version['id']];
                 }
+
+                $version = $this->getAssetMetaData($element, $version);
             }
 
-            return $this->json($versions);
+            return $this->json([
+                'total_count' => count($versions),
+                'items' => $versions
+            ]);
         } else {
             throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$element->getId().']');
         }
@@ -769,5 +792,35 @@ final class ElementController extends BaseEndpointController
         }
 
         throw new AccessDeniedHttpException('Missing the permission to create new '.$elementType.' in the folder: '.$element->getParent()->getRealFullPath());
+    }
+
+    /**
+     * @param mixed $element
+     * @param Version $version
+     * @return Version|array []|array|int[][]|Version
+     *
+     * @throws Exception
+     */
+    private function getAssetMetaData(AbstractElement $element, $result): array
+    {
+        if (!$element instanceof Asset\Folder) {
+            $result = array_merge($result, [
+                'mimeType' => $element->getMimeType(),
+                'fileSize' => $element->getFileSize(),
+            ]);
+        }
+        if ($element instanceof Image) {
+            $result = array_merge($result, [
+                'dimensionData' => [
+                    'width' => $element->getWidth(),
+                    'height' => $element->getHeight(),
+                ],
+                'xmpData' => $element->getXMPData() ?: null,
+                'exifData' => $element->getEXIFData() ?: null,
+                'iptcData' => $element->getIPTCData() ?: null,
+            ]);
+        }
+
+        return $result;
     }
 }

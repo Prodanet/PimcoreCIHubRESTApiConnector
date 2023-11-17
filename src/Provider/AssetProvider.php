@@ -21,6 +21,7 @@ use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Pimcore\Model\Asset\Image\Thumbnail\Config;
 use Pimcore\Model\Element\ElementInterface;
+use Pimcore\Model\Version;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
@@ -211,7 +212,7 @@ final class AssetProvider implements ProviderInterface
      *
      * @return array<string, string>|null
      */
-    private function getMetaDataValues(Asset $asset): ?array
+    public function getMetaDataValues(Asset $asset): ?array
     {
         $data = null;
         $metaData = $asset->getMetadata();
@@ -228,33 +229,55 @@ final class AssetProvider implements ProviderInterface
      *
      * @return array<string, mixed>
      */
-    private function getSystemValues(Asset $asset): array
+    private function getSystemValues(ElementInterface $element): array
     {
+        $type = 'object';
+        $subType = 'object';
+        if ($element instanceof Document) {
+            $type = 'document';
+            $subType = $element->getType();
+        }
+        if ($element instanceof Asset) {
+            $type = 'asset';
+            $subType = $element->getType();
+        }
+
+        $currentVersion = null;
+        $currentVersionObject = $element->getVersions();
+        if (\count($currentVersionObject) > 0 && end($currentVersionObject) instanceof Version) {
+            $currentVersion = end($currentVersionObject)->getId();
+        }
         $data = [
-            'id' => $asset->getId(),
-            'key' => $asset->getKey(),
-            'fullPath' => $asset->getFullPath(),
-            'parentId' => $asset->getParentId(),
+            'id' => $element->getId(),
+            'key' => $element->getKey(),
+            'fullPath' => $element->getFullPath(),
+            'parentId' => $element->getParentId(),
             'type' => 'asset',
-            'subtype' => $asset->getType(),
-            'hasChildren' => $asset->hasChildren(),
-            'creationDate' => $asset->getCreationDate(),
-            'modificationDate' => $asset->getModificationDate(),
-            'locked' => $this->isLocked($asset->getId(), 'asset'),
+            'subtype' => $element->getType(),
+            'hasChildren' => $element->hasChildren(),
+            'creationDate' => $element->getCreationDate(),
+            'modificationDate' => $element->getModificationDate(),
+            'locked' => $this->isLocked($element->getId(), $type),
         ];
 
-        if (!$asset instanceof Folder) {
-            try {
-                $checksum = $this->getChecksum($asset);
-            } catch (\Exception) {
-                $checksum = null;
-            }
-
+        if (!$element instanceof Folder) {
             $data = array_merge($data, [
-                'checksum' => $checksum,
-                'mimeType' => $asset->getMimetype(),
-                'fileSize' => $asset->getFileSize(),
+                'versionCount' => $element->getVersionCount(),
+                'currentVersion' => $currentVersion,
             ]);
+            if ($element instanceof Asset) {
+                try {
+                    $checksum = $this->getChecksum($element);
+                } catch (\Exception) {
+                    $checksum = null;
+                }
+
+                $data = array_merge($data, [
+                    'checksum' => $checksum,
+                    'mimeType' => $element->getMimetype(),
+                    'fileSize' => $element->getFileSize(),
+                ]);
+            }
         }
 
         return $data;

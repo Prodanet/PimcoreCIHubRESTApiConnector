@@ -32,7 +32,7 @@ final class DatahubUploadSession extends AbstractModel
 
     public int $fileSize = 0;
 
-    public int $assetId = 0;
+    public ?int $assetId = null;
 
     public int $parentId = 0;
 
@@ -134,12 +134,12 @@ final class DatahubUploadSession extends AbstractModel
         return $this->parts->count();
     }
 
-    public function getAssetId(): int
+    public function getAssetId(): ?int
     {
         return $this->assetId;
     }
 
-    public function setAssetId(int $assetId): self
+    public function setAssetId(?int $assetId): self
     {
         $this->assetId = $assetId;
 
