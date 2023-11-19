@@ -549,61 +549,61 @@ final class SearchController extends BaseEndpointController
         $search->addQuery(new MatchQuery('system.parentId', $root->getId()));
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
-//
-//        return $this->json($this->buildResponse($result, $configReader));
-//
-//        $size = $this->request->query->getInt('size', 200);
-//        $orderBy = $this->request->query->getString('order_by', 'id');
-//        $pageCursor = $this->request->query->get('page_cursor', null);
-//
-//        $result = [];
-//        $childrenList = match ($type) {
-//            'asset' => new Listing(),
-//            'object' => new DataObject\Listing(),
-//            default => throw new InvalidParameterException('Type ['.$type.'] is not supported'),
-//        };
-//
-//        $childrenList->addConditionParam('parentId = ?', [$root->getId()]);
-//
-//        $conditionParam = $this->filterAccessibleByUser($this->user, $root);
-//        if ($conditionParam) {
-//            $childrenList = $childrenList->addConditionParam($conditionParam);
-//        }
-//
-//        $childrenList->setOrderKey($orderBy);
-//
-//        $pageCursor = null == $pageCursor ? 0 : $pageCursor;
-//        foreach ($childrenList->getItems($pageCursor, $size) as $child) {
-//            $result[] = $this->getChild($child, $configReader);
-//        }
-//
-//        $response = [];
-//        if (0 === $pageCursor) {
-//            $pageCursor += $size;
-//        } else {
-//            $pageCursor = $size;
-//        }
-//
-//        if (\count($result) == $size) {
-//            $requestParameters = $this->request->query->all();
-//            $requestParameters['config'] = $this->request->get('config');
-//            if ($pageCursor < $childrenList->getTotalCount()) {
-//                $requestParameters['page_cursor'] = $pageCursor;
-//                $response['next'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
-//            }
-//
-//            $requestParameters['page_cursor'] = ($pageCursor - ($size * 2));
-//            if ($requestParameters['page_cursor'] > 0) {
-//                $response['prev'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
-//            }
-//        }
-//
-//        $response = array_merge([
-//            'total_count' => $childrenList->getTotalCount(),
-//            'items' => $result,
-//            'page_cursor' => $pageCursor,
-//        ], $response);
-//
-//        return new JsonResponse($response);
+
+        return $this->json($this->buildResponse($result, $configReader));
+        //
+        //        $size = $this->request->query->getInt('size', 200);
+        //        $orderBy = $this->request->query->getString('order_by', 'id');
+        //        $pageCursor = $this->request->query->get('page_cursor', null);
+        //
+        //        $result = [];
+        //        $childrenList = match ($type) {
+        //            'asset' => new Listing(),
+        //            'object' => new DataObject\Listing(),
+        //            default => throw new InvalidParameterException('Type ['.$type.'] is not supported'),
+        //        };
+        //
+        //        $childrenList->addConditionParam('parentId = ?', [$root->getId()]);
+        //
+        //        $conditionParam = $this->filterAccessibleByUser($this->user, $root);
+        //        if ($conditionParam) {
+        //            $childrenList = $childrenList->addConditionParam($conditionParam);
+        //        }
+        //
+        //        $childrenList->setOrderKey($orderBy);
+        //
+        //        $pageCursor = null == $pageCursor ? 0 : $pageCursor;
+        //        foreach ($childrenList->getItems($pageCursor, $size) as $child) {
+        //            $result[] = $this->getChild($child, $configReader);
+        //        }
+        //
+        //        $response = [];
+        //        if (0 === $pageCursor) {
+        //            $pageCursor += $size;
+        //        } else {
+        //            $pageCursor = $size;
+        //        }
+        //
+        //        if (\count($result) == $size) {
+        //            $requestParameters = $this->request->query->all();
+        //            $requestParameters['config'] = $this->request->get('config');
+        //            if ($pageCursor < $childrenList->getTotalCount()) {
+        //                $requestParameters['page_cursor'] = $pageCursor;
+        //                $response['next'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        //            }
+        //
+        //            $requestParameters['page_cursor'] = ($pageCursor - ($size * 2));
+        //            if ($requestParameters['page_cursor'] > 0) {
+        //                $response['prev'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        //            }
+        //        }
+        //
+        //        $response = array_merge([
+        //            'total_count' => $childrenList->getTotalCount(),
+        //            'items' => $result,
+        //            'page_cursor' => $pageCursor,
+        //        ], $response);
+        //
+        //        return new JsonResponse($response);
     }
 }
