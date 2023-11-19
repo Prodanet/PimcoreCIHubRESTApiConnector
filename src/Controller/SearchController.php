@@ -19,6 +19,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\ListingFilterTrait;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset\Listing;
 use Pimcore\Model\DataObject;
@@ -502,15 +503,20 @@ final class SearchController extends BaseEndpointController
             ),
         ],
     )]
-    public function treeItemsAction(): JsonResponse
+    public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService, Request $request): JsonResponse
     {
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
+
         $id = 1;
         if ($this->request->query->has('parentId')) {
             $id = $this->request->query->getInt('parentId');
         }
+        $includeFolders = filter_var(
+            $this->request->get('include_folders', true),
+            \FILTER_VALIDATE_BOOLEAN
+        );
 
         $type = $this->request->query->getString('type');
         $this->checkRequiredParameters(['type' => $type]);
@@ -520,58 +526,84 @@ final class SearchController extends BaseEndpointController
             throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
 
-        $size = $this->request->query->getInt('size', 200);
-        $orderBy = $this->request->query->getString('order_by', 'id');
-        $pageCursor = $this->request->query->get('page_cursor', null);
+        $indices = [];
 
-        $result = [];
-        $childrenList = match ($type) {
-            'asset' => new Listing(),
-            'object' => new DataObject\Listing(),
-            default => throw new InvalidParameterException('Type ['.$type.'] is not supported'),
-        };
+        if ('asset' === $type && $configReader->isAssetIndexingEnabled()) {
+            $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $this->config)];
 
-        $childrenList->addConditionParam('parentId = ?', [$root->getId()]);
-
-        $conditionParam = $this->filterAccessibleByUser($this->user, $root);
-        if ($conditionParam) {
-            $childrenList = $childrenList->addConditionParam($conditionParam);
-        }
-
-        $childrenList->setOrderKey($orderBy);
-
-        $pageCursor = null == $pageCursor ? 0 : $pageCursor;
-        foreach ($childrenList->getItems($pageCursor, $size) as $child) {
-            $result[] = $this->getChild($child, $configReader);
-        }
-
-        $response = [];
-        if (0 === $pageCursor) {
-            $pageCursor += $size;
-        } else {
-            $pageCursor = $size;
-        }
-
-        if (\count($result) == $size) {
-            $requestParameters = $this->request->query->all();
-            $requestParameters['config'] = $this->request->get('config');
-            if ($pageCursor < $childrenList->getTotalCount()) {
-                $requestParameters['page_cursor'] = $pageCursor;
-                $response['next'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+            if (true === $includeFolders) {
+                $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
             }
+        } elseif ('object' === $type && $configReader->isObjectIndexingEnabled()) {
+            $indices = array_map(function ($className) use ($indexManager) {
+                return $indexManager->getIndexName(mb_strtolower($className), $this->config);
+            }, $configReader->getObjectClassNames());
 
-            $requestParameters['page_cursor'] = ($pageCursor - ($size * 2));
-            if ($requestParameters['page_cursor'] > 0) {
-                $response['prev'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+            if (true === $includeFolders) {
+                $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
             }
         }
+        $search = $indexService->createSearch($request);
+        $this->applySearchSettings($search);
+        $this->applyQueriesAndAggregations($search, $configReader);
+        $search->addQuery(new MatchQuery('system.parentId', $root->getId()));
 
-        $response = array_merge([
-            'total_count' => $childrenList->getTotalCount(),
-            'items' => $result,
-            'page_cursor' => $pageCursor,
-        ], $response);
-
-        return new JsonResponse($response);
+        $result = $indexService->search(implode(',', $indices), $search->toArray());
+//
+//        return $this->json($this->buildResponse($result, $configReader));
+//
+//        $size = $this->request->query->getInt('size', 200);
+//        $orderBy = $this->request->query->getString('order_by', 'id');
+//        $pageCursor = $this->request->query->get('page_cursor', null);
+//
+//        $result = [];
+//        $childrenList = match ($type) {
+//            'asset' => new Listing(),
+//            'object' => new DataObject\Listing(),
+//            default => throw new InvalidParameterException('Type ['.$type.'] is not supported'),
+//        };
+//
+//        $childrenList->addConditionParam('parentId = ?', [$root->getId()]);
+//
+//        $conditionParam = $this->filterAccessibleByUser($this->user, $root);
+//        if ($conditionParam) {
+//            $childrenList = $childrenList->addConditionParam($conditionParam);
+//        }
+//
+//        $childrenList->setOrderKey($orderBy);
+//
+//        $pageCursor = null == $pageCursor ? 0 : $pageCursor;
+//        foreach ($childrenList->getItems($pageCursor, $size) as $child) {
+//            $result[] = $this->getChild($child, $configReader);
+//        }
+//
+//        $response = [];
+//        if (0 === $pageCursor) {
+//            $pageCursor += $size;
+//        } else {
+//            $pageCursor = $size;
+//        }
+//
+//        if (\count($result) == $size) {
+//            $requestParameters = $this->request->query->all();
+//            $requestParameters['config'] = $this->request->get('config');
+//            if ($pageCursor < $childrenList->getTotalCount()) {
+//                $requestParameters['page_cursor'] = $pageCursor;
+//                $response['next'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+//            }
+//
+//            $requestParameters['page_cursor'] = ($pageCursor - ($size * 2));
+//            if ($requestParameters['page_cursor'] > 0) {
+//                $response['prev'] = $this->generateUrl('datahub_rest_endpoints_tree_items', $requestParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+//            }
+//        }
+//
+//        $response = array_merge([
+//            'total_count' => $childrenList->getTotalCount(),
+//            'items' => $result,
+//            'page_cursor' => $pageCursor,
+//        ], $response);
+//
+//        return new JsonResponse($response);
     }
 }
