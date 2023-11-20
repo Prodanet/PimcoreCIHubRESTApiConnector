@@ -11,9 +11,7 @@
  */
 declare(strict_types=1);
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\EndpointAndIndexesConfigurator;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ConfigModificationListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ElementEnqueueingListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ExceptionListener;
@@ -29,10 +27,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ConfigModificationListener::class)
         ->args([
             service(IndexManager::class),
-            service('messenger.default_bus'),
-            service(AssetMapping::class),
-            service(DataObjectMapping::class),
-            service(FolderMapping::class),
+            service(EndpointAndIndexesConfigurator::class),
         ])
         ->tag('kernel.event_subscriber');
 
