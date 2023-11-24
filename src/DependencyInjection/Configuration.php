@@ -12,6 +12,8 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -30,6 +32,14 @@ final class Configuration implements ConfigurationInterface
             ->ifString()
             ->then(static fn ($value): string => rtrim(str_replace('-', '_', $value), '_'))
             ->end()
+            ->end()
+            ->scalarNode('asset_provider')
+            ->info('Class that defines the structure of the asset index.')
+            ->defaultValue(AssetProvider::class)
+            ->end()
+            ->scalarNode('data_object_provider')
+            ->info('Class that defines the structure of the data object index.')
+            ->defaultValue(DataObjectProvider::class)
             ->end()
             ->scalarNode('es_client_name')
             ->info('Name of elasticsearch client configuration to be used.')
