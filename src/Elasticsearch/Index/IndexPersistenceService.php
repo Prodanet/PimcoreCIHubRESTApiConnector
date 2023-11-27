@@ -12,8 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\ProviderInterface;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Elastic\Elasticsearch\Client;
@@ -32,8 +31,8 @@ final class IndexPersistenceService
      */
     public function __construct(private Client $client,
         private DataHubConfigurationRepository $dataHubConfigurationRepository,
-        private AssetProvider $assetProvider,
-        private DataObjectProvider $dataObjectProvider,
+        private ProviderInterface $assetProvider,
+        private ProviderInterface $dataObjectProvider,
         private array $indexSettings
     ) {
     }

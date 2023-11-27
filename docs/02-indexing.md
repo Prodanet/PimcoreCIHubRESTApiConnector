@@ -18,3 +18,94 @@ might be a sub folder of the parent folder in Pimcore folder structure, and all 
 
 Also, it might be possible, that due to workspace and data schema settings, missing links in folder structure occur.
 In this case, the indexing process creates virtual folders to fill up these gaps.
+
+## Custom index structure
+
+### Asset
+
+```
+//config/packages/ci-hub.yaml
+    simple_rest_adapter:
+        asset_provider: 'App\Elastic\AssetProvider'
+```
+```
+//config/services.yaml
+    App\Elastic\AssetProvider:
+        arguments:
+            $defaultPreviewThumbnail: '%datahub_rest_adapter.default_preview_thumbnail%'
+            $router: '@router.default'
+```
+
+Replace, modify or extend.
+```
+//Elastic/AssetProvider.php
+    namespace App\Elastic;
+    
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\ProviderInterface;
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\Traits\HasBaseAssetProvider;
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+    use Pimcore\Model\Element\ElementInterface;
+    use Symfony\Component\Routing\RouterInterface;
+    
+    class AssetProvider implements ProviderInterface
+    {
+        use HasBaseAssetProvider {
+            HasBaseAssetProvider::getIndexData as getBaseIndexData;
+        }
+    
+        public function __construct(array $defaultPreviewThumbnail, RouterInterface $router)
+        {
+            $this->defaultPreviewThumbnail = $defaultPreviewThumbnail;
+            $this->router = $router;
+        }
+    
+        public function getIndexData(ElementInterface $element, ConfigReader $configReader): array
+        {
+            return $this->getBaseIndexData($element, $configReader);
+        }
+    }
+```
+
+### DataObject
+
+```
+//config/packages/ci-hub.yaml
+    simple_rest_adapter:
+        data_object_provider: 'App\Elastic\DataObjectProvider'
+```
+```
+//config/services.yaml
+    App\Elastic\DataObjectProvider:
+        arguments:
+            $compositeDataCollector: '@CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector'
+```
+
+Replace, modify or extend.
+```
+//Elastic/DataObjectProvider.php
+    namespace App\Elastic;
+    
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\ProviderInterface;
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\Traits\HasBaseDataObjectProvider;
+    use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+    use Pimcore\Model\Element\ElementInterface;
+    use Symfony\Component\Routing\RouterInterface;
+    
+    class DataObjectProvider implements ProviderInterface
+    {
+        use HasBaseDataObjectProvider {
+            HasBaseDataObjectProvider::getIndexData as getBaseIndexData;
+        }
+    
+        public function __construct(CompositeDataCollector $compositeDataCollector)
+        {
+            $this->compositeDataCollector = $compositeDataCollector;
+        }
+    
+        public function getIndexData(ElementInterface $element, ConfigReader $configReader): array
+        {
+            return $this->getBaseIndexData($element, $configReader);
+        }
+    }
+```
+
