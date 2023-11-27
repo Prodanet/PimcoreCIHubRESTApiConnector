@@ -12,6 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\EndpointAndIndexesConfigurator;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
@@ -130,6 +131,14 @@ final class SimpleRESTAdapterExtension extends Extension implements PrependExten
         $containerBuilder->addDefinitions([DataObjectMapping::class => $definition]);
         $definition = new Definition(FolderMapping::class);
         $containerBuilder->addDefinitions([FolderMapping::class => $definition]);
+
+        $definition = new Definition(EndpointAndIndexesConfigurator::class);
+        $definition->setArgument('$indexManager', new Reference(IndexManager::class));
+        $definition->setArgument('$messageBus', new Reference('messenger.default_bus'));
+        $definition->setArgument('$assetMapping', new Reference(AssetMapping::class));
+        $definition->setArgument('$dataObjectMapping', new Reference(DataObjectMapping::class));
+        $definition->setArgument('$folderMapping', new Reference(FolderMapping::class));
+        $containerBuilder->addDefinitions([EndpointAndIndexesConfigurator::class => $definition]);
     }
 
     /**

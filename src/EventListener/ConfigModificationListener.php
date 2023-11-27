@@ -12,31 +12,21 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use Carbon\Carbon;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\EndpointAndIndexesConfigurator;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\Event\ConfigurationEvent;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
-use Pimcore\Db;
-use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Folder;
-use Pimcore\Model\DataObject;
-use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ConfigModificationListener implements EventSubscriberInterface
 {
-    public function __construct(private IndexManager $indexManager, private MessageBusInterface $messageBus, private AssetMapping $assetMapping, private DataObjectMapping $dataObjectMapping, private FolderMapping $folderMapping)
-    {
+    public function __construct(
+        private IndexManager $indexManager,
+        private EndpointAndIndexesConfigurator $endpointAndIndexesConfigurator
+    ) {
     }
 
     public static function getSubscribedEvents(): array
@@ -62,121 +52,6 @@ final class ConfigModificationListener implements EventSubscriberInterface
     {
         $configReader = new ConfigReader($configurationEvent->getConfiguration());
 
-        // Handle asset indices
-        if ($configReader->isAssetIndexingEnabled()) {
-            $this->handleAssetIndices($configReader);
-        }
-
-        // Handle object indices
-        if ($configReader->isObjectIndexingEnabled()) {
-            $this->handleObjectIndices($configReader);
-        }
-
-        // Initialize endpoint
-        $this->initializeEndpoint($configReader);
-        $this->initIndex($configReader);
-    }
-
-    protected function getDb(): Connection
-    {
-        return Db::get();
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function initIndex(ConfigReader $configReader): void
-    {
-        $assets = $this->getDb()->executeQuery('SELECT id, parentId FROM assets')->fetchAllAssociative();
-        foreach ($assets as $asset) {
-            $name = $configReader->getName();
-
-            // Check if assets are enabled
-            if (!$configReader->isAssetIndexingEnabled()) {
-                continue;
-            }
-
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($asset['id'], 'asset', $name));
-            $this->enqueueParentFolders(Asset::getById($asset['parentId']), Folder::class, 'asset', $name);
-        }
-
-        $objects = $this->getDb()->executeQuery('SELECT id, parentId FROM objects')->fetchAllAssociative();
-        foreach ($objects as $object) {
-            $name = $configReader->getName();
-
-            // Check if assets are enabled
-            if (!$configReader->isAssetIndexingEnabled()) {
-                continue;
-            }
-
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($object['id'], 'object', $name));
-            $this->enqueueParentFolders(DataObject::getById($object['parentId']), \Pimcore\Model\DataObject\Folder::class, 'object', $name);
-        }
-    }
-
-    private function enqueueParentFolders(
-        ?ElementInterface $element,
-        string $folderClass,
-        string $type,
-        string $name
-    ): void {
-        while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
-            $element = $element->getParent();
-        }
-    }
-
-    private function handleAssetIndices(ConfigReader $configReader): void
-    {
-        $endpointName = $configReader->getName();
-
-        // Asset Folders
-        $this->indexManager->createOrUpdateIndex(
-            $this->indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $endpointName),
-            $this->folderMapping->generate()
-        );
-
-        // Assets
-        $this->indexManager->createOrUpdateIndex(
-            $this->indexManager->getIndexName(IndexManager::INDEX_ASSET, $endpointName),
-            $this->assetMapping->generate($configReader->toArray())
-        );
-    }
-
-    private function handleObjectIndices(ConfigReader $configReader): void
-    {
-        $endpointName = $configReader->getName();
-
-        // DataObject Folders
-        $this->indexManager->createOrUpdateIndex(
-            $this->indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $endpointName),
-            $this->folderMapping->generate()
-        );
-
-        $objectClasses = $configReader->getObjectClasses();
-
-        // DataObject Classes
-        foreach ($objectClasses as $objectClass) {
-            $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(mb_strtolower($objectClass['name']), $endpointName),
-                $this->dataObjectMapping->generate($objectClass)
-            );
-        }
-    }
-
-    /**
-     * @throws \RuntimeException
-     * @throws ESClientException
-     */
-    private function initializeEndpoint(ConfigReader $configReader): void
-    {
-        $indices = $this->indexManager->getAllIndexNames($configReader);
-
-        // Clear index data
-        foreach ($indices as $index) {
-            $this->indexManager->clearIndexData($index);
-        }
-
-        $this->messageBus->dispatch(new InitializeEndpointMessage($configReader->getName()));
+        $this->endpointAndIndexesConfigurator->createOrUpdate($configReader);
     }
 }
