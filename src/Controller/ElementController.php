@@ -15,10 +15,8 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\Traits\HasBaseAssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
-use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
@@ -27,14 +25,12 @@ use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Element\AbstractElement;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Element\Tag;
-use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use function array_key_exists;
 
 #[Route(path: ['/datahub/rest/{config}/element', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_element_')]
 #[Security(name: 'Bearer')]
@@ -42,10 +38,9 @@ use function array_key_exists;
 final class ElementController extends BaseEndpointController
 {
     use RestHelperTrait;
-    use HasBaseAssetProvider;
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Route('', name: 'get', methods: ['GET'])]
     #[OA\Get(
@@ -425,7 +420,7 @@ final class ElementController extends BaseEndpointController
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Route('/versions', name: 'versions', methods: ['GET'])]
     #[OA\Get(
@@ -593,7 +588,7 @@ final class ElementController extends BaseEndpointController
                 }
 
                 $version['scheduled'] = null;
-                if (array_key_exists($version['id'], $schedules)) {
+                if (\array_key_exists($version['id'], $schedules)) {
                     $version['scheduled'] = $schedules[$version['id']];
                 }
 
@@ -601,8 +596,8 @@ final class ElementController extends BaseEndpointController
             }
 
             return $this->json([
-                'total_count' => count($versions),
-                'items' => $versions
+                'total_count' => \count($versions),
+                'items' => $versions,
             ]);
         } else {
             throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$element->getId().']');
@@ -800,11 +795,8 @@ final class ElementController extends BaseEndpointController
 
     /**
      * @param mixed $element
-     * @param $result
-     * @param ConfigReader $configReader
-     * @return array
      *
-     * @throws Exception
+     * @throws \Exception
      */
     private function getAssetMetaData(AbstractElement $element, $result, ConfigReader $configReader): array
     {
@@ -812,8 +804,8 @@ final class ElementController extends BaseEndpointController
             $result = array_merge($result, [
                 'mimeType' => $element->getMimeType(),
                 'fileSize' => $element->getFileSize(),
-                'binaryData' => $this->getBinaryDataValues($element, $configReader),
-                'metaData' => $this->getMetaDataValues($element),
+                'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
+                'metaData' => $this->getAssetProvider()->getMetaDataValues($element),
             ]);
         }
         if ($element instanceof Image) {
