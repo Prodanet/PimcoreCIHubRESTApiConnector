@@ -19,12 +19,13 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
+use Pimcore\Model\AbstractModel;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\Asset\Image;
-use Pimcore\Model\Element\AbstractElement;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Element\Tag;
+use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -576,10 +577,17 @@ final class ElementController extends BaseEndpointController
                 ->setOrderKey('date')
                 ->setOrder('ASC');
 
-            $versions = $listing->load();
-            $versions = Service::getSafeVersionInfo($versions);
-            $versions = array_reverse($versions); // reverse array to sort by ID DESC
-            foreach ($versions as &$version) {
+            $versionsObject = $listing->load();
+            $versionsArray = Service::getSafeVersionInfo($versionsObject);
+            $versionsArray = array_reverse($versionsArray); // reverse array to sort by ID DESC
+            $versions = [];
+            foreach ($versionsArray as $item) {
+                $versions[$item['id']] = $item;
+            }
+
+            $versionsObject = array_reverse($versionsObject); // reverse array to sort by ID DESC
+            foreach ($versionsObject as $versionObject) {
+                $version = $versions[$versionObject->getId()];
                 if (0 === $version['index']
                     && $version['date'] == $element->getModificationDate()
                     && $version['versionCount'] == $element->getVersionCount()
@@ -592,11 +600,12 @@ final class ElementController extends BaseEndpointController
                     $version['scheduled'] = $schedules[$version['id']];
                 }
 
-                $version = $this->getAssetMetaData($element, $version, $configReader);
+                $version = $this->getAssetMetaData($versionObject, $version, $configReader);
+                $versions[$versionObject->getId()] = $version;
             }
 
             return $this->json([
-                'total_count' => \count($versions),
+                'total_count' => \count($versionsArray),
                 'items' => $versions,
             ]);
         } else {
@@ -798,15 +807,28 @@ final class ElementController extends BaseEndpointController
      *
      * @throws \Exception
      */
-    private function getAssetMetaData(AbstractElement $element, $result, ConfigReader $configReader): array
+    private function getAssetMetaData(AbstractModel $element, $result, ConfigReader $configReader): array
     {
-        if ($element instanceof Asset && !$element instanceof Asset\Folder) {
-            $result = array_merge($result, [
-                'mimeType' => $element->getMimeType(),
-                'fileSize' => $element->getFileSize(),
-                'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
-                'metaData' => $this->getAssetProvider()->getMetaDataValues($element),
-            ]);
+        if (($element instanceof Asset || $element instanceof Version) && !$element instanceof Asset\Folder) {
+            if ($element instanceof Version) {
+                $version = $element->getData();
+                $result = array_merge($result, [
+                    'mimeType' => $version->getMimeType(),
+                    'fileSize' => $version->getFileSize(),
+                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
+                    'metaData' => $this->getAssetProvider()->getMetaDataValues($version),
+                ]);
+            } else {
+                $result = array_merge($result, [
+                    'mimeType' => $element->getMimeType(),
+                    'fileSize' => $element->getFileSize(),
+                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
+                    'metaData' => $this->getAssetProvider()->getMetaDataValues($element),
+                ]);
+            }
+        }
+        if ($element instanceof Version) {
+            $element = $element->getData();
         }
         if ($element instanceof Image) {
             $result = array_merge($result, [

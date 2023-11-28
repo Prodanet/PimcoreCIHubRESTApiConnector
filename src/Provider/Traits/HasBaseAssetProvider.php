@@ -67,34 +67,42 @@ trait HasBaseAssetProvider
      *
      * @throws \Exception
      */
-    public function getBinaryDataValues(Asset $asset, ConfigReader $configReader): array
+    public function getBinaryDataValues(Asset|Version $asset, ConfigReader $configReader): array
     {
         $data = [];
 
-        $id = $asset->getId();
-
+        $object = $asset instanceof Version ? $asset->getData() : $asset;
+        $id = $object->getId();
         try {
-            $checksum = $this->getChecksum($asset);
+            $checksum = $this->getChecksum($object);
         } catch (\Exception) {
             $checksum = null;
         }
 
-        if ($asset instanceof Image) {
+        if ($object instanceof Image) {
             $thumbnails = $configReader->getAssetThumbnails();
 
             if ($configReader->isOriginalImageAllowed()) {
                 $data['original'] = [
                     'checksum' => $checksum,
-                    'path' => $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'filename' => $object->getFilename(),
+                ];
+                if($asset instanceof Version) {
+                    $data['original']['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $asset->getId(),
+                        'type' => 'version',
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                } else {
+                    $data['original']['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
                         'config' => $configReader->getName(),
                         'id' => $id,
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $asset->getFilename(),
-                ];
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                }
             }
 
             foreach ($thumbnails as $thumbnailName) {
-                $thumbnail = $asset->getThumbnail($thumbnailName);
+                $thumbnail = $object->getThumbnail($thumbnailName);
 
                 try {
                     $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
@@ -104,21 +112,31 @@ trait HasBaseAssetProvider
 
                 $data[$thumbnailName] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'filename' => $thumbnail->getAsset()->getFilename(),
+                ];
+
+                if($asset instanceof Version) {
+                    $data[$thumbnailName]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $asset->getId(),
+                        'type' => 'version',
+                        'thumbnail' => $thumbnailName,
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                } else {
+                    $data[$thumbnailName]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
                         'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => $thumbnailName,
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getAsset()->getKey(), PATHINFO_BASENAME),
-                ];
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                }
             }
 
             // Make sure the preview thumbnail used by CI HUB is added to the list of thumbnails
             if (!\array_key_exists(self::CIHUB_PREVIEW_THUMBNAIL, $data) && 'ciHub' === $configReader->getType()) {
                 if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {
-                    $thumbnail = $asset->getThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
+                    $thumbnail = $object->getThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
                 } else {
-                    $thumbnail = $asset->getThumbnail($this->defaultPreviewThumbnail);
+                    $thumbnail = $object->getThumbnail($this->defaultPreviewThumbnail);
                 }
 
                 try {
@@ -129,30 +147,50 @@ trait HasBaseAssetProvider
 
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'filename' => $thumbnail->getAsset()->getKey(), // pathinfo($thumbnail->get(), PATHINFO_BASENAME),
+                ];
+                if($asset instanceof Version) {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $asset->getId(),
+                        'type' => 'version',
+                        'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                } else {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
                         'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getKey(), // pathinfo($thumbnail->get(), PATHINFO_BASENAME),
-                ];
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                }
             }
         } else {
             $data['original'] = [
                 'checksum' => $checksum,
-                'path' => $this->router->generate('datahub_rest_endpoints_asset_download', [
-                    'config' => $configReader->getName(),
-                    'id' => $id,
-                ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                'filename' => $asset->getFilename(),
+                'filename' => $object->getFilename(),
             ];
 
+            if($asset instanceof Version) {
+                $data['original']['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'config' => $configReader->getName(),
+                    'id' => $asset->getId(),
+                    'type' => 'version',
+                    'thumbnail' => $thumbnailName,
+                ], UrlGeneratorInterface::ABSOLUTE_PATH);
+            } else {
+                $data['original']['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'config' => $configReader->getName(),
+                    'id' => $id,
+                    'thumbnail' => $thumbnailName,
+                ], UrlGeneratorInterface::ABSOLUTE_PATH);
+            }
+
             // Add the preview thumbnail for CI HUB
-            if ($asset instanceof Document && 'ciHub' === $configReader->getType()) {
+            if ($object instanceof Document && 'ciHub' === $configReader->getType()) {
                 if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {
-                    $thumbnail = $asset->getImageThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
+                    $thumbnail = $object->getImageThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
                 } else {
-                    $thumbnail = $asset->getImageThumbnail($this->defaultPreviewThumbnail);
+                    $thumbnail = $object->getImageThumbnail($this->defaultPreviewThumbnail);
                 }
 
                 try {
@@ -163,13 +201,23 @@ trait HasBaseAssetProvider
 
                 $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
                     'checksum' => $thumbChecksum,
-                    'path' => $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getFileSystemPath(), PATHINFO_BASENAME),
+                ];
+
+                if($asset instanceof Version) {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $asset->getId(),
+                        'type' => 'version',
+                        'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                } else {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] =  $this->router->generate('datahub_rest_endpoints_asset_download', [
                         'config' => $configReader->getName(),
                         'id' => $id,
                         'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getFileSystemPath(), PATHINFO_BASENAME),
-                ];
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                }
             }
         }
 

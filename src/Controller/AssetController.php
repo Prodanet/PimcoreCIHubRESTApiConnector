@@ -22,6 +22,7 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Document;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Element\Service;
+use Pimcore\Model\Version;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -353,6 +354,15 @@ final class AssetController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
+                name: 'version',
+                description: 'ID of element.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'integer'
+                )
+            ),
+            new OA\Parameter(
                 name: 'thumbnail',
                 description: 'Thumbnail config nae',
                 in: 'query',
@@ -401,11 +411,14 @@ final class AssetController extends BaseEndpointController
         $configReader = new ConfigReader($configuration->getConfiguration());
 
         $id = $this->request->query->getInt('id');
-        $this->request->query->set('type', 'asset');
 
         // Check if required parameters are missing
         $this->checkRequiredParameters(['id' => $id]);
         $element = $this->getElementByIdType();
+        if($element instanceof Version) {
+            $element = $element->getData();
+        }
+
         if (!$element->isAllowed('view', $this->user)) {
             throw new AccessDeniedHttpException('Your request to create a folder has been blocked due to missing permissions');
         }

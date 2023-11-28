@@ -48,7 +48,7 @@ trait RestHelperTrait
         return [$element, $version];
     }
 
-    private function getElementByIdType(): ElementInterface
+    private function getElementByIdType(): ElementInterface|Version
     {
         $id = $this->request->query->getInt('id');
         $type = $this->request->query->getString('type');
@@ -59,9 +59,11 @@ trait RestHelperTrait
         $element = match ($type) {
             'asset' => Asset::getById($id),
             'object' => DataObject::getById($id),
+            'version' => Version::getById($id),
             default => throw new NotFoundException($type." with doesn't exist"),
         };
-        if (!$element instanceof ElementInterface) {
+
+        if (!$element instanceof ElementInterface && !$element instanceof Version) {
             throw new NotFoundException($type.' with id ['.$id."] doesn't exist");
         }
 
