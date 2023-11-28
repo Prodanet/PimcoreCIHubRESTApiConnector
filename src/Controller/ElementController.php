@@ -15,12 +15,14 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\Traits\HasBaseAssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Element\AbstractElement;
 use Pimcore\Model\Element\Service;
@@ -40,6 +42,7 @@ use function array_key_exists;
 final class ElementController extends BaseEndpointController
 {
     use RestHelperTrait;
+    use HasBaseAssetProvider;
 
     /**
      * @throws Exception
@@ -162,7 +165,7 @@ final class ElementController extends BaseEndpointController
                 ];
             }, $tags),
         ];
-        $result = $this->getAssetMetaData($element, $result);
+        $result = $this->getAssetMetaData($element, $result, $configReader);
 
         return $this->json($result);
     }
@@ -555,7 +558,8 @@ final class ElementController extends BaseEndpointController
     {
         $type = $this->request->query->getString('type');
         $element = $this->getElementByIdType();
-
+        $configuration = $this->getDataHubConfiguration();
+        $configReader = new ConfigReader($configuration->getConfiguration());
         if ($element->isAllowed('versions', $this->user)) {
             $schedule = $element->getScheduledTasks();
             $schedules = [];
@@ -593,7 +597,7 @@ final class ElementController extends BaseEndpointController
                     $version['scheduled'] = $schedules[$version['id']];
                 }
 
-                $version = $this->getAssetMetaData($element, $version);
+                $version = $this->getAssetMetaData($element, $version, $configReader);
             }
 
             return $this->json([
@@ -796,17 +800,20 @@ final class ElementController extends BaseEndpointController
 
     /**
      * @param mixed $element
-     * @param Version $version
-     * @return Version|array []|array|int[][]|Version
+     * @param $result
+     * @param ConfigReader $configReader
+     * @return array
      *
      * @throws Exception
      */
-    private function getAssetMetaData(AbstractElement $element, $result): array
+    private function getAssetMetaData(AbstractElement $element, $result, ConfigReader $configReader): array
     {
-        if (!$element instanceof Asset\Folder) {
+        if ($element instanceof Asset && !$element instanceof Asset\Folder) {
             $result = array_merge($result, [
                 'mimeType' => $element->getMimeType(),
                 'fileSize' => $element->getFileSize(),
+                'binaryData' => $this->getBinaryDataValues($element, $configReader),
+                'metaData' => $this->getMetaDataValues($element),
             ]);
         }
         if ($element instanceof Image) {
