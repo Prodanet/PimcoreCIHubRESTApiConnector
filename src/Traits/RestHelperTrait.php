@@ -51,7 +51,7 @@ trait RestHelperTrait
     private function getElementByIdType(): ElementInterface|Version
     {
         $id = $this->request->query->getInt('id');
-        $type = $this->request->query->getString('type');
+        $type = $this->request->query->getString('type', 'asset');
         if (!isset($type)) {
             throw new InvalidParameterException(['type']);
         }

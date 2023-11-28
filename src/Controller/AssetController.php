@@ -415,7 +415,7 @@ final class AssetController extends BaseEndpointController
         // Check if required parameters are missing
         $this->checkRequiredParameters(['id' => $id]);
         $element = $this->getElementByIdType();
-        if($element instanceof Version) {
+        if ($element instanceof Version) {
             $element = $element->getData();
         }
 
