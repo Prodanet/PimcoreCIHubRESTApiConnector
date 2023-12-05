@@ -79,18 +79,41 @@ abstract class BaseEndpointController extends FrontendController
 
     public function applySearchSettings(Search $search): void
     {
-        $size = (int) $this->request->get('size', 200);
-        $pageCursor = (int) $this->request->get('page_cursor', 0);
+        $size = max((int) $this->request->get('size', 200), 1);
+        $pageCursor = max((int) $this->request->get('page_cursor', 0), 0);
         $orderBy = $this->request->get('order_by');
 
         $search->setSize($size);
         $search->setFrom($pageCursor);
 
-        if (null !== $orderBy) {
-            $search->addSort(new FieldSort($orderBy));
-        }
+        $this->applySort($search, $orderBy);
 
         $this->nextPageCursor = $pageCursor + $size;
+    }
+
+    private function applySort(Search $search, mixed $orderBy): void
+    {
+        if (null !== $orderBy) {
+            $orderBy = (string)$orderBy;
+            $items = json_decode($orderBy, true);
+            if (is_array($items)) {
+                foreach ($items as $field => $order) {
+                    if (in_array(strtolower($order), [FieldSort::ASC, FieldSort::DESC])) {
+                        $order = strtolower($order);
+                    } else {
+                        throw new \InvalidArgumentException('Sort order option ("asc" or "desc") is missing from order_by parameter.');
+                    }
+                    if ($field) {
+                        $search->addSort(new FieldSort($field, $order));
+                    }
+                }
+            } else {
+                if (preg_match("/[\{\}]/", $orderBy)) {
+                    throw new \InvalidArgumentException('Parameter order_by contains invalid json.');
+                }
+                $search->addSort(new FieldSort($orderBy));
+            }
+        }
     }
 
     /**
@@ -99,8 +122,7 @@ abstract class BaseEndpointController extends FrontendController
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
         $parentId = (int) $this->request->get('parentId', 1);
-        $type = $this->request->get('type', 'object');
-        $orderBy = $this->request->get('order_by', null);
+        $type = $this->request->get('type', null);
         $fulltext = $this->request->get('fulltext_search');
         /*
          * @TODO to remove on 2.2.x
@@ -149,27 +171,6 @@ abstract class BaseEndpointController extends FrontendController
         ];
 
         $body['query'] = $query;
-
-        $sort = [];
-
-        if ($orderBy) {
-            foreach ($orderBy as $field => $order) {
-                $sort[] = [
-                    $field => [
-                        'order' => $order,
-                        'missing' => '_last',
-                        'unmapped_type' => 'keyword',
-                    ],
-                ];
-            }
-        }
-
-        $sort[] = [
-            'system.id' => [
-                'order' => 'asc',
-            ],
-        ];
-        $body['sort'] = $sort;
     }
 
     /**
