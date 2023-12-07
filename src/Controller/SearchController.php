@@ -81,7 +81,7 @@ final class SearchController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'filter',
-                description: 'Define filter for further filtering. See https://pimcore.com/docs/pimcore/current/Development_Documentation/Web_Services/Query_Filters.html for filter syntax, implemeted operators are $not, $or, $and.',
+                description: 'Define filter for further filtering. See https://restdb.io/docs/querying-with-the-api for filter syntax, implemeted operators are $not, $or, $and.',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
@@ -90,12 +90,13 @@ final class SearchController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'order_by',
-                description: 'Field to order by.',
+                description: 'Field(s) to order by.',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
                     type: 'string'
-                )
+                ),
+                examples: [new OA\Examples('system.id', ''), new OA\Examples('{"system.id": "acs"}', ''), new OA\Examples('{"system.subtype": "asc", "system.id":"desc"}', '')]
             ),
             new OA\Parameter(
                 name: 'page_cursor',
@@ -274,9 +275,6 @@ final class SearchController extends BaseEndpointController
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
-        $size = $this->request->get('size', 200);
-        $pageCursor = $this->request->get('page_cursor', null);
-        $pageCursor = $pageCursor ?: 0;
 
         $indices = [];
 
@@ -294,9 +292,6 @@ final class SearchController extends BaseEndpointController
         $search = $indexService->createSearch($request);
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $configReader);
-
-        $search->setSize($size);
-        $search->setFrom($pageCursor * $size);
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
