@@ -73,7 +73,7 @@ final class UploadHelper
         $fileName = Service::getValidKey($fileName, 'asset');
 
         $fileSize = (int) $request->get('filesize');
-        $assetId = $request->request->get('asset_id', null);
+        $assetId = $request->request->get('asset_id', 0);
 
         if (!isset($fileName, $fileSize)) {
             throw new InvalidParameterException(['filesize', 'file_name']);
@@ -82,7 +82,7 @@ final class UploadHelper
         $parentId = $request->request->get('parentId');
         $parentId = $this->getParent($parentId, $assetId);
 
-        if (null !== $assetId) {
+        if (0 !== $assetId) {
             $asset = Asset::getById($assetId);
             if ($asset instanceof Asset) {
                 if (!$asset->isAllowed('allowOverwrite', $this->user)) {
@@ -234,8 +234,7 @@ final class UploadHelper
         if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
             throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
-
-        if (null !== $assetId) {
+        if (null !== $assetId && $assetId > 0) {
             $asset = Asset::getById($assetId);
             if (!$asset instanceof Asset) {
                 throw new NotFoundException('Asset does not exist');
