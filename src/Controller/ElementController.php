@@ -23,6 +23,7 @@ use Pimcore\Model\AbstractModel;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\Asset\Image;
+use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Element\Tag;
 use Pimcore\Model\Version;
@@ -595,10 +596,21 @@ final class ElementController extends BaseEndpointController
                     $version['public'] = true;
                 }
 
+                $version['modificationDate'] = $version['date'];
+                $version['creationDate'] = $version['date'];
                 $version['scheduled'] = null;
+                if ($element instanceof Asset) {
+                    $version['name'] = $element->getFilename();
+                }
+                if ($element instanceof DataObject) {
+                    $version['name'] = $element->getKey();
+                }
+
                 if (\array_key_exists($version['id'], $schedules)) {
                     $version['scheduled'] = $schedules[$version['id']];
                 }
+
+                unset($version['date']);
 
                 $version = $this->getAssetMetaData($versionObject, $version, $configReader);
                 $versions[$versionObject->getId()] = $version;
