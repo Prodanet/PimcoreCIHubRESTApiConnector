@@ -183,13 +183,13 @@ trait HasBaseAssetProvider
                     'config' => $configReader->getName(),
                     'id' => $asset->getId(),
                     'type' => 'version',
-                    'thumbnail' => $thumbnailName,
+                    'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                 ], UrlGeneratorInterface::ABSOLUTE_PATH);
             } else {
                 $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
                     'config' => $configReader->getName(),
                     'id' => $id,
-                    'thumbnail' => $thumbnailName,
+                    'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
                 ], UrlGeneratorInterface::ABSOLUTE_PATH);
             }
 
