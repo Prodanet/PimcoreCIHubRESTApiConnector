@@ -14,7 +14,6 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Helper;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Concatenate;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\ChunkUploadResponse;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Model\DatahubUploadSession;
@@ -122,48 +121,35 @@ final class UploadHelper
      */
     public function commitSession(string $id): array
     {
-        $datahubUploadSession = DatahubUploadSession::getById($id);
-        $parentId = $this->getParent($datahubUploadSession->getParentId(), $datahubUploadSession->getAssetId());
-
+        $uploadSession = DatahubUploadSession::getById($id);
+        $parentId = $this->getParent($uploadSession->getParentId(), $uploadSession->getAssetId());
+        $parentAsset = Asset::getById($parentId);
         $filesystemOperator = Storage::get('temp');
 
-        $concatenate = new Concatenate($filesystemOperator);
-        $filesystemOperator->write($datahubUploadSession->getTemporaryPath(), '');
-
         try {
-            foreach ($datahubUploadSession->getParts() as $part) {
-                $partTemporaryFile = $datahubUploadSession->getTemporaryPartFilename($part->getId());
-                $concatenate->handle($datahubUploadSession->getTemporaryPath(), $partTemporaryFile);
-                $filesystemOperator->delete($partTemporaryFile);
-            }
-
-            $stream = stream_get_meta_data($filesystemOperator->readStream($datahubUploadSession->getTemporaryPath()));
-            if (null === $datahubUploadSession->getAssetId()) {
+            if (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName())) {
+                $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName());
+                $asset->setStream($filesystemOperator->readStream($uploadSession->getTemporaryPath()));
+                $asset->save();
+            } elseif (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName())) {
+                $filename = $this->getSafeFilename($parentAsset->getRealFullPath(), $uploadSession->getFileName());
                 $asset = Asset::create($parentId, [
-                    'filename' => $datahubUploadSession->getFileName(),
-                    'sourcePath' => $stream['uri'],
+                    'filename' => $filename,
+                    'stream' => $filesystemOperator->readStream($uploadSession->getTemporaryPath()),
                     'userOwner' => $this->user->getId(),
                     'userModification' => $this->user->getId(),
                 ]);
             } else {
-                $asset = Asset::getById($datahubUploadSession->getAssetId());
-                if ($asset instanceof Asset) {
-                    if ($asset->isAllowed('allowOverwrite', $this->user)) {
-                        $asset->setFilename($datahubUploadSession->getFileName());
-                        $asset->setStream($filesystemOperator->readStream($datahubUploadSession->getTemporaryPath()));
-                        $asset->setUserOwner($this->user->getId());
-                        $asset->setUserModification($this->user->getId());
-                        $asset->save();
-                    } else {
-                        throw new AccessDeniedHttpException('Missing the permission to overwrite asset: '.$asset->getId());
-                    }
-                } else {
-                    throw new \Exception('Asset with id ['.$id."] doesn't exist");
-                }
+                $asset = Asset::create($parentId, [
+                    'filename' => $uploadSession->getFileName(),
+                    'stream' => $filesystemOperator->readStream($uploadSession->getTemporaryPath()),
+                    'userOwner' => $this->user->getId(),
+                    'userModification' => $this->user->getId(),
+                ]);
             }
 
-            @unlink($datahubUploadSession->getFileName());
-            $datahubUploadSession->delete();
+            $filesystemOperator->delete($uploadSession->getTemporaryPath());
+            $uploadSession->delete();
 
             return [
                 'id' => $asset->getId(),
@@ -196,11 +182,11 @@ final class UploadHelper
 
     /**
      * @throws FilesystemException
+     * @throws \Exception
      */
     public function uploadPart(
         DatahubUploadSession $datahubUploadSession,
-        #[LanguageLevelTypeAware(['7.2' => 'HashContext'], default: 'resource')]
-                             $content,
+        $content,
         int $size,
         int $ordinal
     ): UploadPart {
@@ -217,8 +203,9 @@ final class UploadHelper
         $uploadPart->setOrdinal($ordinal);
         rewind($content);
 
-        $storage = Storage::get('temp');
-        $storage->writeStream($datahubUploadSession->getTemporaryPartFilename($ulid), $content);
+        $merger = new FileMerger('/var/www/html/var/tmp/'.$datahubUploadSession->getTemporaryPath());
+        $merger->appendFile($content);
+        $merger->close();
 
         $datahubUploadSession->addPart($uploadPart);
         $datahubUploadSession->save();
@@ -260,5 +247,26 @@ final class UploadHelper
         }
 
         return $parentId;
+    }
+
+    protected function getSafeFilename(string $targetPath, string $filename): string
+    {
+        $pathinfo = pathinfo($filename);
+        $originalFilename = $pathinfo['filename'];
+        $originalFileextension = empty($pathinfo['extension']) ? '' : '.'.$pathinfo['extension'];
+        $count = 1;
+
+        if ('/' == $targetPath) {
+            $targetPath = '';
+        }
+
+        while (true) {
+            if (Asset\Service::pathExists($targetPath.'/'.$filename)) {
+                $filename = $originalFilename.'_'.$count.$originalFileextension;
+                ++$count;
+            } else {
+                return $filename;
+            }
+        }
     }
 }

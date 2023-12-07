@@ -38,6 +38,7 @@ final class ConfigController extends AdminAbstractController
         private AssetProvider $assetProvider)
     {
     }
+
     #[Route('/delete', name: 'delete', methods: ['GET'])]
     public function deleteAction(
         DataHubConfigurationRepository $configRepository,
@@ -125,7 +126,6 @@ final class ConfigController extends AdminAbstractController
         $childrenList = new \Pimcore\Model\Asset\Listing();
         $result = [];
         foreach ($childrenList->getItems(0, 1000) as $child) {
-
             $result[] = $this->assetProvider->getIndexData($child, $configReader);
         }
 
