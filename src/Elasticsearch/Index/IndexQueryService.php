@@ -17,7 +17,6 @@ use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use ONGR\ElasticsearchDSL\Search;
-use Symfony\Component\HttpFoundation\Request;
 
 final class IndexQueryService
 {
@@ -25,7 +24,7 @@ final class IndexQueryService
     {
     }
 
-    public function createSearch(Request $request): Search
+    public function createSearch(): Search
     {
         return new Search();
     }
