@@ -561,7 +561,99 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
 
         return this.dataObjectSchemaGrid;
     },
+    openSchemaDialog: function (classId, columnConfig, language, record) {
+        var objectId = 1;
 
+        let dialogColumnConfig = {
+            classid: classId,
+            language: language
+        };
+
+        var fieldKeys = Object.keys(columnConfig);
+
+        var selectedGridColumns = [];
+        for (var i = 0; i < fieldKeys.length; i++) {
+            var field = columnConfig[fieldKeys[i]];
+            if (!field.hidden) {
+                var fc = {
+                    key: fieldKeys[i],
+                    label: field.fieldConfig.label,
+                    dataType: field.fieldConfig.type,
+                };
+                if (field.fieldConfig.width) {
+                    fc.width = field.fieldConfig.width;
+                }
+                if (field.fieldConfig.locked) {
+                    fc.locked = field.fieldConfig.locked;
+                }
+
+                if (field.isOperator) {
+                    fc.isOperator = true;
+                    fc.attributes = field.fieldConfig.attributes;
+
+                }
+
+                selectedGridColumns.push(fc);
+            }
+        }
+
+        dialogColumnConfig.selectedGridColumns = selectedGridColumns;
+
+        var settings = {
+            source: 'pimcore_data_hub_simple_rest'
+        };
+
+        let className = '';
+        const classStore = pimcore.globalmanager.get("object_types_store");
+        let classIdx = classStore.findExact("text", record.data.id);
+        if (classIdx >= 0) {
+            className = classStore.getAt(classIdx).data.name;
+        }
+
+        var gridConfigDialog = new pimcore.plugin.pimcoreDataHubSimpleRestBundle.configuration.gridConfigDialog(dialogColumnConfig, function (record, classId, data, settings, save) {
+                var columns = {};
+
+                //convert to data array as grid uses it
+                for (let i = 0; i < data.columns.length; i++) {
+                    let curr = data.columns[i];
+
+                    //remove layout information as it is not needed
+                    delete curr.layout;
+                    columns[curr.key] = {
+                        name: curr.key,
+                        position: (i + 1),
+                        hidden: false,
+                        fieldConfig: curr,
+                        isOperator: curr.isOperator
+                    };
+                }
+
+                record.set('columnConfig', columns);
+                record.set('language', data.language);
+
+            }.bind(this, record, classId),
+            function () {
+                gridConfigDialog.window.close();
+            }.bind(this),
+            false,
+            settings,
+            {
+                allowPreview: true,
+                classId: classId,
+                objectId: objectId,
+                csvMode: 0,
+                showPreviewSelector : true,
+                previewSelectorTypes : ['object'],
+                previewSelectorSubTypes: {
+                    'object' : ['object','variant']
+                },
+                previewSelectorSpecific: {
+                    classes : [className]
+                }
+            }
+        );
+        gridConfigDialog.itemsPerPage.hide();
+    },
     showPermissionDialog: function (type) {
         let store = this[type + "PermissionsStore"];
         this.permissionDialog = new Ext.Window({

@@ -16,9 +16,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector\CompositeDataCollector;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\LockedTrait;
 use Pimcore\Localization\LocaleService;
+use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Concrete;
-use Pimcore\Model\DataObject\Service;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Tool;
 use Webmozart\Assert\Assert;
@@ -53,26 +53,48 @@ trait HasDataObjectProvider
     private function getDataValues(Concrete $concrete, ConfigReader $configReader): array
     {
         $objectSchema = $configReader->extractObjectSchema($concrete->getClassName());
-        $fields = $objectSchema['columnConfig'] ?? [];
+        $gridConfigData = $this->getGridConfigData($objectSchema);
+        $data = [];
+        if (\Pimcore\Version::getMajorVersion() >= 11) {
+            $data = DataObject\Service::getCsvDataForObject(
+                $concrete,
+                $gridConfigData['language'],
+                $gridConfigData['fields'],
+                $gridConfigData['helperDefinitions'],
+                new LocaleService(),
+                'title',
+                false
+            );
+        } else {
+            $data = DataObject\Service::getCsvDataForObject(
+                $concrete,
+                $gridConfigData['language'],
+                $gridConfigData['fields'],
+                $gridConfigData['helperDefinitions'],
+                new LocaleService(),
+                true
+            );
+        }
 
-        $data = Service::getCsvDataForObject(
-            $concrete,
-            Tool::getDefaultLanguage(),
-            array_keys($fields),
-            $fields,
-            new LocaleService(),
-            '1'
-        );
+        return $this->prepareExportDataForExtraction($gridConfigData['helperDefinitions'], $data);
+    }
 
-        // Collect data for special field types, such as images/hotspot images/image galleries
-        foreach ($fields as $key => $field) {
-            $fieldValue = $this->compositeDataCollector->collect($concrete, $key, $configReader);
+    protected function prepareExportDataForExtraction(array $definitions, array $data): array
+    {
+        foreach ($definitions as $field => $definition) {
+            $mappedFieldName = $this->mapFieldName($field, $definition);
 
-            if (null === $fieldValue) {
-                continue;
+            if ($field != $mappedFieldName) {
+                $data[$mappedFieldName] = $data[$field];
+                unset($data[$field]);
+                $field = $mappedFieldName;
             }
 
-            $data[$key] = $fieldValue;
+            $fieldConfigType = $definition['fieldConfig']['type'] ?? null;
+
+            if ('link' == $fieldConfigType) {
+                $data[$field] = (string) Tool\Serialize::unserialize(base64_decode($data[$field], true));
+            }
         }
 
         return $data;
@@ -97,5 +119,72 @@ trait HasDataObjectProvider
             'modificationDate' => $object->getModificationDate(),
             'locked' => $this->isLocked($object->getId(), 'object'),
         ];
+    }
+
+    protected function getGridConfigData(array $objectSchema): array
+    {
+        $helperDefinitions = $objectSchema['columnConfig'] ?? [];
+
+        $fields = array_keys($helperDefinitions);
+        if (\Pimcore\Version::getMajorVersion() >= 11) {
+            $fields = array_map(function ($key, $value) {
+                $label = $key;
+                if (isset($value['fieldConfig'])) {
+                    if (isset($value['fieldConfig']['label']) && $value['fieldConfig']['label']) {
+                        $label = $value['fieldConfig']['label'];
+                    } elseif (isset($value['fieldConfig']['attributes']['label'])) {
+                        $label = $value['fieldConfig']['attributes']['label'] ?: $key;
+                    }
+                }
+
+                return [
+                    'key' => $key,
+                    'label' => $label,
+                ];
+            },
+                array_keys($helperDefinitions), $helperDefinitions);
+        }
+        foreach ($helperDefinitions as $k => $v) {
+            if (DataObject\Service::isHelperGridColumnConfig($k)) {
+                $helperDefinitions[$k] = json_decode(json_encode($v['fieldConfig']));
+            }
+        }
+        $requestedLanguage = $objectSchema['language'] ?? null;
+
+        return [
+            'fields' => $fields,
+            'helperDefinitions' => $helperDefinitions,
+            'language' => $requestedLanguage,
+        ];
+    }
+
+    protected function mapFieldName($field, $definition): string
+    {
+        if (str_starts_with($field, '#') && $definition) {
+            if (!empty($definition->attributes)) {
+                return $definition->attributes->label ?: $field;
+            }
+
+            return $field;
+        } elseif (str_starts_with($field, '~')) {
+            $fieldParts = explode('~', $field);
+            $type = $fieldParts[1];
+
+            if ('classificationstore' == $type) {
+                $fieldNames = $fieldParts[2];
+                $groupKeyId = explode('-', $fieldParts[3]);
+                $groupId = (int) $groupKeyId[0];
+                $keyId = (int) $groupKeyId[1];
+
+                $groupConfig = DataObject\Classificationstore\GroupConfig::getById($groupId);
+                $keyConfig = DataObject\Classificationstore\KeyConfig::getById($keyId);
+
+                if ($groupConfig && $keyConfig) {
+                    $field = $fieldNames.'~'.$groupConfig->getName().'~'.$keyConfig->getName();
+                }
+            }
+        }
+
+        return $field;
     }
 }
