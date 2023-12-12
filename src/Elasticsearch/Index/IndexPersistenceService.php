@@ -26,6 +26,26 @@ use Pimcore\Model\Element\ElementInterface;
 
 final class IndexPersistenceService
 {
+    protected array $mappingTemplate = [
+        'dynamic_templates' => [
+            [
+                'strings' => [
+                    'match_mapping_type' => 'string',
+                    'mapping' => [
+                        'type' => 'keyword',
+                        'fields' => [
+                            'analyzed' => [
+                                'type' => 'text',
+                                'analyzer' => 'datahub_ngram_analyzer',
+                                'search_analyzer' => 'datahub_whitespace_analyzer',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
     /**
      * @param array<string, string|array> $indexSettings
      */
@@ -81,29 +101,33 @@ final class IndexPersistenceService
     /**
      * Creates a new index either with or without settings/mappings.
      *
-     * @param string $name    – The name of the index
-     * @param array  $mapping – The mapping for the index
+     * @param string $name – The name of the index
+     * @param array $mapping – The mapping for the index
      *
      * @return array<string, mixed>
      *
      * @throws ClientResponseException
      * @throws MissingParameterException
      * @throws ServerResponseException
+     * @throws \Exception
      */
     public function createIndex(string $name, array $mapping = []): array
     {
-        $params = [
-            'index' => $name,
-        ];
+        $mappings = array_merge_recursive($mapping, $this->mappingTemplate);
 
-        if ([] !== $mapping) {
-            $params['body'] = [
+        $result = $this->client->indices()->create([
+            'index' => $name,
+            'body' => [
+                'mappings' => $mappings,
                 'settings' => $this->indexSettings,
-                'mappings' => $mapping,
-            ];
+            ],
+        ])->asArray();
+
+        if (!$result['acknowledged']) {
+            throw new \Exception('Index creation failed. IndexName: '.$name);
         }
 
-        return $this->client->indices()->create($params)->asArray();
+        return $result;
     }
 
     /**
@@ -286,12 +310,11 @@ final class IndexPersistenceService
             throw new \InvalidArgumentException('This element type is currently not supported.');
         }
 
-        $params = [
+        return $this->client->index([
             'index' => $indexName,
+            'type' => '_doc',
             'id' => $element->getId(),
             'body' => $body,
-        ];
-
-        return $this->client->index($params)->asArray();
+        ])->asArray();
     }
 }

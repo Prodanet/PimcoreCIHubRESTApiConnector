@@ -61,7 +61,9 @@ final class IndexQueryService
         }
 
         $requestParams = [
-            'index' => $index,
+            'track_total_hits' => true,
+            'rest_total_hits_as_int' => true,
+            'index' => explode(',', $index),
             'body' => $query,
         ];
 
