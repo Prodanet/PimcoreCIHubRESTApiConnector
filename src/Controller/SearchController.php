@@ -14,6 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\ListingFilterTrait;
@@ -289,7 +290,7 @@ final class SearchController extends BaseEndpointController
             );
         }
 
-        $search = $indexService->createSearch($request);
+        $search = $indexService->createSearch();
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $configReader);
 
@@ -382,6 +383,16 @@ final class SearchController extends BaseEndpointController
                 required: false,
                 schema: new OA\Schema(
                     type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'include_folders',
+                description: 'Set to true to include folders, default false.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'boolean',
+                    default: false
                 )
             ),
             new OA\Parameter(
@@ -498,7 +509,7 @@ final class SearchController extends BaseEndpointController
             ),
         ],
     )]
-    public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService, Request $request): JsonResponse
+    public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
@@ -517,6 +528,9 @@ final class SearchController extends BaseEndpointController
         $this->checkRequiredParameters(['type' => $type]);
 
         $root = Service::getElementById($type, $id);
+        if (!$root) {
+            throw new NotFoundException(sprintf("Parent with id [%s] doesn't exist for the type [%s]", $id, $type));
+        }
         if (!$root->isAllowed('list', $this->user)) {
             throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
         }
@@ -538,7 +552,7 @@ final class SearchController extends BaseEndpointController
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
             }
         }
-        $search = $indexService->createSearch($request);
+        $search = $indexService->createSearch();
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $configReader);
         $search->addQuery(new MatchQuery('system.parentId', $root->getId()));

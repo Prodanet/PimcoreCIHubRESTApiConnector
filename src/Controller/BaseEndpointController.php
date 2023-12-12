@@ -79,9 +79,9 @@ abstract class BaseEndpointController extends FrontendController
 
     public function applySearchSettings(Search $search): void
     {
-        $size = max((int) $this->request->get('size', 200), 1);
-        $pageCursor = max((int) $this->request->get('page_cursor', 0), 0);
-        $orderBy = $this->request->get('order_by');
+        $size = max($this->request->query->getInt('size', 200), 1);
+        $pageCursor = max($this->request->query->getInt('page_cursor', 0), 0);
+        $orderBy = $this->request->query->getString('order_by', '');
 
         $search->setSize($size);
         $search->setFrom($pageCursor);
@@ -91,10 +91,9 @@ abstract class BaseEndpointController extends FrontendController
         $this->nextPageCursor = $pageCursor + $size;
     }
 
-    private function applySort(Search $search, mixed $orderBy): void
+    private function applySort(Search $search, string $orderBy): void
     {
-        if (null !== $orderBy) {
-            $orderBy = (string)$orderBy;
+        if (!empty($orderBy)) {
             $items = json_decode($orderBy, true);
             if (is_array($items)) {
                 foreach ($items as $field => $order) {
@@ -121,9 +120,7 @@ abstract class BaseEndpointController extends FrontendController
      */
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
-        $parentId = (int) $this->request->get('parentId', 1);
-        $type = $this->request->get('type', null);
-        $fulltext = $this->request->get('fulltext_search');
+        $fulltext = $this->request->query->getString('fulltext_search');
         /*
          * @TODO to remove on 2.2.x
          */
@@ -158,19 +155,6 @@ abstract class BaseEndpointController extends FrontendController
                 $search->addAggregation(new TermsAggregation($field, $field));
             }
         }
-
-        $query['bool']['filter']['bool']['must'][] = [
-            'term' => [
-                'system.type' => $type,
-            ],
-        ];
-        $query['bool']['filter']['bool']['must'][] = [
-            'term' => [
-                'system.parentId' => $parentId,
-            ],
-        ];
-
-        $body['query'] = $query;
     }
 
     /**
