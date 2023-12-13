@@ -520,17 +520,14 @@ final class AssetController extends BaseEndpointController
         $configReader = new ConfigReader($configuration->getConfiguration());
 
         $plu = null;
-        if ($this->request->query->has('plu')) {
-            $plu = $this->request->query->getString('plu');
+        if ($request->query->has('plu')) {
+            $plu = $request->query->getString('plu');
         }
 
         $this->checkRequiredParameters(['plu' => $plu]);
 
-        $type = 'asset';
-
         $indices = [];
-
-        if ('asset' === $type && $configReader->isAssetIndexingEnabled()) {
+        if ($configReader->isAssetIndexingEnabled()) {
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName)];
         }
 
