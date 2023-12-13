@@ -11,10 +11,13 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Config;
@@ -28,9 +31,11 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Routing\RouterInterface;
 
 #[Route(path: ['/datahub/rest/{config}/asset', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_asset_')]
 #[Security(name: 'Bearer')]
@@ -452,5 +457,111 @@ final class AssetController extends BaseEndpointController
         return $streamedResponse->setCallback(static function () use ($stream): void {
             fpassthru($stream);
         });
+    }
+
+    #[Route('/download-links', name: 'download_links', methods: ['GET'])]
+    #[OA\Get(
+        description: 'Method to return filtered list of links to assets.',
+        summary: 'List assets',
+        parameters: [
+            new OA\Parameter(
+                name: 'Authorization',
+                description: 'Bearer (in Swagger UI use authorize feature to set header)',
+                in: 'header'
+            ),
+            new OA\Parameter(
+                name: 'config',
+                description: 'Name of the config.',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'plu',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation.',
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request data'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Access denied'
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Server error'
+            ),
+        ],
+    )]
+    public function downloadLinks(
+        IndexManager $indexManager,
+        IndexQueryService $indexService,
+        Request $request,
+        RouterInterface $router
+    ): Response
+    {
+        $this->authManager->checkAuthentication();
+
+        $configName = $this->config;
+        $configuration = $this->getDataHubConfiguration();
+        $configReader = new ConfigReader($configuration->getConfiguration());
+
+        $plu = null;
+        if ($this->request->query->has('plu')) {
+            $plu = $this->request->query->getString('plu');
+        }
+
+        $this->checkRequiredParameters(['plu' => $plu]);
+
+        $type = 'asset';
+
+        $indices = [];
+
+        if ('asset' === $type && $configReader->isAssetIndexingEnabled()) {
+            $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName)];
+        }
+
+        $search = $indexService->createSearch($request);
+        $this->applySearchSettings($search);
+
+        $search->addQuery(new MatchQuery('metaData.Default.PLU', $plu));
+
+        $result = $indexService->search(implode(',', $indices), $search->toArray());
+
+        $hits = $result['hits'];
+        $total = $hits['total']['value'];
+        $entries = $hits['hits'];
+
+        $items = [];
+        if ($total > 0) {
+            $ids = array_map(function($v) {
+                return $v['_id'];
+            }, $entries);
+
+            $items = array_map(function($id) use ($router, $configName) {
+                return $router->generate('datahub_rest_endpoints_asset_download', [
+                    'config' => $configName,
+                    'id' => $id,
+                ]);
+            }, $ids);
+        }
+
+        return $this->json([
+            'total_count' => $total,
+            'items' => $items,
+        ]);
     }
 }
