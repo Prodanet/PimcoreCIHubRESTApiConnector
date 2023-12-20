@@ -1,8 +1,8 @@
 {
-  "name": "ci-hub/rest-adapter-bundle",
+  "name": "brandoriented/ci-hub-api-bundle",
   "type": "pimcore-bundle",
-  "license": "GPL-3.0-or-later",
-  "description": "REST Adapter for Pimcore DataHub",
+  "license": "GPL-3.0-or-lateyr",
+  "description": "REST Adapter for CI-HUB",
   "keywords": [
     "pimcore",
     "pimcore-bundle"
