@@ -23,7 +23,7 @@ final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements Pim
     use BundleAdminClassicTrait;
     use PackageVersionTrait;
 
-    public const PACKAGE_NAME = 'ci-hub/rest-adapter-bundle';
+    public const PACKAGE_NAME = 'bo-hub/ci-hub-api-bundle';
 
     public function getInstaller(): ?InstallerInterface
     {
