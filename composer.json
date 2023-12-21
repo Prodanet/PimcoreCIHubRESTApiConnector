@@ -1,5 +1,5 @@
 {
-  "name": "brandoriented/ci-hub-api-bundle",
+  "name": "bo/ci-hub-api-bundle",
   "type": "pimcore-bundle",
   "license": "GPL-3.0-or-lateyr",
   "description": "REST Adapter for CI-HUB",
