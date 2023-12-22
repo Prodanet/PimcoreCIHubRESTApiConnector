@@ -125,7 +125,10 @@ abstract class BaseEndpointController extends FrontendController
          * @TODO to remove on 2.2.x
          */
         if ($this->request->query->has('filter')) {
-            $filter = json_decode($this->request->get('filter'), true, 512, \JSON_THROW_ON_ERROR);
+            $filter = $this->request->get('filter');
+            if(is_string($filter)) {
+                $filter = json_decode($filter, true, 512, \JSON_THROW_ON_ERROR);
+            }
         } else {
             $filter = [];
         }
