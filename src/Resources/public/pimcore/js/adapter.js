@@ -21,7 +21,7 @@ pimcore.plugin.datahub.adapter.simpleRest = Class.create(pimcore.plugin.datahub.
         Ext.Msg.confirm(t('delete'), t('delete_message'), function (btn) {
             if ('yes' === btn) {
                 Ext.Ajax.request({
-                    url: Routing.generate('pimcore_datahub_config_delete'),
+                    url: Routing.generate('datahub_rest_adapter_config_delete'),
                     params: {
                         name: record.data.id,
                     },
