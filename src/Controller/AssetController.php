@@ -531,7 +531,7 @@ final class AssetController extends BaseEndpointController
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName)];
         }
 
-        $search = $indexService->createSearch($request);
+        $search = $indexService->createSearch();
         $this->applySearchSettings($search);
 
         $search->addQuery(new MatchQuery('metaData.Default.PLU', $plu));

@@ -34,7 +34,7 @@ final class Dao extends AbstractDao
         $data = $this->db->fetchAssociative('SELECT * FROM '.$this->tableName.' WHERE id = ?', [$this->model->getId()]);
 
         if (!$data) {
-            throw new NotFoundException('Uload Session with the ID '.$this->model->getId()." doesn't exists");
+            throw new NotFoundException('Upload Session with the ID ['.$this->model->getId()."] doesn't exists");
         }
 
         $this->assignVariablesToModel($data);
