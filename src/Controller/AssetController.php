@@ -431,17 +431,11 @@ final class AssetController extends BaseEndpointController
         $thumbnail = $this->request->get('thumbnail');
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 
-        if (!empty($thumbnail) && ($element instanceof Image || $element instanceof Document)) {
+        if (!empty($thumbnail) && $element instanceof Image) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
-                if ($element instanceof Image) {
-                    $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
-                } else {
-                    $elementFile = $element->getImageThumbnail($defaultPreviewThumbnail);
-                }
-            } elseif ($element instanceof Image) {
-                $elementFile = $element->getThumbnail($thumbnail);
+                $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
             } else {
-                $elementFile = $element->getImageThumbnail($thumbnail);
+                $elementFile = $element->getThumbnail($thumbnail);
             }
         } else {
             $elementFile = $element;
