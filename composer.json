@@ -7,7 +7,7 @@
     "pimcore",
     "pimcore-bundle"
   ],
-  "homepage": "https://github.com/BrandOriented/SimpleRESTAdapterBundle",
+  "homepage": "https://github.com/BrandOriented/PimcoreCiHubConnector",
   "authors": [
     {
       "name": "CI HUB GmbH",
@@ -27,8 +27,8 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/BrandOriented/SimpleRESTAdapterBundle/issues",
-    "docs": "https://github.com/BrandOriented/SimpleRESTAdapterBundle/blob/master/README.md"
+    "issues": "https://github.com/BrandOriented/PimcoreCiHubConnector/issues",
+    "docs": "https://github.com/BrandOriented/PimcoreCiHubConnector/blob/master/README.md"
   },
   "prefer-stable": true,
   "minimum-stability": "stable",
