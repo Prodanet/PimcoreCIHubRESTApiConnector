@@ -4,7 +4,8 @@ This bundle depends on the [Pimcore DataHub](https://github.com/pimcore/data-hub
 To install the Simple REST Adapter complete following steps:
 * Install via composer
   ```
-  composer require ci-hub/simple-rest-adapter-bundle
+  composer require bo-hub/ci-hub-adapter-bundle
+  composer require bo-hub/ci-hub-api-bundle
   ```
 * Enable via command-line (or inside the Pimcore extension manager)
   ```
