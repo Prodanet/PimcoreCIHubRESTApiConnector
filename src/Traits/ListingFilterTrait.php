@@ -37,7 +37,7 @@ trait ListingFilterTrait
                 NOT EXISTS(SELECT list FROM users_workspaces_object WHERE userId ='.$currentUserId.'  AND list=0 AND cpath = uwa.cpath))';
                 $isDisallowedCurrentRow = 'EXISTS(SELECT list FROM users_workspaces_object WHERE userId IN ('.implode(',', $userIds).')  AND cid = id AND list=0)';
             } else {
-                throw new InvalidParameterException('Type ['.$element.'] is not supported');
+                throw new InvalidParameterException('Type ['.$element::class.'] is not supported');
             }
 
             return 'IF('.$anyAllowedRowOrChildren.',1,IF('.$inheritedPermission.', '.$isDisallowedCurrentRow.' = 0, 0)) = 1';

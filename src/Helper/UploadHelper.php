@@ -112,7 +112,9 @@ final class UploadHelper
     public function deleteSession(string $id): void
     {
         $datahubUploadSession = DatahubUploadSession::getById($id);
-        $datahubUploadSession->delete();
+        if ($datahubUploadSession) {
+            $datahubUploadSession->delete();
+        }
     }
 
     /**

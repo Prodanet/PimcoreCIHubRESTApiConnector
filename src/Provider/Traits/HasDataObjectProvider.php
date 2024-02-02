@@ -54,7 +54,6 @@ trait HasDataObjectProvider
     {
         $objectSchema = $configReader->extractObjectSchema($concrete->getClassName());
         $gridConfigData = $this->getGridConfigData($objectSchema);
-        $data = [];
         if (\Pimcore\Version::getMajorVersion() >= 11) {
             $data = DataObject\Service::getCsvDataForObject(
                 $concrete,

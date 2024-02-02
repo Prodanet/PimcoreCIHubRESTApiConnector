@@ -49,7 +49,8 @@ final class IndexPersistenceService
     /**
      * @param array<string, string|array> $indexSettings
      */
-    public function __construct(private Client $client,
+    public function __construct(
+        private Client $client,
         private DataHubConfigurationRepository $dataHubConfigurationRepository,
         private ProviderInterface $assetProvider,
         private ProviderInterface $dataObjectProvider,

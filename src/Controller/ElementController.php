@@ -21,7 +21,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\AbstractModel;
 use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\Service;
