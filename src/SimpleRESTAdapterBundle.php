@@ -17,8 +17,11 @@ use Pimcore\Extension\Bundle\Installer\InstallerInterface;
 use Pimcore\Extension\Bundle\PimcoreBundleAdminClassicInterface;
 use Pimcore\Extension\Bundle\Traits\BundleAdminClassicTrait;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
+use Pimcore\HttpKernel\Bundle\DependentBundleInterface;
+use Pimcore\HttpKernel\BundleCollection\BundleCollection;
+use Nelmio\ApiDocBundle\NelmioApiDocBundle;
 
-final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements PimcoreBundleAdminClassicInterface
+final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements DependentBundleInterface, PimcoreBundleAdminClassicInterface
 {
     use BundleAdminClassicTrait;
     use PackageVersionTrait;
@@ -51,5 +54,10 @@ final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements Pim
     protected function getComposerPackageName(): string
     {
         return self::PACKAGE_NAME;
+    }
+
+    public static function registerDependentBundles(BundleCollection $collection): void
+    {
+        $collection->addBundle(new NelmioApiDocBundle());
     }
 }
