@@ -43,6 +43,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ],
         'areas' => [
             'disable_default_routes' => true,
+            'default' => [
+                'path_patterns' => ['^/api'],
+            ],
             'ci_hub' => [
                 'path_patterns' => [
                     '^/datahub/rest/{config}(?!/doc$)',
