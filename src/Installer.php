@@ -73,7 +73,7 @@ final class Installer extends SettingsStoreAwareInstaller
             $tableSession = $schema->createTable(self::UPLOAD_SESSION_TABLE);
             $tableSession->addColumn('id', 'string', ['length' => 255, 'notnull' => false]);
             $tableSession->addUniqueIndex(['id']);
-            $tableSession->addColumn('parts', 'json', ['notnull' => false, 'default' => json_encode([])]);
+            $tableSession->addColumn('parts', 'json');
             $tableSession->addColumn('totalParts', 'integer', ['length' => 11, 'notnull' => false]);
             $tableSession->addColumn('fileSize', 'integer', ['length' => 11, 'notnull' => false]);
             $tableSession->addColumn('assetId', 'integer', ['length' => 11, 'notnull' => false]);

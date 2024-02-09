@@ -41,24 +41,6 @@ final class AuthManager
         $this->config = $this->request->get('config');
     }
 
-    public function isAllowed(Asset $asset, string $type, User $user): bool
-    {
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-        $isAllowed = false;
-        foreach ($configReader->getPermissions() as $permission) {
-            $permissionType = $permission[$type] ?? false;
-            if ($permission['id'] === $user->getId() && true === $permissionType) {
-                $isAllowed = true;
-            }
-        }
-
-        $elementEvent = new ElementEvent($asset, ['isAllowed' => $isAllowed, 'permissionType' => $type, 'user' => $user]);
-        \Pimcore::getEventDispatcher()->dispatch($elementEvent, ElementEvents::ELEMENT_PERMISSION_IS_ALLOWED);
-
-        return (bool) $elementEvent->getArgument('isAllowed');
-    }
-
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();
@@ -81,11 +63,11 @@ final class AuthManager
         throw new AuthenticationException('Failed to authenticate with username and token');
     }
 
+    /**
+     * @throws Exception
+     */
     private function getUserByToken(): ?User
     {
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-
         if (!$this->request->headers->has('Authorization')
             || !str_starts_with($this->request->headers->get('Authorization'), 'Bearer ')) {
             throw new AccessDeniedException();
@@ -95,11 +77,10 @@ final class AuthManager
         $authorizationHeader = mb_substr($this->request->headers->get('Authorization'), 7);
 
         $db = Db::get();
-        $userId = $db->fetchOne('SELECT userId FROM `users_datahub_config` WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
-        foreach ($configReader->getPermissions() as $permission) {
-            if ($permission['id'] === $userId) {
-                return User::getById($userId);
-            }
+        $userId = $db->fetchOne('SELECT userId FROM users_datahub_config WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
+        $user = User::getById($userId);
+        if ($user instanceof User\AbstractUser) {
+            return $user;
         }
 
         throw new AuthenticationException('Failed to authenticate with username and token');

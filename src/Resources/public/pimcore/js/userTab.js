@@ -17,6 +17,165 @@ pimcore.helpers.showUser = function (specificUser) {
         }
     }
 };
+pimcore.helpers.openProfile = function () {
+    try {
+        pimcore.globalmanager.get("profile").activate();
+    }
+    catch (e) {
+        pimcore.globalmanager.add("profile", new pimcore.plugin.simpleRestAdapterBundle.user.profile());
+    }
+};
+
+pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.profile");
+pimcore.plugin.simpleRestAdapterBundle.user.profile = Class.create(pimcore.settings.profile.panel, {
+    cihub: null,
+    currentItems: null,
+    getTabPanel: function () {
+        if (!this.panel) {
+            this.currentItems = this.getEditPanel();
+            this.ciHubLoadPanel().then(res => {
+                this.cihub = res;
+            }).then(res => {
+                this.currentItems.insert(0, this.getPanel());
+            });
+            this.panel = new Ext.Panel({
+                id: "my_profile",
+                title: t("my_profile"),
+                iconCls: "pimcore_icon_user",
+                border: false,
+                closable: true,
+                layout: "fit",
+                bodyStyle: "padding: 10px;",
+                items: [this.currentItems]
+            });
+
+            var tabPanel = Ext.getCmp("pimcore_panel_tabs");
+            tabPanel.add(this.panel);
+            tabPanel.setActiveItem("my_profile");
+
+            this.panel.on("destroy", function () {
+                pimcore.globalmanager.remove("profile");
+            }.bind(this));
+            pimcore.layout.refresh();
+
+        }
+
+        return this.panel;
+    },
+    getPanel: function () {
+        const generateToken = (n) => {
+            var chars = '!@#$%^&*()_+{}:"|?><,./;`abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var token = '';
+            for(var i = 0; i < n; i++) {
+                token += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return token;
+        };
+        const apikeyField = new Ext.form.field.Text({
+            xtype: 'textfield',
+            labelWidth: 200,
+            fieldLabel: 'Token',
+            name: 'apikey',
+            value: this.cihub ? this.cihub.apikey : '',
+            minLength: 16,
+            width: 500
+        });
+
+        this.deliverySettingsForm = new Ext.form.FormPanel({
+            autoScroll: true,
+            defaults: {
+                labelWidth: 200,
+            },
+            title: t('CI-HUB Settings'),
+            items: [
+                {
+                    xtype: 'fieldcontainer',
+                    layout: 'hbox',
+                    items: [
+                        apikeyField,
+                        {
+                            xtype: 'button',
+                            width: 32,
+                            style: 'margin-left: 8px',
+                            iconCls: 'pimcore_icon_clear_cache',
+                            handler: () => {
+                                apikeyField.setValue(generateToken(32));
+                            },
+                        },
+                        {
+                            xtype: 'button',
+                            text: t("save"),
+                            handler: this.save.bind(this),
+                            iconCls: "pimcore_icon_accept"
+                        },
+                    ],
+                },
+            ],
+        });
+
+        return this.deliverySettingsForm;
+    },
+    ciHubLoadPanel: function() {
+        return new Promise((resolve, reject) => {
+            Ext.Ajax.request({
+                url: Routing.generate('admin_ci_hub_user_config'),
+                success: function(transport) {
+                    var response = Ext.decode(transport.responseText);
+                    if(response) {
+                        resolve(response);
+                    }
+                },
+                params: {
+                    id: this.id
+                }
+            });
+        });
+    },
+    initializeCiHub: function () {
+        const panel = this.getPanel();
+        const currentItems = this.currentItems;
+        Ext.Ajax.request({
+            url: Routing.generate('admin_ci_hub_user_config'),
+            success: function(transport) {
+                var response = Ext.decode(transport.responseText);
+                if(response) {
+                    this.cihub = response;
+                    currentItems.insert(1, panel);
+                }
+
+            },
+            params: {
+                id: this.id
+            }
+        });
+    },
+    save: function () {
+        const cihub = {
+        };
+        try {
+            cihub.data = Ext.encode(this.deliverySettingsForm.getForm().getValues());
+        } catch (e) {
+            console.log(e);
+        }
+        Ext.Ajax.request({
+            url: Routing.generate('admin_ci_hub_user_config_update'),
+            method: "PUT",
+            params: cihub,
+            success: function (transport) {
+                try{
+                    const res = Ext.decode(transport.responseText);
+                    if (res.success) {
+                        pimcore.helpers.showNotification(t("success"), t("saved_successfully"), "success");
+                    } else {
+                        pimcore.helpers.showNotification(t("error"), t("saving_failed"), "error",t(res.message));
+                    }
+                } catch(e){
+                    pimcore.helpers.showNotification(t("error"), t("saving_failed"), "error");
+                }
+            }.bind(this)
+        });
+    }
+});
 pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.panel");
 pimcore.plugin.simpleRestAdapterBundle.user.panel = Class.create(pimcore.settings.user.panel, {
     openUser: function(userId) {
@@ -32,9 +191,8 @@ pimcore.plugin.simpleRestAdapterBundle.user.panel = Class.create(pimcore.setting
             console.log(e);
         }
     },
-
 });
-pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.panel");
+pimcore.registerNS("pimcore.plugin.simpleRestAdapterBundle.user.usertab");
 pimcore.plugin.simpleRestAdapterBundle.user.usertab = Class.create(pimcore.settings.user.usertab, {
     initialize: function (parentPanel, id) {
         this.parentPanel = parentPanel;

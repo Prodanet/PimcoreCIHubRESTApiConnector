@@ -233,7 +233,7 @@ final class UploadHelper
             $parentAsset = Asset::getById($parentId);
         }
 
-        if (!$parentAsset->isAllowed('create', $this->user) && !$this->authManager->isAllowed($parentAsset, 'create', $this->user)) {
+        if (!$parentAsset->isAllowed('create', $this->user)) {
             throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
         if (null !== $assetId && $assetId > 0) {
@@ -242,7 +242,7 @@ final class UploadHelper
                 throw new NotFoundException('Asset does not exist');
             }
 
-            if (!$asset->isAllowed('update', $this->user) && !$this->authManager->isAllowed($asset, 'update', $this->user)) {
+            if (!$asset->isAllowed('update', $this->user)) {
                 throw new AccessDeniedHttpException('Missing the permission to update asset: '.$asset->getId());
             }
         }

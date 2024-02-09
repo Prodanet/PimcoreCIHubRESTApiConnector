@@ -173,16 +173,6 @@ final class ConfigReader
     }
 
     /**
-     * Returns a permission for user.
-     *
-     * @return array<int, array>
-     */
-    public function getPermissions(): array
-    {
-        return $this->config['permissions']['user'] ?? [];
-    }
-
-    /**
      * Checks if asset indexing is enabled.
      */
     public function isAssetIndexingEnabled(): bool

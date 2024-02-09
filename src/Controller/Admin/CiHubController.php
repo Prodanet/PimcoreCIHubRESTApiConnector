@@ -45,21 +45,28 @@ final class CiHubController extends UserAwareController
     #[Route('/config/update', name: 'admin_ci_hub_user_config_update', options: ['expose' => true])]
     public function update(Request $request): Response
     {
-        /** @var User|User\Role|null $userRole */
-        $userRole = UserRole::getById($request->request->getInt('id'));
-        $currentUserIsAdmin = $this->getPimcoreUser()->isAdmin();
+        if ($request->request->has('id')) {
+            /** @var User|User\Role|null $userRole */
+            $userRole = UserRole::getById($request->request->getInt('id'));
+            $currentUserIsAdmin = $this->getPimcoreUser()->isAdmin();
 
-        if (!$userRole instanceof UserRole) {
-            throw $this->createNotFoundException();
-        }
+            if (!$userRole instanceof UserRole) {
+                throw $this->createNotFoundException();
+            }
 
-        if ($userRole instanceof User && $userRole->isAdmin() && !$currentUserIsAdmin) {
-            throw $this->createAccessDeniedHttpException('Only admin users are allowed to modify admin users');
+            if ($userRole instanceof User && $userRole->isAdmin() && !$currentUserIsAdmin) {
+                throw $this->createAccessDeniedHttpException('Only admin users are allowed to modify admin users');
+            }
+        } else {
+            $userId = $this->getPimcoreUser()->getId();
+            $userRole = UserRole::getById($userId);
+            if (!$userRole instanceof UserRole) {
+                throw $this->createNotFoundException();
+            }
         }
 
         if ($request->get('data')) {
             $db = Db::get();
-
             $data = $db->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$userRole->getId());
             if ($data) {
                 $db->update('users_datahub_config', [
@@ -78,17 +85,24 @@ final class CiHubController extends UserAwareController
 
     /**
      * @throws Exception
+     * @throws \JsonException
      */
     #[Route('/config', name: 'admin_ci_hub_user_config', options: ['expose' => true])]
     public function get(Request $request): Response
     {
         $userId = (int) $request->get('id');
         if ($userId < 1) {
-            throw $this->createNotFoundException();
+            $user = $this->getPimcoreUser();
+            $data = Db::get()->fetchOne('SELECT data FROM users_datahub_config WHERE userId = '.$user->getId());
+
+            if (!$data) {
+                $data = '{}';
+            }
+
+            return $this->jsonResponse(json_decode($data, null, 512, \JSON_THROW_ON_ERROR));
         }
 
         $user = User::getById($userId);
-
         if (!$user instanceof User) {
             throw $this->createNotFoundException();
         }

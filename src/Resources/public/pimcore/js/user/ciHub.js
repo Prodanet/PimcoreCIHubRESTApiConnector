@@ -3,7 +3,6 @@ pimcore.plugin.simpleRestAdapterBundle.user.ciHub = Class.create({
     initialize: function (userPanel) {
         this.userPanel = userPanel;
         this.data = this.userPanel.data;
-        console.log(this.data);
     },
     getPanel: function () {
         const generateToken = (n) => {
@@ -18,7 +17,7 @@ pimcore.plugin.simpleRestAdapterBundle.user.ciHub = Class.create({
             xtype: 'textfield',
             labelWidth: 200,
             width: 600,
-            fieldLabel: t('plugin_pimcore_datahub_security_datahub_apikey'),
+            fieldLabel: 'Token',
             name: 'apikey',
             value: this.data.cihub ? this.data.cihub.apikey : '',
             minLength: 16,
@@ -31,7 +30,7 @@ pimcore.plugin.simpleRestAdapterBundle.user.ciHub = Class.create({
                 labelWidth: 200,
             },
             border: false,
-            title: t('Datahub settings'),
+            title: t('CI-HUB Settings'),
             items: [
                 {
                     xtype: 'fieldcontainer',
