@@ -59,7 +59,7 @@ trait HasBaseAssetProvider
                     'width' => $element->getWidth(),
                     'height' => $element->getHeight(),
                 ],
-                'xmpData' => $element->getXMPData() ?: null,
+//                'xmpData' => $element->getXMPData() ?: null,
                 'exifData' => $element->getEXIFData() ?: null,
                 'iptcData' => $element->getIPTCData() ?: null,
             ]));
