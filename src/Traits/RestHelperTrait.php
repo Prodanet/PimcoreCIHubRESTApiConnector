@@ -60,7 +60,7 @@ trait RestHelperTrait
             'asset' => Asset::getById($id),
             'object' => DataObject::getById($id),
             'version' => Version::getById($id),
-            default => throw new NotFoundException($type." with doesn't exist"),
+            default => throw new NotFoundException($type.' with id ['.$id."] doesn't exist"),
         };
 
         if (!$element instanceof ElementInterface && !$element instanceof Version) {
