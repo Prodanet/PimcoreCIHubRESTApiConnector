@@ -402,7 +402,7 @@ pimcore.plugin.simpleRestAdapterBundle.configuration.configItem = Class.create(p
             className = classStore.getAt(classIdx).data.name;
         }
 
-        var gridConfigDialog = new pimcore.plugin.pimcoreDataHubSimpleRestBundle.configuration.gridConfigDialog(dialogColumnConfig, function (record, classId, data, settings, save) {
+        var gridConfigDialog = new pimcore.plugin.simpleRestAdapterBundle.configuration.gridConfigDialog(dialogColumnConfig, function (record, classId, data, settings, save) {
                 var columns = {};
 
                 //convert to data array as grid uses it
