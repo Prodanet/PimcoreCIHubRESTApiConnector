@@ -64,7 +64,10 @@ abstract class BaseEndpointController extends FrontendController
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
-        $this->user = $this->authManager->authenticate();
+
+        if (!$this->request->isMethod('OPTIONS')) {
+            $this->user = $this->authManager->authenticate();
+        }
     }
 
     public function getAssetProvider(): AssetProvider
