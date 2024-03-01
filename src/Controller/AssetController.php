@@ -383,12 +383,13 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'thumbnail',
-                description: 'Thumbnail config name (e.g. pimcore-system-treepreview)',
+                description: 'Thumbnail config name',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
                     type: 'string'
-                )
+                ),
+                examples: [new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview')]
             ),
         ],
         responses: [
@@ -499,6 +500,7 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'plu',
+                description: 'Value from the "metaData.Default.PLU"',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
@@ -510,6 +512,26 @@ final class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count',
+                            type: 'integer',
+                            example: 1
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            description: 'Asset path',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'string',
+                                example: '/datahub/rest/{config}/asset/download?id=1'
+                            )
+                        ),
+                    ],
+                    type: 'object'
+                )
             ),
             new OA\Response(
                 response: 400,
@@ -538,10 +560,7 @@ final class AssetController extends BaseEndpointController
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
 
-        $plu = null;
-        if ($request->query->has('plu')) {
-            $plu = $request->query->getString('plu');
-        }
+        $plu = $request->query->getString('plu');
 
         $this->checkRequiredParameters(['plu' => $plu]);
 
@@ -557,9 +576,9 @@ final class AssetController extends BaseEndpointController
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
-        $hits = $result['hits'];
-        $total = $hits['total']['value'];
-        $entries = $hits['hits'];
+        $hits = $result['hits'] ?? [];
+        $total = $hits['total'] ?? 0;
+        $entries = $hits['hits'] ?? [];
 
         $items = [];
         if ($total > 0) {
