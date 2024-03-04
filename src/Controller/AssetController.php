@@ -12,6 +12,7 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
@@ -20,12 +21,12 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
-use Pimcore\Config;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Document;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Version;
+use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -47,6 +48,21 @@ final class AssetController extends BaseEndpointController
     #[OA\Post(
         description: 'Simple method to create and upload asset',
         summary: 'Add asset',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(
+                            property: 'file',
+                            type: 'string',
+                            format: 'binary'
+                        )
+                    ]
+                )
+            )
+        ),
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -64,9 +80,9 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'type',
-                description: 'Type of elements – asset or object.',
+                description: 'Type of elements – asset or object (not used, will be removed).',
                 in: 'query',
-                required: true,
+                required: false,
                 schema: new OA\Schema(
                     type: 'string',
                     enum: ['asset', 'object']
@@ -74,28 +90,13 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'parentId',
-                description: 'Parent ID of element.',
+                description: 'Parent ID of the element.',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            ),
-            new OA\RequestBody(
-                content: new OA\MediaType(
-                    mediaType: 'multipart/form-data',
-                    schema: new OA\Schema(
-                        properties: [
-                            new OA\Property(
-                                property: 'file',
-                                type: 'string',
-                                format: 'binary'
-                            ),
-                        ],
-                        type: 'file'
-                    )
-                )
-            ),
+            )
         ],
         responses: [
             new OA\Response(
@@ -115,7 +116,7 @@ final class AssetController extends BaseEndpointController
                         ),
                         new OA\Property(
                             property: 'success',
-                            description: 'Succes response',
+                            description: 'Success response',
                             type: 'boolean'
                         ),
                     ],
@@ -137,15 +138,16 @@ final class AssetController extends BaseEndpointController
         ],
     )]
     #[OA\Tag(name: 'Asset')]
-    #[Route('', name: 'upload', methods: ['POST'])]
-    public function add(
-        Config $pimcoreConfig
-    ): Response {
+    #[Route(name: 'upload', methods: ['POST'])]
+    public function add(): Response {
         $parentId = $this->request->query->getInt('parentId');
         $this->checkRequiredParameters(['parentId' => $parentId]);
         try {
             /** @var UploadedFile $uploadedFile */
             $uploadedFile = $this->request->files->get('file');
+            if (!$uploadedFile) {
+                throw new InvalidParameterException(['file']);
+            }
             $sourcePath = $uploadedFile->getRealPath();
             $filename = $uploadedFile->getClientOriginalName();
             $filename = Service::getValidKey($filename, 'asset');
@@ -155,7 +157,7 @@ final class AssetController extends BaseEndpointController
             }
 
             $parentAsset = Asset::getById($this->request->query->getInt('parentId'));
-            if (!$parentAsset instanceof Asset) {
+            if (!$parentAsset instanceof Asset\Folder) {
                 throw new \Exception('Parent does not exist');
             }
 
@@ -197,6 +199,20 @@ final class AssetController extends BaseEndpointController
     #[OA\Post(
         description: 'Simple method to update and upload asset',
         summary: 'Update asset',
+        requestBody:  new OA\RequestBody(
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(
+                            property: 'file',
+                            type: 'string',
+                            format: 'binary'
+                        ),
+                    ]
+                )
+            )
+        ),
         parameters: [
             new OA\Parameter(
                 name: 'Authorization',
@@ -214,9 +230,9 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'type',
-                description: 'Type of elements – asset or object.',
+                description: 'Type of elements – asset or object (not used, will be removed).',
                 in: 'query',
-                required: true,
+                required: false,
                 schema: new OA\Schema(
                     type: 'string',
                     enum: ['asset', 'object']
@@ -224,28 +240,13 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'id',
-                description: 'Element ID.',
+                description: 'ID of the element.',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            ),
-            new OA\RequestBody(
-                content: new OA\MediaType(
-                    mediaType: 'multipart/form-data',
-                    schema: new OA\Schema(
-                        properties: [
-                            new OA\Property(
-                                property: 'file',
-                                type: 'string',
-                                format: 'binary'
-                            ),
-                        ],
-                        type: 'file'
-                    )
-                )
-            ),
+            )
         ],
         responses: [
             new OA\Response(
@@ -265,7 +266,7 @@ final class AssetController extends BaseEndpointController
                         ),
                         new OA\Property(
                             property: 'success',
-                            description: 'Succes response',
+                            description: 'Success response',
                             type: 'boolean'
                         ),
                     ],
@@ -297,10 +298,13 @@ final class AssetController extends BaseEndpointController
 
         try {
             $asset = Asset::getById($id);
-            if ($asset instanceof Asset) {
+            if ($asset instanceof Asset && !$asset instanceof Asset\Folder) {
                 if ($asset->isAllowed('create', $this->user)) {
                     /** @var UploadedFile $uploadedFile */
                     $uploadedFile = $this->request->files->get('file');
+                    if (!$uploadedFile) {
+                        throw new InvalidParameterException(['file']);
+                    }
                     $sourcePath = $uploadedFile->getRealPath();
                     $filename = $uploadedFile->getClientOriginalName();
                     $filename = Service::getValidKey($filename, 'asset');
@@ -351,7 +355,7 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'id',
-                description: 'ID of element.',
+                description: 'ID of the element.',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
@@ -360,7 +364,7 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'version',
-                description: 'ID of element.',
+                description: 'Version of the element.',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
@@ -368,13 +372,24 @@ final class AssetController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
+                name: 'type',
+                description: 'Type of elements – asset, object or version.',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['asset', 'object', 'version']
+                )
+            ),
+            new OA\Parameter(
                 name: 'thumbnail',
-                description: 'Thumbnail config nae',
+                description: 'Thumbnail config name',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
                     type: 'string'
-                )
+                ),
+                examples: [new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview')]
             ),
         ],
         responses: [
@@ -428,7 +443,10 @@ final class AssetController extends BaseEndpointController
             throw new AccessDeniedHttpException('Your request to create a folder has been blocked due to missing permissions');
         }
 
-        $thumbnail = $this->request->get('thumbnail');
+        $thumbnail = (string) $this->request->get('thumbnail');
+        if (!Thumbnail\Config::getByAutoDetect($thumbnail)) {
+            throw new InvalidParameterException(['thumbnail' => 'Thumbnail [' . $thumbnail . '] does not exist']);
+        }
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 
         if (!empty($thumbnail) && $element instanceof Image) {
@@ -441,8 +459,10 @@ final class AssetController extends BaseEndpointController
             $elementFile = $element;
         }
 
+        $filename = basename(rawurldecode($elementFile->getPath()));
+        $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
         $streamedResponse = new StreamedResponse();
-        $streamedResponse->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, basename($elementFile->getPath()));
+        $streamedResponse->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
         $streamedResponse->headers->set('Content-Type', $elementFile->getMimetype());
         $streamedResponse->headers->set('Content-Length', $elementFile->getFileSize());
 
@@ -474,6 +494,7 @@ final class AssetController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'plu',
+                description: 'Value from the "metaData.Default.PLU"',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
@@ -485,6 +506,26 @@ final class AssetController extends BaseEndpointController
             new OA\Response(
                 response: 200,
                 description: 'Successful operation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'total_count',
+                            description: 'Total count',
+                            type: 'integer',
+                            example: 1
+                        ),
+                        new OA\Property(
+                            property: 'items',
+                            description: 'Asset path',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'string',
+                                example: '/datahub/rest/{config}/asset/download?id=1'
+                            )
+                        ),
+                    ],
+                    type: 'object'
+                )
             ),
             new OA\Response(
                 response: 400,
@@ -513,10 +554,7 @@ final class AssetController extends BaseEndpointController
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
 
-        $plu = null;
-        if ($request->query->has('plu')) {
-            $plu = $request->query->getString('plu');
-        }
+        $plu = $request->query->getString('plu');
 
         $this->checkRequiredParameters(['plu' => $plu]);
 
@@ -532,9 +570,9 @@ final class AssetController extends BaseEndpointController
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
 
-        $hits = $result['hits'];
-        $total = $hits['total']['value'];
-        $entries = $hits['hits'];
+        $hits = $result['hits'] ?? [];
+        $total = $hits['total'] ?? 0;
+        $entries = $hits['hits'] ?? [];
 
         $items = [];
         if ($total > 0) {
