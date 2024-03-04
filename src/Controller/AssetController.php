@@ -14,29 +14,28 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
-use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use Nelmio\ApiDocBundle\Annotation\Security;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Document;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Version;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route(path: ['/datahub/rest/{config}/asset', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_asset_')]
 #[Security(name: 'Bearer')]
@@ -449,14 +448,13 @@ final class AssetController extends BaseEndpointController
         }
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 
+        $elementFile = $element;
         if (!empty($thumbnail) && $element instanceof Image) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
                 $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
-            } else {
+            } elseif (Image\Thumbnail\Config::getByAutoDetect($thumbnail)) {
                 $elementFile = $element->getThumbnail($thumbnail);
             }
-        } else {
-            $elementFile = $element;
         }
 
         $filename = basename(rawurldecode($elementFile->getPath()));
@@ -466,10 +464,8 @@ final class AssetController extends BaseEndpointController
         $streamedResponse->headers->set('Content-Type', $elementFile->getMimetype());
         $streamedResponse->headers->set('Content-Length', $elementFile->getFileSize());
 
-        $stream = $elementFile->getStream();
-
-        return $streamedResponse->setCallback(static function () use ($stream): void {
-            fpassthru($stream);
+        return $streamedResponse->setCallback(static function () use ($elementFile): void {
+            fpassthru($elementFile->getStream());
         });
     }
 
@@ -546,8 +542,7 @@ final class AssetController extends BaseEndpointController
         IndexQueryService $indexService,
         Request $request,
         RouterInterface $router
-    ): Response
-    {
+    ): Response {
         $this->authManager->checkAuthentication();
 
         $configName = $this->config;
@@ -576,11 +571,11 @@ final class AssetController extends BaseEndpointController
 
         $items = [];
         if ($total > 0) {
-            $ids = array_map(function($v) {
+            $ids = array_map(function ($v) {
                 return $v['_id'];
             }, $entries);
 
-            $items = array_map(function($id) use ($router, $configName) {
+            $items = array_map(function ($id) use ($router, $configName) {
                 return $router->generate('datahub_rest_endpoints_asset_download', [
                     'config' => $configName,
                     'id' => $id,

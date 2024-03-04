@@ -55,12 +55,12 @@ abstract class BaseEndpointController extends FrontendController
      * @throws Exception
      */
     public function __construct(
-        private DataHubConfigurationRepository $dataHubConfigurationRepository,
-        private LabelExtractorInterface $labelExtractor,
-        private RequestStack $requestStack,
+        private readonly DataHubConfigurationRepository $dataHubConfigurationRepository,
+        private readonly LabelExtractorInterface $labelExtractor,
+        private readonly RequestStack $requestStack,
         protected AuthManager $authManager,
-        private AssetProvider $assetProvider,
-        private DataObjectProvider $dataObjectProvider,
+        private readonly AssetProvider $assetProvider,
+        private readonly DataObjectProvider $dataObjectProvider,
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
@@ -98,10 +98,10 @@ abstract class BaseEndpointController extends FrontendController
     {
         if (!empty($orderBy)) {
             $items = json_decode($orderBy, true);
-            if (is_array($items)) {
+            if (\is_array($items)) {
                 foreach ($items as $field => $order) {
-                    if (in_array(strtolower($order), [FieldSort::ASC, FieldSort::DESC])) {
-                        $order = strtolower($order);
+                    if (\in_array(mb_strtolower($order), [FieldSort::ASC, FieldSort::DESC], true)) {
+                        $order = mb_strtolower($order);
                     } else {
                         throw new \InvalidArgumentException('Sort order option ("asc" or "desc") is missing from order_by parameter.');
                     }
@@ -129,7 +129,7 @@ abstract class BaseEndpointController extends FrontendController
          */
         if ($this->request->query->has('filter')) {
             $filter = $this->request->get('filter');
-            if(is_string($filter)) {
+            if (\is_string($filter)) {
                 $filter = json_decode($filter, true, 512, \JSON_THROW_ON_ERROR);
             }
         } else {
