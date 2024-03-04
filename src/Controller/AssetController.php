@@ -334,7 +334,7 @@ final class AssetController extends BaseEndpointController
         }
     }
 
-    #[Route('/download', name: 'download', methods: ['GET'])]
+    #[Route('/download', name: 'download', methods: ['GET', 'OPTIONS'])]
     #[OA\Get(
         description: 'Method to download binary file by asset ID.',
         summary: 'Download Asset',
