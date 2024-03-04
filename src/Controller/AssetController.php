@@ -457,7 +457,7 @@ final class AssetController extends BaseEndpointController
 
         $filename = basename(rawurldecode($elementFile->getPath()));
         $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
-        $streamedResponse = new StreamedResponse();
+        $streamedResponse = new StreamedResponse(headers: $crossOriginHeaders);
         $streamedResponse->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
         $streamedResponse->headers->set('Content-Type', $elementFile->getMimetype());
         $streamedResponse->headers->set('Content-Length', $elementFile->getFileSize());
