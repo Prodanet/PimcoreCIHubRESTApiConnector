@@ -23,9 +23,9 @@ use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Image;
+use Pimcore\Model\Asset\Image\Thumbnail;
 use Pimcore\Model\Element\Service;
 use Pimcore\Model\Version;
-use Pimcore\Model\Asset\Image\Thumbnail;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -57,7 +57,7 @@ final class AssetController extends BaseEndpointController
                             property: 'file',
                             type: 'string',
                             format: 'binary'
-                        )
+                        ),
                     ]
                 )
             )
@@ -95,7 +95,7 @@ final class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -138,7 +138,8 @@ final class AssetController extends BaseEndpointController
     )]
     #[OA\Tag(name: 'Asset')]
     #[Route(name: 'upload', methods: ['POST'])]
-    public function add(): Response {
+    public function add(): Response
+    {
         $parentId = $this->request->query->getInt('parentId');
         $this->checkRequiredParameters(['parentId' => $parentId]);
         try {
@@ -198,7 +199,7 @@ final class AssetController extends BaseEndpointController
     #[OA\Post(
         description: 'Simple method to update and upload asset',
         summary: 'Update asset',
-        requestBody:  new OA\RequestBody(
+        requestBody: new OA\RequestBody(
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
@@ -245,7 +246,7 @@ final class AssetController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'integer'
                 )
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -443,16 +444,13 @@ final class AssetController extends BaseEndpointController
         }
 
         $thumbnail = (string) $this->request->get('thumbnail');
-        if (!Thumbnail\Config::getByAutoDetect($thumbnail)) {
-            throw new InvalidParameterException(['thumbnail' => 'Thumbnail [' . $thumbnail . '] does not exist']);
-        }
         $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
 
         $elementFile = $element;
         if (!empty($thumbnail) && $element instanceof Image) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
                 $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
-            } elseif (Image\Thumbnail\Config::getByAutoDetect($thumbnail)) {
+            } elseif (Thumbnail\Config::getByAutoDetect($thumbnail)) {
                 $elementFile = $element->getThumbnail($thumbnail);
             }
         }
