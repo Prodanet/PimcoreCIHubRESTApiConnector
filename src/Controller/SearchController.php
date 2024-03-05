@@ -97,7 +97,11 @@ final class SearchController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'string'
                 ),
-                examples: [new OA\Examples('system.id', ''), new OA\Examples('{"system.id": "acs"}', ''), new OA\Examples('{"system.subtype": "asc", "system.id":"desc"}', '')]
+                examples: [
+                    new OA\Examples('system.id', '', value: 'system.id'),
+                    new OA\Examples('{"system.id": "acs"}', '', value: '{"system.id": "acs"}'),
+                    new OA\Examples('{"system.subtype": "asc", "system.id":"desc"}', '', value: '{"system.subtype": "asc", "system.id":"desc"}')
+                ]
             ),
             new OA\Parameter(
                 name: 'page_cursor',
