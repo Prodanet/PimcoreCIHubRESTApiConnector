@@ -289,7 +289,9 @@ final class SearchController extends BaseEndpointController
                 array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames())
             );
         }
-
+        if (empty($indices)) {
+            throw new \InvalidArgumentException('There is no index configured at all.');
+        }
         $search = $indexService->createSearch();
         $this->applySearchSettings($search);
         $this->applyQueriesAndAggregations($search, $configReader);
@@ -551,6 +553,10 @@ final class SearchController extends BaseEndpointController
             if (true === $includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
             }
+        }
+
+        if (empty($indices)) {
+            throw new \InvalidArgumentException(sprintf('There is no index configured for %s', $type));
         }
         $search = $indexService->createSearch();
         $this->applySearchSettings($search);
