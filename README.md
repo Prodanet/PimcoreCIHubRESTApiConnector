@@ -38,6 +38,7 @@ Therefore, it can be used to connect Pimcore to other systems or to connect Fron
 
 ## Further Information
 * [Installation & Bundle Configuration](docs/00-installation-configuration.md)
+* [User authorization](docs/00-user-authorization.md)
 * [Endpoint Configuration Details](docs/01-endpoint-configuration.md)
 * [Indexing Details](docs/02-indexing.md)
 
