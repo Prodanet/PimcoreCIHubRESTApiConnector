@@ -25,6 +25,7 @@ use Pimcore\Model\Element\DuplicateFullPathException;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\ValidationException;
 use Pimcore\Model\Version;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 trait RestHelperTrait
@@ -254,5 +255,20 @@ trait RestHelperTrait
         } else {
             throw new \InvalidArgumentException('This element type is currently not supported.');
         }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function addThumbnailCacheHeaders(Response $response): void
+    {
+        $lifetime = 300;
+        $date = new \DateTime('now');
+        $date->add(new \DateInterval('PT'.$lifetime.'S'));
+
+        $response->setMaxAge($lifetime);
+        $response->setPublic();
+        $response->setExpires($date);
+        $response->headers->set('Pragma', '');
     }
 }
