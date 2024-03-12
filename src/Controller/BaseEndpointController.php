@@ -20,6 +20,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformerInterface;
 use Doctrine\DBAL\Exception;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -62,6 +63,7 @@ abstract class BaseEndpointController extends FrontendController
         protected AuthManager $authManager,
         private readonly AssetProvider $assetProvider,
         private readonly DataObjectProvider $dataObjectProvider,
+        private readonly FilterFieldNameTransformerInterface $filterFieldNameTransformer,
     ) {
         $this->request = $this->requestStack->getMainRequest();
         $this->config = $this->request->get('config');
@@ -217,8 +219,7 @@ abstract class BaseEndpointController extends FrontendController
                         continue;
                     }
 
-                    $field = 'metaData.Default.'.$field.'.keyword';
-
+                    $field = $this->filterFieldNameTransformer->transform($field);
                     $search->addQuery(new TermsQuery($field,$condition), $operator);
                 }
             } elseif (\is_array($value)) {

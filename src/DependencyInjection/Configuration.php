@@ -14,6 +14,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\DependencyInjection;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformer;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -40,6 +41,10 @@ final class Configuration implements ConfigurationInterface
             ->scalarNode('data_object_provider')
             ->info('Class that defines the structure of the data object index.')
             ->defaultValue(DataObjectProvider::class)
+            ->end()
+            ->scalarNode('filter_field_name_transformer')
+            ->info('Class that defines the transformer for the filter parameter. Used in search and tree-items endpoint.')
+            ->defaultValue(FilterFieldNameTransformer::class)
             ->end()
             ->scalarNode('es_client_name')
             ->info('Name of elasticsearch client configuration to be used.')
