@@ -27,6 +27,8 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformer;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformerInterface;
 use Nelmio\ApiDocBundle\Render\RenderOpenApi;
 use Pimcore\Bundle\ElasticsearchClientBundle\DependencyInjection\PimcoreElasticsearchClientExtension;
 use Pimcore\Config;
@@ -139,6 +141,9 @@ final class SimpleRESTAdapterExtension extends Extension implements PrependExten
         $definition->setArgument('$dataObjectMapping', new Reference(DataObjectMapping::class));
         $definition->setArgument('$folderMapping', new Reference(FolderMapping::class));
         $containerBuilder->addDefinitions([EndpointAndIndexesConfigurator::class => $definition]);
+
+        $definition = new Definition($config['filter_field_name_transformer'] ?? FilterFieldNameTransformer::class);
+        $containerBuilder->addDefinitions([FilterFieldNameTransformerInterface::class => $definition]);
     }
 
     /**
