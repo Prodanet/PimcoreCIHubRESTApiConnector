@@ -18,12 +18,16 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
+use League\Flysystem\FilesystemException;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
+use Pimcore\Bundle\AdminBundle\Service\ThumbnailService;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
+use Pimcore\Model\Asset\Thumbnail\ThumbnailInterface;
 use Pimcore\Model\Version;
+use Pimcore\Tool\Storage;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -39,6 +43,9 @@ class DownloadController extends BaseEndpointController
 {
     use RestHelperTrait;
 
+    /**
+     * @throws FilesystemException
+     */
     #[Route('/download', name: 'download', methods: ['GET', 'OPTIONS'])]
     #[OA\Get(
         description: 'Method to download binary file by asset ID.',
@@ -157,13 +164,30 @@ class DownloadController extends BaseEndpointController
             } elseif (Thumbnail\Config::getByAutoDetect($thumbnail)) {
                 $elementFile = $element->getThumbnail($thumbnail);
             }
-        }
 
-        $response = new StreamedResponse(function () use ($elementFile) {
-            fpassthru($elementFile->getStream());
-        }, 200, [
-            'Content-Type' => $elementFile->getMimetype(),
-        ]);
+            $storagePath = $this->getStoragePath($elementFile,
+                $element->getId(),
+                $element->getFilename(),
+                $element->getRealPath(),
+                $element->getChecksum()
+            );
+
+            $storage = Storage::get('thumbnail');
+            if (!$storage->fileExists($storagePath)) {
+                $response = new StreamedResponse(function () use ($elementFile) {
+                    fpassthru($elementFile->getStream());
+                }, 200, [
+                    'Content-Type' => $elementFile->getMimetype(),
+                ]);
+            } else {
+                $response = new StreamedResponse(function () use ($storagePath) {
+                    $storage = Storage::get('thumbnail');
+                    fpassthru($storage->readStream($storagePath));
+                }, 200, [
+                    'Content-Type' => $storage->mimeType($storagePath),
+                ]);
+            }
+        }
 
         $response->headers->add($crossOriginHeaders);
 
@@ -305,5 +329,45 @@ class DownloadController extends BaseEndpointController
             'total_count' => $total,
             'items' => $items,
         ]);
+    }
+
+    public function getStoragePath(ThumbnailInterface $thumb, int $id, string $filename, string $realPlace, string $checksum): string
+    {
+        $thumbnail = $thumb->getConfig();
+        $format = mb_strtolower($thumbnail->getFormat());
+        $fileExt = pathinfo($filename, \PATHINFO_EXTENSION);
+
+        // simple detection for source type if SOURCE is selected
+        if ('source' == $format || empty($format)) {
+            $thumbnail->setFormat('jpeg'); // default format for documents is JPEG not PNG (=too big)
+            $optimizedFormat = true;
+            $format = ThumbnailService::getAllowedFormat($fileExt, ['pjpeg', 'jpeg', 'gif', 'png'], 'png');
+            if ('jpeg' === $format) {
+                $format = 'pjpeg';
+            }
+        }
+
+        $thumbDir = rtrim($realPlace, '/').'/'.$id.'/image-thumb__'.$id.'__'.$thumbnail->getName();
+        $filename = preg_replace("/\.".preg_quote(pathinfo($filename, \PATHINFO_EXTENSION), '/').'$/i', '', $filename);
+
+        // add custom suffix if available
+        if ($thumbnail->getFilenameSuffix()) {
+            $filename .= '~-~'.$thumbnail->getFilenameSuffix();
+        }
+        // add high-resolution modifier suffix to the filename
+        if ($thumbnail->getHighResolution() > 1) {
+            $filename .= '@'.$thumbnail->getHighResolution().'x';
+        }
+
+        $fileExtension = $format;
+        if ('original' == $format) {
+            $fileExtension = $fileExt;
+        } elseif ('pjpeg' === $format || 'jpeg' === $format) {
+            $fileExtension = 'jpg';
+        }
+
+        $filename .= '.'.$thumbnail->getHash([$checksum]).'.'.$fileExtension;
+
+        return $thumbDir.'/'.$filename;
     }
 }
