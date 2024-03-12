@@ -23,6 +23,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Bundle\AdminBundle\Service\ThumbnailService;
+use Pimcore\Messenger\AssetPreviewImageMessage;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Pimcore\Model\Asset\Thumbnail\ThumbnailInterface;
@@ -175,6 +176,9 @@ class DownloadController extends BaseEndpointController
             );
             $storage = Storage::get('thumbnail');
             if (!$storage->fileExists($storagePath)) {
+                \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
+                    new AssetPreviewImageMessage($element->getId())
+                );
                 $response = new StreamedResponse(function () use ($elementFile) {
                     fpassthru($elementFile->getStream());
                 }, 200, [
@@ -374,15 +378,5 @@ class DownloadController extends BaseEndpointController
         $filename .= '.'.$thumbnail->getHash([$checksum]).'.'.$fileExtension;
 
         return $thumbDir.'/'.$filename;
-    }
-
-    /**
-     * @throws FilesystemException
-     */
-    private function getStreamedResponse(mixed $elementFile, mixed $element): StreamedResponse
-    {
-
-
-        return $response;
     }
 }
