@@ -32,9 +32,12 @@ datahub_rest_adapter:
     # Prefix for index names.
     index_name_prefix:    datahub_restindex
 
-    # Default providers that populate the index:
+    # Default providers that populate the index.
     asset_provider: 'CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider'
     data_object_provider: 'CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider'
+
+    # Default transformer for the filter parameter. Used in search and tree-items endpoint.
+    filter_field_name_transformer: 'CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformer'
 
     # List of Elasticsearch hosts.
     es_hosts:

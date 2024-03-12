@@ -101,7 +101,10 @@ class DownloadController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'string'
                 ),
-                examples: [new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview')]
+                examples: [
+                    new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview'),
+                    new OA\Examples('galleryThumbnail', '', value: 'galleryThumbnail')
+                ]
             ),
         ],
         responses: [
