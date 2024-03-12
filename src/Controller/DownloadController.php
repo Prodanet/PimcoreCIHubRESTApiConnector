@@ -163,11 +163,36 @@ class DownloadController extends BaseEndpointController
                 $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
             } elseif (Thumbnail\Config::getByAutoDetect($thumbnail)) {
                 $elementFile = $element->getThumbnail($thumbnail);
+            } else {
+                $elementFile = $element->getThumbnail();
             }
 
-            $response = $this->getStreamedResponse($elementFile, $element);
+            $storagePath = $this->getStoragePath($elementFile,
+                $element->getId(),
+                $element->getFilename(),
+                $element->getRealPath(),
+                $element->getChecksum()
+            );
+            $storage = Storage::get('thumbnail');
+            if (!$storage->fileExists($storagePath)) {
+                $response = new StreamedResponse(function () use ($elementFile) {
+                    fpassthru($elementFile->getStream());
+                }, 200, [
+                    'Content-Type' => $elementFile->getMimetype(),
+                ]);
+            } else {
+                $response = new StreamedResponse(function () use ($storagePath, $storage) {
+                    fpassthru($storage->readStream($storagePath));
+                }, 200, [
+                    'Content-Type' => $storage->mimeType($storagePath),
+                ]);
+            }
         } else {
-            $response = $this->getStreamedResponse($elementFile, $element);
+            $response = new StreamedResponse(function () use ($elementFile) {
+                fpassthru($elementFile->getStream());
+            }, 200, [
+                'Content-Type' => $elementFile->getMimetype(),
+            ]);
             // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
             if (!$this->request->request->has('thumbnail')) {
                 $filename = basename(rawurldecode($elementFile->getPath()));
@@ -356,26 +381,7 @@ class DownloadController extends BaseEndpointController
      */
     private function getStreamedResponse(mixed $elementFile, mixed $element): StreamedResponse
     {
-        $storagePath = $this->getStoragePath($elementFile,
-            $element->getId(),
-            $element->getFilename(),
-            $element->getRealPath(),
-            $element->getChecksum()
-        );
-        $storage = Storage::get('thumbnail');
-        if (!$storage->fileExists($storagePath)) {
-            $response = new StreamedResponse(function () use ($elementFile) {
-                fpassthru($elementFile->getStream());
-            }, 200, [
-                'Content-Type' => $elementFile->getMimetype(),
-            ]);
-        } else {
-            $response = new StreamedResponse(function () use ($storagePath, $storage) {
-                fpassthru($storage->readStream($storagePath));
-            }, 200, [
-                'Content-Type' => $storage->mimeType($storagePath),
-            ]);
-        }
+
 
         return $response;
     }
