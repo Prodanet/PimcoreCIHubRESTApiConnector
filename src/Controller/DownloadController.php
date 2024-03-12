@@ -101,10 +101,7 @@ class DownloadController extends BaseEndpointController
                 schema: new OA\Schema(
                     type: 'string'
                 ),
-                examples: [
-                    new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview'),
-                    new OA\Examples('galleryThumbnail', '', value: 'galleryThumbnail')
-                ]
+                examples: [new OA\Examples('pimcore-system-treepreview', '', value: 'pimcore-system-treepreview')]
             ),
         ],
         responses: [
@@ -168,39 +165,19 @@ class DownloadController extends BaseEndpointController
                 $elementFile = $element->getThumbnail($thumbnail);
             }
 
-            $storagePath = $this->getStoragePath($elementFile,
-                $element->getId(),
-                $element->getFilename(),
-                $element->getRealPath(),
-                $element->getChecksum()
-            );
-
-            $storage = Storage::get('thumbnail');
-            if (!$storage->fileExists($storagePath)) {
-                $response = new StreamedResponse(function () use ($elementFile) {
-                    fpassthru($elementFile->getStream());
-                }, 200, [
-                    'Content-Type' => $elementFile->getMimetype(),
-                ]);
-            } else {
-                $response = new StreamedResponse(function () use ($storagePath) {
-                    $storage = Storage::get('thumbnail');
-                    fpassthru($storage->readStream($storagePath));
-                }, 200, [
-                    'Content-Type' => $storage->mimeType($storagePath),
-                ]);
+            $response = $this->getStreamedResponse($elementFile, $element);
+        } else {
+            $response = $this->getStreamedResponse($elementFile, $element);
+            // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
+            if (!$this->request->request->has('thumbnail')) {
+                $filename = basename(rawurldecode($elementFile->getPath()));
+                $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
+                $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
+                $response->headers->set('Content-Length', $elementFile->getFileSize());
             }
         }
 
         $response->headers->add($crossOriginHeaders);
-
-        // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
-        if (!$this->request->request->has('thumbnail')) {
-            $filename = basename(rawurldecode($elementFile->getPath()));
-            $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
-            $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
-            $response->headers->set('Content-Length', $elementFile->getFileSize());
-        }
         try {
             // Add cache to headers
             $this->addThumbnailCacheHeaders($response);
@@ -372,5 +349,34 @@ class DownloadController extends BaseEndpointController
         $filename .= '.'.$thumbnail->getHash([$checksum]).'.'.$fileExtension;
 
         return $thumbDir.'/'.$filename;
+    }
+
+    /**
+     * @throws FilesystemException
+     */
+    private function getStreamedResponse(mixed $elementFile, mixed $element): StreamedResponse
+    {
+        $storagePath = $this->getStoragePath($elementFile,
+            $element->getId(),
+            $element->getFilename(),
+            $element->getRealPath(),
+            $element->getChecksum()
+        );
+        $storage = Storage::get('thumbnail');
+        if (!$storage->fileExists($storagePath)) {
+            $response = new StreamedResponse(function () use ($elementFile) {
+                fpassthru($elementFile->getStream());
+            }, 200, [
+                'Content-Type' => $elementFile->getMimetype(),
+            ]);
+        } else {
+            $response = new StreamedResponse(function () use ($storagePath, $storage) {
+                fpassthru($storage->readStream($storagePath));
+            }, 200, [
+                'Content-Type' => $storage->mimeType($storagePath),
+            ]);
+        }
+
+        return $response;
     }
 }
