@@ -81,12 +81,22 @@ final class SearchController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'filter',
-                description: 'Define filter for further filtering. See https://restdb.io/docs/querying-with-the-api for filter syntax, implemeted operators are $not, $or, $and.',
+                name: 'filter[]',
+                description: '<div>
+                Define filter for further filtering. <a href="#operations-Search-get_datahub_rest_endpoints_filterget" >Use</a> to get the list of filter names and values.<br/>
+                <ul>
+                    <li>Each pair of name and value should be separate JSON (logical operator "and").</li>
+                    <li>Multiple values for the same name are supported in the separate JSON (logical operator "or").</li>
+                </ul>
+                </div>',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
-                    type: 'string'
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        example: '{"name":"value"}'
+                    )
                 )
             ),
             new OA\Parameter(
@@ -274,9 +284,8 @@ final class SearchController extends BaseEndpointController
             ),
         ],
     )]
-    public function searchAction(Request $request, IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
+    public function searchAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
-        // Check if request is authenticated properly
         $this->authManager->checkAuthentication();
         $configuration = $this->getDataHubConfiguration();
         $configReader = new ConfigReader($configuration->getConfiguration());
@@ -366,14 +375,25 @@ final class SearchController extends BaseEndpointController
                 )
             ),
             new OA\Parameter(
-                name: 'filter',
-                description: 'Define filter for further filtering. See https://pimcore.com/docs/pimcore/current/Development_Documentation/Web_Services/Query_Filters.html for filter syntax, implemeted operators are $not, $or, $and.',
+                name: 'filter[]',
+                description: '<div>
+                Define filter for further filtering. <a href="#operations-Search-get_datahub_rest_endpoints_filterget" >Use</a> to get the list of filter names and values.<br/>
+                <ul>
+                    <li>Each pair of name and value should be separate JSON (logical operator "and").</li>
+                    <li>Multiple values for the same name are supported in the separate JSON (logical operator "or").</li>
+                </ul>
+                </div>',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
-                    type: 'string'
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        example: '{"name":"value"}'
+                    )
                 )
-            ), new OA\Parameter(
+            ),
+            new OA\Parameter(
                 name: 'order_by',
                 description: 'Field to order by.',
                 in: 'query',

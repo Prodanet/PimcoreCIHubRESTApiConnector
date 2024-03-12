@@ -25,6 +25,7 @@ use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
+use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use Pimcore\Bundle\DataHubBundle\Configuration;
@@ -124,17 +125,8 @@ abstract class BaseEndpointController extends FrontendController
     protected function applyQueriesAndAggregations(Search $search, ConfigReader $configReader): void
     {
         $fulltext = $this->request->query->getString('fulltext_search');
-        /*
-         * @TODO to remove on 2.2.x
-         */
-        if ($this->request->query->has('filter')) {
-            $filter = $this->request->get('filter');
-            if (\is_string($filter)) {
-                $filter = json_decode($filter, true, 512, \JSON_THROW_ON_ERROR);
-            }
-        } else {
-            $filter = [];
-        }
+
+        $filter = $this->getFilter();
 
         $this->includeAggregations = filter_var(
             $this->request->get('include_aggs', false),
@@ -145,7 +137,7 @@ abstract class BaseEndpointController extends FrontendController
             $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
-        if (\is_array($filter) && [] !== $filter) {
+        if ([] !== $filter) {
             $this->buildQueryConditions($search, $filter);
         }
 
@@ -164,6 +156,50 @@ abstract class BaseEndpointController extends FrontendController
     }
 
     /**
+     * @return array<string, array<string>>
+     * @throws \JsonException
+     */
+    private function getFilter(): array
+    {
+        $output = [];
+        if ($this->request->query->has('filter')) {
+            $rawData = $this->request->get('filter');
+            if (\is_string($rawData)) {
+                $filter = $this->getValidFilter($rawData);
+            } elseif (\is_array($rawData)) {
+                $items = $rawData;
+                $filter = [];
+                foreach ($items as $item) {
+                    if (\is_string($item)) {
+                        $filter = $this->getValidFilter($item, $filter);
+                    }
+                }
+            }
+            $output = ['$and' => $filter];
+        }
+
+        return $output;
+    }
+
+    /**
+     * @return array<string, array<string>>
+     * @throws \JsonException
+     */
+    private function getValidFilter(string $json, array $filter = []): array
+    {
+        $data = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
+        if (\is_array($data)) {
+            foreach ($data as $key => $value) {
+                if (\is_string($key) && \is_string($value)) {
+                    $filter[$key][] = $value;
+                }
+            }
+        }
+
+        return $filter;
+    }
+
+    /**
      * @param array<string, string|array> $filters
      */
     protected function buildQueryConditions(Search $search, array $filters): void
@@ -176,13 +212,14 @@ abstract class BaseEndpointController extends FrontendController
                     continue;
                 }
 
-                foreach ($value as $condition) {
+                foreach ($value as $field => $condition) {
                     if (!\is_array($condition)) {
                         continue;
                     }
 
-                    $field = (string) array_key_first($condition);
-                    $search->addQuery(new TermQuery($field, $condition[$field]), $operator);
+                    $field = 'metaData.Default.'.$field.'.keyword';
+
+                    $search->addQuery(new TermsQuery($field,$condition), $operator);
                 }
             } elseif (\is_array($value)) {
                 foreach ($value as $subKey => $subValue) {
