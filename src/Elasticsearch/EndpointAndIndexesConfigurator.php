@@ -18,6 +18,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Doctrine\DBAL\Connection;
@@ -82,28 +83,8 @@ class EndpointAndIndexesConfigurator
      */
     protected function initIndex(ConfigReader $configReader): void
     {
-        $assets = $this->getDb()->executeQuery('SELECT id, parentId FROM assets')->fetchAllAssociative();
-        foreach ($assets as $asset) {
-            $name = $configReader->getName();
-
-            if (!$configReader->isAssetIndexingEnabled()) {
-                continue;
-            }
-
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($asset['id'], 'asset', $name));
-            $this->enqueueParentFolders(Asset::getById($asset['parentId']), Folder::class, 'asset', $name);
-        }
-
-        $objects = $this->getDb()->executeQuery('SELECT id, parentId FROM objects')->fetchAllAssociative();
-        foreach ($objects as $object) {
-            $name = $configReader->getName();
-
-            if (!$configReader->isAssetIndexingEnabled()) {
-                continue;
-            }
-
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($object['id'], 'object', $name));
-            $this->enqueueParentFolders(DataObject::getById($object['parentId']), DataObject\Folder::class, 'object', $name);
+        if ($configReader->isAssetIndexingEnabled()) {
+            $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName()));
         }
     }
 
