@@ -25,7 +25,9 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
 {
-    const CHUNK_SIZE = 100;
+    const CHUNK_SIZE  = 100;
+    const TYPE_ASSET  = 'asset';
+    const TYPE_OBJECT = 'object';
 
     public function __construct(
         private MessageBusInterface $messageBus,
@@ -37,39 +39,8 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
      */
     public function __invoke(RebuildIndexElementMessage $rebuildIndexElementMessage): void
     {
-        $maxId = $this->getDb()->executeQuery('SELECT MAX(id) FROM assets')->fetchNumeric()[0];
-        $start = 0;
-        for ($end = self::CHUNK_SIZE; $end <= $maxId; $end += self::CHUNK_SIZE) {
-            $assets = $this->getDb()
-                ->executeQuery("SELECT id, parentId FROM assets WHERE id >= $start AND id < $end")
-                ->fetchAllAssociative()
-            ;
-            if (!empty($assets)) {
-                foreach ($assets as $asset) {
-                    $this->messageBus->dispatch(new UpdateIndexElementMessage($asset['id'], 'asset', $rebuildIndexElementMessage->name));
-                    $this->enqueueParentFolders(Asset::getById($asset['parentId']), Folder::class, 'asset', $rebuildIndexElementMessage->name);
-                }
-            }
-
-            $start = $end;
-        }
-
-        $maxId = $this->getDb()->executeQuery('SELECT MAX(id) FROM objects')->fetchNumeric()[0];
-        $start = 0;
-        for ($end = self::CHUNK_SIZE; $end <= $maxId; $end += self::CHUNK_SIZE) {
-            $objects = $this->getDb()
-                ->executeQuery("SELECT id, parentId FROM objects WHERE id >= $start AND id < $end")
-                ->fetchAllAssociative()
-            ;
-            if (!empty($objects)) {
-                foreach ($objects as $object) {
-                    $this->messageBus->dispatch(new UpdateIndexElementMessage($object['id'], 'object', $rebuildIndexElementMessage->name));
-                    $this->enqueueParentFolders(Asset::getById($object['parentId']), DataObject\Folder::class, 'object', $rebuildIndexElementMessage->name);
-                }
-            }
-
-            $start = $end;
-        }
+        $this->rebuildType($rebuildIndexElementMessage, self::TYPE_ASSET);
+        $this->rebuildType($rebuildIndexElementMessage, self::TYPE_OBJECT);
     }
 
     private function enqueueParentFolders(
@@ -87,5 +58,31 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
     protected function getDb(): Connection
     {
         return Db::get();
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function rebuildType(RebuildIndexElementMessage $rebuildIndexElementMessage, string $type): void
+    {
+        $maxId = $this->getDb()->executeQuery("SELECT MAX(id) FROM {$type}s")->fetchNumeric()[0];
+        for ($start = 0; $start <= $maxId; $start += self::CHUNK_SIZE) {
+            $end = $start + self::CHUNK_SIZE;
+            $items = $this->getDb()
+                ->executeQuery("SELECT id, parentId FROM {$type}s WHERE id >= $start AND id < $end")
+                ->fetchAllAssociative()
+            ;
+            if (!empty($items)) {
+                foreach ($items as $item) {
+                    $this->messageBus->dispatch(new UpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name));
+                    $this->enqueueParentFolders(
+                        $type == self::TYPE_ASSET ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
+                        $type == self::TYPE_ASSET ? Folder::class : DataObject\Folder::class,
+                        $type,
+                        $rebuildIndexElementMessage->name,
+                    );
+                }
+            }
+        }
     }
 }
