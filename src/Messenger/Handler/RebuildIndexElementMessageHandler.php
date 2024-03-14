@@ -43,27 +43,10 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
         $this->rebuildType($rebuildIndexElementMessage, self::TYPE_OBJECT);
     }
 
-    private function enqueueParentFolders(
-        ?ElementInterface $element,
-        string $folderClass,
-        string $type,
-        string $name,
-    ): void {
-        while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
-            $element = $element->getParent();
-        }
-    }
-
-    protected function getDb(): Connection
-    {
-        return Db::get();
-    }
-
     /**
      * @throws \Doctrine\DBAL\Exception
      */
-    public function rebuildType(RebuildIndexElementMessage $rebuildIndexElementMessage, string $type): void
+    private function rebuildType(RebuildIndexElementMessage $rebuildIndexElementMessage, string $type): void
     {
         $maxId = $this->getDb()->executeQuery("SELECT MAX(id) FROM {$type}s")->fetchNumeric()[0];
         for ($start = 0; $start <= $maxId; $start += self::CHUNK_SIZE) {
@@ -84,5 +67,22 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
                 }
             }
         }
+    }
+
+    private function enqueueParentFolders(
+        ?ElementInterface $element,
+        string $folderClass,
+        string $type,
+        string $name,
+    ): void {
+        while ($element instanceof $folderClass && 1 !== $element->getId()) {
+            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
+            $element = $element->getParent();
+        }
+    }
+
+    protected function getDb(): Connection
+    {
+        return Db::get();
     }
 }
