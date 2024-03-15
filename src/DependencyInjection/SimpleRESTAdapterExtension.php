@@ -107,7 +107,6 @@ final class SimpleRESTAdapterExtension extends Extension implements PrependExten
         $containerBuilder->addDefinitions([DataHubConfigurationRepository::class => $definition]);
 
         $definition = new Definition(AuthManager::class);
-        $definition->setArgument('$dataHubConfigurationRepository', new Reference(DataHubConfigurationRepository::class));
         $definition->setArgument('$requestStack', new Reference(RequestStack::class));
 
         $containerBuilder->addDefinitions([AuthManager::class => $definition]);

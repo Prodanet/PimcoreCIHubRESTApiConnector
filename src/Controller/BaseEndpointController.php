@@ -99,12 +99,12 @@ abstract class BaseEndpointController extends FrontendController
 
     private function applySort(Search $search, string $orderBy): void
     {
-        if (!empty($orderBy)) {
+        if ('' !== $orderBy && '0' !== $orderBy) {
             $items = json_decode($orderBy, true);
             if (\is_array($items)) {
                 foreach ($items as $field => $order) {
-                    if (\in_array(mb_strtolower($order), [FieldSort::ASC, FieldSort::DESC], true)) {
-                        $order = mb_strtolower($order);
+                    if (\in_array(mb_strtolower((string) $order), [FieldSort::ASC, FieldSort::DESC], true)) {
+                        $order = mb_strtolower((string) $order);
                     } else {
                         throw new \InvalidArgumentException('Sort order option ("asc" or "desc") is missing from order_by parameter.');
                     }
@@ -159,6 +159,7 @@ abstract class BaseEndpointController extends FrontendController
 
     /**
      * @return array<string, array<string>>
+     *
      * @throws \JsonException
      */
     private function getFilter(): array
@@ -185,6 +186,7 @@ abstract class BaseEndpointController extends FrontendController
 
     /**
      * @return array<string, array<string>>
+     *
      * @throws \JsonException
      */
     private function getValidFilter(string $json, array $filter = []): array
@@ -220,7 +222,7 @@ abstract class BaseEndpointController extends FrontendController
                     }
 
                     $field = $this->filterFieldNameTransformer->transform($field);
-                    $search->addQuery(new TermsQuery($field,$condition), $operator);
+                    $search->addQuery(new TermsQuery($field, $condition), $operator);
                 }
             } elseif (\is_array($value)) {
                 foreach ($value as $subKey => $subValue) {

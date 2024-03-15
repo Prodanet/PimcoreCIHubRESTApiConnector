@@ -12,9 +12,11 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Services\ThumbnailService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
@@ -22,18 +24,17 @@ use League\Flysystem\FilesystemException;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
-use Pimcore\Bundle\AdminBundle\Service\ThumbnailService;
 use Pimcore\Messenger\AssetPreviewImageMessage;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
 use Pimcore\Model\Asset\Thumbnail\ThumbnailInterface;
 use Pimcore\Model\Version;
 use Pimcore\Tool\Storage;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -137,32 +138,48 @@ class DownloadController extends BaseEndpointController
         if ($this->request->isMethod('OPTIONS')) {
             return new Response('', 204, $crossOriginHeaders);
         }
-
-        // Check if request is authenticated properly
-        $this->authManager->checkAuthentication();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
+        try {
+            // Check if request is authenticated properly
+            $this->authManager->checkAuthentication();
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $id = $this->request->query->getInt('id');
 
-        // Check if required parameters are missing
-        $this->checkRequiredParameters(['id' => $id]);
+        try {
+            // Check if required parameters are missing
+            $this->checkRequiredParameters(['id' => $id]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
+
         $element = $this->getElementByIdType();
         if ($element instanceof Version) {
             $element = $element->getData();
         }
 
         if (!$element->isAllowed('view', $this->user)) {
-            throw new AccessDeniedHttpException('Your request to create a folder has been blocked due to missing permissions');
+            return new JsonResponse([
+                'error' => 'Your request to create a folder has been blocked due to missing permissions',
+            ]);
         }
 
         $thumbnail = (string) $this->request->get('thumbnail');
         $elementFile = $element;
-        if (!empty($thumbnail) && $element instanceof Image) {
+        if ('' !== $thumbnail && '0' !== $thumbnail && $element instanceof Image) {
             if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
                 $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
                 $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
-            } elseif (Thumbnail\Config::getByAutoDetect($thumbnail)) {
+            } elseif (Thumbnail\Config::getByAutoDetect($thumbnail) instanceof Thumbnail\Config) {
                 $elementFile = $element->getThumbnail($thumbnail);
             } else {
                 $elementFile = $element->getThumbnail();
@@ -179,27 +196,27 @@ class DownloadController extends BaseEndpointController
                 \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
                     new AssetPreviewImageMessage($element->getId())
                 );
-                $response = new StreamedResponse(function () use ($elementFile) {
+                $response = new StreamedResponse(function () use ($elementFile): void {
                     fpassthru($elementFile->getStream());
                 }, 200, [
                     'Content-Type' => $elementFile->getMimetype(),
                 ]);
             } else {
-                $response = new StreamedResponse(function () use ($storagePath, $storage) {
+                $response = new StreamedResponse(function () use ($storagePath, $storage): void {
                     fpassthru($storage->readStream($storagePath));
                 }, 200, [
                     'Content-Type' => $storage->mimeType($storagePath),
                 ]);
             }
         } else {
-            $response = new StreamedResponse(function () use ($elementFile) {
+            $response = new StreamedResponse(function () use ($elementFile): void {
                 fpassthru($elementFile->getStream());
             }, 200, [
                 'Content-Type' => $elementFile->getMimetype(),
             ]);
             // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
             if (!$this->request->request->has('thumbnail')) {
-                $filename = basename(rawurldecode($elementFile->getPath()));
+                $filename = basename(rawurldecode((string) $elementFile->getPath()));
                 $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
                 $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
                 $response->headers->set('Content-Length', $elementFile->getFileSize());
@@ -210,7 +227,7 @@ class DownloadController extends BaseEndpointController
         try {
             // Add cache to headers
             $this->addThumbnailCacheHeaders($response);
-        } catch (\Exception $ignored) {
+        } catch (\Exception) {
         }
 
         return $response;
@@ -290,31 +307,50 @@ class DownloadController extends BaseEndpointController
     )]
     public function downloadLinks(
         IndexManager $indexManager,
-        IndexQueryService $indexService,
+        IndexQueryService $indexQueryService,
         Request $request,
         RouterInterface $router
     ): Response {
-        $this->authManager->checkAuthentication();
-
         $configName = $this->config;
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
+        try {
+            $this->authManager->checkAuthentication();
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $plu = $request->query->getString('plu');
-
-        $this->checkRequiredParameters(['plu' => $plu]);
+        try {
+            $this->checkRequiredParameters(['plu' => $plu]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $indices = [];
         if ($configReader->isAssetIndexingEnabled()) {
             $indices = [$indexManager->getIndexName(IndexManager::INDEX_ASSET, $configName)];
         }
 
-        $search = $indexService->createSearch();
-        $this->applySearchSettings($search);
+        $search = $indexQueryService->createSearch();
+        try {
+            $this->applySearchSettings($search);
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $search->addQuery(new MatchQuery('metaData.Default.PLU', $plu));
 
-        $result = $indexService->search(implode(',', $indices), $search->toArray());
+        $result = $indexQueryService->search(implode(',', $indices), $search->toArray());
 
         $hits = $result['hits'] ?? [];
         $total = $hits['total'] ?? 0;
@@ -322,16 +358,12 @@ class DownloadController extends BaseEndpointController
 
         $items = [];
         if ($total > 0) {
-            $ids = array_map(function ($v) {
-                return $v['_id'];
-            }, $entries);
+            $ids = array_map(fn (array $v) => $v['_id'], $entries);
 
-            $items = array_map(function ($id) use ($router, $configName) {
-                return $router->generate('datahub_rest_endpoints_asset_download', [
-                    'config' => $configName,
-                    'id' => $id,
-                ]);
-            }, $ids);
+            $items = array_map(fn ($id): string => $router->generate('datahub_rest_endpoints_asset_download', [
+                'config' => $configName,
+                'id' => $id,
+            ]), $ids);
         }
 
         return $this->json([
@@ -347,7 +379,7 @@ class DownloadController extends BaseEndpointController
         $fileExt = pathinfo($filename, \PATHINFO_EXTENSION);
 
         // simple detection for source type if SOURCE is selected
-        if ('source' == $format || empty($format)) {
+        if ('source' === $format || ('' === $format || '0' === $format)) {
             $thumbnail->setFormat('jpeg'); // default format for documents is JPEG not PNG (=too big)
             $optimizedFormat = true;
             $format = ThumbnailService::getAllowedFormat($fileExt, ['pjpeg', 'jpeg', 'gif', 'png'], 'png');

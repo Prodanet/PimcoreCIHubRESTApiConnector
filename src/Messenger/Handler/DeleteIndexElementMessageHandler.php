@@ -19,7 +19,7 @@ use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
-final class DeleteIndexElementMessageHandler implements MessageHandlerInterface
+final readonly class DeleteIndexElementMessageHandler implements MessageHandlerInterface
 {
     public function __construct(private IndexPersistenceService $indexPersistenceService)
     {

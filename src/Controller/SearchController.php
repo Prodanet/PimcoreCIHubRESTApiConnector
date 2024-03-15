@@ -14,7 +14,6 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\ListingFilterTrait;
@@ -22,14 +21,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
-use Pimcore\Model\Asset\Listing;
-use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\Service;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[Route(path: ['/datahub/rest/{config}', '/pimcore-datahub-webservices/simplerest/{config}'], name: 'datahub_rest_endpoints_')]
 #[Security(name: 'Bearer')]
@@ -110,7 +104,7 @@ final class SearchController extends BaseEndpointController
                 examples: [
                     new OA\Examples('system.id', '', value: 'system.id'),
                     new OA\Examples('{"system.id": "acs"}', '', value: '{"system.id": "acs"}'),
-                    new OA\Examples('{"system.subtype": "asc", "system.id":"desc"}', '', value: '{"system.subtype": "asc", "system.id":"desc"}')
+                    new OA\Examples('{"system.subtype": "asc", "system.id":"desc"}', '', value: '{"system.subtype": "asc", "system.id":"desc"}'),
                 ]
             ),
             new OA\Parameter(
@@ -286,9 +280,16 @@ final class SearchController extends BaseEndpointController
     )]
     public function searchAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
-        $this->authManager->checkAuthentication();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
+        try {
+            $this->authManager->checkAuthentication();
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $indices = [];
 
@@ -302,11 +303,18 @@ final class SearchController extends BaseEndpointController
                 array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames())
             );
         }
-        if (empty($indices)) {
-            throw new \InvalidArgumentException('There is no index configured at all.');
+        if ([] === $indices) {
+            return new JsonResponse(['success' => false, 'message' => 'There is no index configured at all.']);
         }
         $search = $indexService->createSearch();
-        $this->applySearchSettings($search);
+        try {
+            $this->applySearchSettings($search);
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
         $this->applyQueriesAndAggregations($search, $configReader);
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
@@ -537,9 +545,16 @@ final class SearchController extends BaseEndpointController
     )]
     public function treeItemsAction(IndexManager $indexManager, IndexQueryService $indexService): JsonResponse
     {
-        $this->authManager->checkAuthentication();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
+        try {
+            $this->authManager->checkAuthentication();
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $id = 1;
         if ($this->request->query->has('parentId')) {
@@ -551,14 +566,21 @@ final class SearchController extends BaseEndpointController
         );
 
         $type = $this->request->query->getString('type');
-        $this->checkRequiredParameters(['type' => $type]);
+        try {
+            $this->checkRequiredParameters(['type' => $type]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         $root = Service::getElementById($type, $id);
         if (!$root) {
-            throw new NotFoundException(sprintf("Parent with id [%s] doesn't exist for the type [%s]", $id, $type));
+            return new JsonResponse(['error' => sprintf("Parent with id [%s] doesn't exist for the type [%s]", $id, $type)]);
         }
         if (!$root->isAllowed('list', $this->user)) {
-            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$root->getRealFullPath());
+            return new JsonResponse(['success' => false, 'message' => 'Missing the permission to list in the folder: '.$root->getRealFullPath()]);
         }
 
         $indices = [];
@@ -570,20 +592,25 @@ final class SearchController extends BaseEndpointController
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_ASSET_FOLDER, $this->config);
             }
         } elseif ('object' === $type && $configReader->isObjectIndexingEnabled()) {
-            $indices = array_map(function ($className) use ($indexManager) {
-                return $indexManager->getIndexName(mb_strtolower($className), $this->config);
-            }, $configReader->getObjectClassNames());
+            $indices = array_map(fn ($className): string => $indexManager->getIndexName(mb_strtolower($className), $this->config), $configReader->getObjectClassNames());
 
             if (true === $includeFolders) {
                 $indices[] = $indexManager->getIndexName(IndexManager::INDEX_OBJECT_FOLDER, $this->config);
             }
         }
 
-        if (empty($indices)) {
-            throw new \InvalidArgumentException(sprintf('There is no index configured for %s', $type));
+        if ([] === $indices) {
+            return new JsonResponse(['error' => sprintf('There is no index configured for %s', $type)]);
         }
         $search = $indexService->createSearch();
-        $this->applySearchSettings($search);
+        try {
+            $this->applySearchSettings($search);
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
         $this->applyQueriesAndAggregations($search, $configReader);
         $search->addQuery(new MatchQuery('system.parentId', $root->getId()));
 

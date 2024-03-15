@@ -25,7 +25,7 @@ use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element\ElementInterface;
 
-final class IndexManager
+final readonly class IndexManager
 {
     public const INDEX_ASSET = 'asset';
 
@@ -180,7 +180,7 @@ final class IndexManager
             } elseif ($value instanceof DataObject\Folder) {
                 $indexName = self::INDEX_OBJECT_FOLDER;
             } elseif ($value instanceof Concrete) {
-                $indexName = mb_strtolower($value->getClassName());
+                $indexName = mb_strtolower((string) $value->getClassName());
             }
         }
 

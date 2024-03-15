@@ -29,7 +29,6 @@ use Pimcore\Model\Version;
 use Pimcore\Model\Version\Listing;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -140,28 +139,33 @@ final class ElementController extends BaseEndpointController
     public function getElementAction(AssetHelper $assetHelper, AssetProvider $assetProvider): JsonResponse
     {
         $this->authManager->checkAuthentication();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-        $element = $this->getElementByIdType();
-        $elementType = $element instanceof Asset ? 'asset' : 'object';
-        if (!$element->isAllowed('view', $this->user)) {
-            throw new AccessDeniedHttpException('Missing the permission to list in the folder: '.$element->getRealFullPath());
+        try {
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
         }
-        $tags = Tag::getTagsForElement('asset', $element->getId());
+        $elementByIdType = $this->getElementByIdType();
+        $elementType = $elementByIdType instanceof Asset ? 'asset' : 'object';
+        if (!$elementByIdType->isAllowed('view', $this->user)) {
+            return new JsonResponse(['success' => false, 'message' => 'Missing the permission to list in the folder: '.$elementByIdType->getRealFullPath()]);
+        }
+        $tags = Tag::getTagsForElement('asset', $elementByIdType->getId());
 
         $result = [
-            'id' => $element->getId(),
-            'parentId' => $element->getParentId(),
-            'name' => $element->getKey(),
-            'type' => $element->getType(),
-            'locked' => $assetHelper->isLocked($element->getId(), $elementType, $this->user->getId()),
-            'tags' => array_map(function (Tag $tag) {
-                return [
-                    'label' => $tag->getName(),
-                ];
-            }, $tags),
+            'id' => $elementByIdType->getId(),
+            'parentId' => $elementByIdType->getParentId(),
+            'name' => $elementByIdType->getKey(),
+            'type' => $elementByIdType->getType(),
+            'locked' => $assetHelper->isLocked($elementByIdType->getId(), $elementType, $this->user->getId()),
+            'tags' => array_map(fn (Tag $tag): array => [
+                'label' => $tag->getName(),
+            ], $tags),
         ];
-        $result = $this->getAssetMetaData($element, $result, $configReader);
+        $result = $this->getAssetMetaData($elementByIdType, $result, $configReader);
 
         return $this->json($result);
     }
@@ -242,17 +246,17 @@ final class ElementController extends BaseEndpointController
     public function delete(): Response
     {
         $type = $this->request->query->getString('type');
-        $element = $this->getElementByIdType();
-        if ($element->isAllowed('delete', $this->user)) {
-            $element->delete();
+        $elementByIdType = $this->getElementByIdType();
+        if ($elementByIdType->isAllowed('delete', $this->user)) {
+            $elementByIdType->delete();
 
             return new JsonResponse([
                 'success' => true,
-                'message' => $type.' in the folder: '.$element->getParent()->getRealFullPath().' was deleted',
+                'message' => $type.' in the folder: '.$elementByIdType->getParent()->getRealFullPath().' was deleted',
             ]);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to remove '.$type.' in the folder: '.$element->getParent()->getRealFullPath());
+        return new JsonResponse(['success' => false, 'message' => 'Missing the permission to remove '.$type.' in the folder: '.$elementByIdType->getParent()->getRealFullPath()]);
     }
 
     #[Route('/version', name: 'version', methods: ['GET'])]
@@ -553,11 +557,18 @@ final class ElementController extends BaseEndpointController
     public function getVersions(): Response
     {
         $type = $this->request->query->getString('type');
-        $element = $this->getElementByIdType();
-        $configuration = $this->getDataHubConfiguration();
-        $configReader = new ConfigReader($configuration->getConfiguration());
-        if ($element->isAllowed('versions', $this->user)) {
-            $schedule = $element->getScheduledTasks();
+        $elementByIdType = $this->getElementByIdType();
+        try {
+            $configuration = $this->getDataHubConfiguration();
+            $configReader = new ConfigReader($configuration->getConfiguration());
+        } catch (\Exception $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
+        if ($elementByIdType->isAllowed('versions', $this->user)) {
+            $schedule = $elementByIdType->getScheduledTasks();
             $schedules = [];
             foreach ($schedule as $task) {
                 if ($task->getActive()) {
@@ -570,7 +581,7 @@ final class ElementController extends BaseEndpointController
             $listing->setLoadAutoSave(true);
 
             $listing->setCondition('cid = ? AND ctype = ? AND (autoSave=0 OR (autoSave=1 AND userId = ?)) ', [
-                $element->getId(),
+                $elementByIdType->getId(),
                 $type,
                 $this->user->getId(),
             ])
@@ -581,16 +592,16 @@ final class ElementController extends BaseEndpointController
             $versionsArray = Service::getSafeVersionInfo($versionsObject);
             $versionsArray = array_reverse($versionsArray); // reverse array to sort by ID DESC
             $versions = [];
-            foreach ($versionsArray as $item) {
-                $versions[$item['id']] = $item;
+            foreach ($versionsArray as $versionArray) {
+                $versions[$versionArray['id']] = $versionArray;
             }
 
             $versionsObject = array_reverse($versionsObject); // reverse array to sort by ID DESC
             foreach ($versionsObject as $versionObject) {
                 $version = $versions[$versionObject->getId()];
                 if (0 === $version['index']
-                    && $version['date'] == $element->getModificationDate()
-                    && $version['versionCount'] == $element->getVersionCount()
+                    && $version['date'] == $elementByIdType->getModificationDate()
+                    && $version['versionCount'] == $elementByIdType->getVersionCount()
                 ) {
                     $version['public'] = true;
                 }
@@ -598,11 +609,11 @@ final class ElementController extends BaseEndpointController
                 $version['modificationDate'] = $version['date'];
                 $version['creationDate'] = $version['date'];
                 $version['scheduled'] = null;
-                if ($element instanceof Asset) {
-                    $version['name'] = $element->getFilename();
+                if ($elementByIdType instanceof Asset) {
+                    $version['name'] = $elementByIdType->getFilename();
                 }
-                if ($element instanceof DataObject) {
-                    $version['name'] = $element->getKey();
+                if ($elementByIdType instanceof DataObject) {
+                    $version['name'] = $elementByIdType->getKey();
                 }
 
                 if (\array_key_exists($version['id'], $schedules)) {
@@ -620,7 +631,7 @@ final class ElementController extends BaseEndpointController
                 'items' => $versions,
             ]);
         } else {
-            throw $this->createAccessDeniedException('Permission denied, '.$type.' id ['.$element->getId().']');
+            return new JsonResponse(['success' => false, 'message' => 'Permission denied, '.$type.' id ['.$elementByIdType->getId().']']);
         }
     }
 
@@ -699,23 +710,23 @@ final class ElementController extends BaseEndpointController
     )]
     public function lock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
-        $element = $this->getElementByIdType();
-        $elementType = $element instanceof Asset ? 'asset' : 'object';
-        if ('folder' !== $element->getType()
-            && ($element->isAllowed('publish', $this->user)
-                || $element->isAllowed('delete', $this->user))
+        $elementByIdType = $this->getElementByIdType();
+        $elementType = $elementByIdType instanceof Asset ? 'asset' : 'object';
+        if ('folder' !== $elementByIdType->getType()
+            && ($elementByIdType->isAllowed('publish', $this->user)
+                || $elementByIdType->isAllowed('delete', $this->user))
         ) {
-            if ($assetHelper->isLocked($element->getId(), $elementType, $this->user->getId())) {
-                return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$element->getId().'] is already locked for editing'], 403);
+            if ($assetHelper->isLocked($elementByIdType->getId(), $elementType, $this->user->getId())) {
+                return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] is already locked for editing'], 403);
             }
 
-            $assetHelper->lock($element->getId(), $elementType, $this->user->getId());
-            $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $elementType, $this->request->get('config')));
+            $assetHelper->lock($elementByIdType->getId(), $elementType, $this->user->getId());
+            $messageBus->dispatch(new UpdateIndexElementMessage($elementByIdType->getId(), $elementType, $this->request->get('config')));
 
-            return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] was just locked']);
+            return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] was just locked']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new '.$elementType.' in the folder: '.$element->getParent()->getRealFullPath());
+        return new JsonResponse(['success' => false, 'message' => 'Missing the permission to create new '.$elementType.' in the folder: '.$elementByIdType->getParent()->getRealFullPath()]);
     }
 
     #[Route('/unlock', name: 'unlock', methods: ['POST'])]
@@ -793,63 +804,63 @@ final class ElementController extends BaseEndpointController
     )]
     public function unlock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
     {
-        $element = $this->getElementByIdType();
-        $elementType = $element instanceof Asset ? 'asset' : 'object';
+        $elementByIdType = $this->getElementByIdType();
+        $elementType = $elementByIdType instanceof Asset ? 'asset' : 'object';
         // check for lock on non-folder items only.
-        if ('folder' !== $element->getType() && ($element->isAllowed('publish', $this->user) || $element->isAllowed('delete', $this->user))) {
-            if ($assetHelper->isLocked($element->getId(), $elementType, $this->user->getId())) {
-                $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $element->getId());
+        if ('folder' !== $elementByIdType->getType() && ($elementByIdType->isAllowed('publish', $this->user) || $elementByIdType->isAllowed('delete', $this->user))) {
+            if ($assetHelper->isLocked($elementByIdType->getId(), $elementType, $this->user->getId())) {
+                $unlocked = $assetHelper->unlockForLocker($this->user->getId(), $elementByIdType->getId());
                 if ($unlocked) {
-                    return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] has been unlocked for editing']);
+                    return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] has been unlocked for editing']);
                 }
-                $messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $elementType, $this->request->get('config')));
+                $messageBus->dispatch(new UpdateIndexElementMessage($elementByIdType->getId(), $elementType, $this->request->get('config')));
 
-                return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$element->getId().'] is locked for editing'], 403);
+                return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] is locked for editing'], 403);
             }
 
-            return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$element->getId().'] is already unlocked for editing']);
+            return new JsonResponse(['success' => false, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] is already unlocked for editing']);
         }
 
-        throw new AccessDeniedHttpException('Missing the permission to create new '.$elementType.' in the folder: '.$element->getParent()->getRealFullPath());
+        return new JsonResponse(['success' => false, 'message' => 'Missing the permission to create new '.$elementType.' in the folder: '.$elementByIdType->getParent()->getRealFullPath()]);
     }
 
     /**
-     * @param mixed $element
+     * @param mixed $model
      *
      * @throws \Exception
      */
-    private function getAssetMetaData(AbstractModel $element, $result, ConfigReader $configReader): array
+    private function getAssetMetaData(AbstractModel $model, $result, ConfigReader $configReader): array
     {
-        if (($element instanceof Asset || $element instanceof Version) && !$element instanceof Asset\Folder) {
-            if ($element instanceof Version) {
-                $version = $element->getData();
+        if (($model instanceof Asset || $model instanceof Version) && !$model instanceof Asset\Folder) {
+            if ($model instanceof Version) {
+                $version = $model->getData();
                 $result = array_merge($result, [
                     'mimeType' => $version->getMimeType(),
                     'fileSize' => $version->getFileSize(),
-                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
+                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($model, $configReader),
                     'metaData' => $this->getAssetProvider()->getMetaDataValues($version),
                 ]);
             } else {
                 $result = array_merge($result, [
-                    'mimeType' => $element->getMimeType(),
-                    'fileSize' => $element->getFileSize(),
-                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($element, $configReader),
-                    'metaData' => $this->getAssetProvider()->getMetaDataValues($element),
+                    'mimeType' => $model->getMimeType(),
+                    'fileSize' => $model->getFileSize(),
+                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($model, $configReader),
+                    'metaData' => $this->getAssetProvider()->getMetaDataValues($model),
                 ]);
             }
         }
-        if ($element instanceof Version) {
-            $element = $element->getData();
+        if ($model instanceof Version) {
+            $model = $model->getData();
         }
-        if ($element instanceof Image) {
+        if ($model instanceof Image) {
             $result = array_merge($result, [
                 'dimensionData' => [
-                    'width' => $element->getWidth(),
-                    'height' => $element->getHeight(),
+                    'width' => $model->getWidth(),
+                    'height' => $model->getHeight(),
                 ],
-                'xmpData' => $element->getXMPData() ?: null,
-                'exifData' => $element->getEXIFData() ?: null,
-                'iptcData' => $element->getIPTCData() ?: null,
+                'xmpData' => $model->getXMPData() ?: null,
+                'exifData' => $model->getEXIFData() ?: null,
+                'iptcData' => $model->getIPTCData() ?: null,
             ]);
         }
 

@@ -13,34 +13,26 @@
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Manager;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ConfigurationNotFoundException;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Doctrine\DBAL\Exception;
-use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Db;
-use Pimcore\Event\ElementEvents;
-use Pimcore\Event\Model\ElementEvent;
-use Pimcore\Model\Asset;
 use Pimcore\Model\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
-final class AuthManager
+final readonly class AuthManager
 {
-    private string $config;
-
     private Request $request;
 
     public function __construct(
-        private DataHubConfigurationRepository $dataHubConfigurationRepository,
         private RequestStack $requestStack
     ) {
         $this->request = $this->requestStack->getMainRequest();
-        $this->config = $this->request->get('config');
     }
 
+    /**
+     * @throws Exception
+     */
     public function checkAuthentication(): void
     {
         $user = $this->getUserByToken();
@@ -69,15 +61,15 @@ final class AuthManager
     private function getUserByToken(): ?User
     {
         if (!$this->request->headers->has('Authorization')
-            || !str_starts_with($this->request->headers->get('Authorization'), 'Bearer ')) {
+            || !str_starts_with((string) $this->request->headers->get('Authorization'), 'Bearer ')) {
             throw new AccessDeniedException();
         }
 
         // skip beyond "Bearer "
-        $authorizationHeader = mb_substr($this->request->headers->get('Authorization'), 7);
+        $authorizationHeader = mb_substr((string) $this->request->headers->get('Authorization'), 7);
 
-        $db = Db::get();
-        $userId = $db->fetchOne('SELECT userId FROM users_datahub_config WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
+        $connection = Db::get();
+        $userId = $connection->fetchOne('SELECT userId FROM users_datahub_config WHERE JSON_UNQUOTE(JSON_EXTRACT(data, \'$.apikey\')) = ?', [$authorizationHeader]);
         $user = User::getById($userId);
         if ($user instanceof User\AbstractUser) {
             return $user;
@@ -89,16 +81,5 @@ final class AuthManager
     private function isValidUser(?User $user): bool
     {
         return $user instanceof User && $user->isActive() && $user->getId();
-    }
-
-    private function getDataHubConfiguration(): Configuration
-    {
-        $configuration = $this->dataHubConfigurationRepository->findOneByName($this->config);
-
-        if (!$configuration instanceof Configuration) {
-            throw new ConfigurationNotFoundException($this->config);
-        }
-
-        return $configuration;
     }
 }

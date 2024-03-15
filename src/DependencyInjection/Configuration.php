@@ -31,7 +31,7 @@ final class Configuration implements ConfigurationInterface
             ->defaultValue('datahub_restindex')
             ->validate()
             ->ifString()
-            ->then(static fn ($value): string => rtrim(str_replace('-', '_', $value), '_'))
+            ->then(static fn ($value): string => rtrim(str_replace('-', '_', (string) $value), '_'))
             ->end()
             ->end()
             ->scalarNode('asset_provider')

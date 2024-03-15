@@ -147,7 +147,7 @@ trait RestHelperTrait
                         'userOwner' => $this->user->getId(),
                         'userModification' => $this->user->getId(),
                     ]);
-                } catch (DuplicateFullPathException $e) {
+                } catch (DuplicateFullPathException) {
                     throw new AssetExistsException('Folder with this name already exists');
                 } catch (\Exception $exception) {
                     throw new AssetExistsException($exception->getMessage());
@@ -195,7 +195,7 @@ trait RestHelperTrait
                     $folder->save();
 
                     return $folder;
-                } catch (DuplicateFullPathException $e) {
+                } catch (DuplicateFullPathException) {
                     throw new AssetExistsException('Folder with this name already exists');
                 } catch (\Exception $exception) {
                     throw new AssetExistsException($exception->getMessage());
@@ -263,12 +263,12 @@ trait RestHelperTrait
     protected function addThumbnailCacheHeaders(Response $response): void
     {
         $lifetime = 300;
-        $date = new \DateTime('now');
-        $date->add(new \DateInterval('PT'.$lifetime.'S'));
+        $dateTime = new \DateTime('now');
+        $dateTime->add(new \DateInterval('PT'.$lifetime.'S'));
 
         $response->setMaxAge($lifetime);
         $response->setPublic();
-        $response->setExpires($date);
+        $response->setExpires($dateTime);
         $response->headers->set('Pragma', '');
     }
 }

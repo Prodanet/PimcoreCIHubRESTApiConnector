@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
-final class InitializeEndpointMessage
+final readonly class InitializeEndpointMessage
 {
     public function __construct(private string $endpointName)
     {

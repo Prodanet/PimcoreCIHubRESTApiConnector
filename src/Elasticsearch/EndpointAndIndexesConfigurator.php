@@ -32,7 +32,7 @@ use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-class EndpointAndIndexesConfigurator
+readonly class EndpointAndIndexesConfigurator
 {
     public function __construct(
         private IndexManager $indexManager,
@@ -156,7 +156,7 @@ class EndpointAndIndexesConfigurator
         // DataObject Classes
         foreach ($objectClasses as $objectClass) {
             $this->indexManager->createOrUpdateIndex(
-                $this->indexManager->getIndexName(mb_strtolower($objectClass['name']), $endpointName),
+                $this->indexManager->getIndexName(mb_strtolower((string) $objectClass['name']), $endpointName),
                 $this->dataObjectMapping->generate($objectClass)
             );
         }

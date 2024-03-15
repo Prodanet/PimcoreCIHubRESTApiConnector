@@ -21,7 +21,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\SimpleRESTAdapterEvents;
 use Doctrine\DBAL\Exception;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-final class ConfigModificationListener implements EventSubscriberInterface
+final readonly class ConfigModificationListener implements EventSubscriberInterface
 {
     public function __construct(
         private IndexManager $indexManager,

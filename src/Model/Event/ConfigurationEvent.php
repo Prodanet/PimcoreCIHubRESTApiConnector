@@ -20,7 +20,7 @@ class ConfigurationEvent extends Event
      * @param array<string, array> $configuration
      * @param array<string, array> $priorConfiguration
      */
-    public function __construct(private array $configuration, private array $priorConfiguration = [])
+    public function __construct(private readonly array $configuration, private readonly array $priorConfiguration = [])
     {
     }
 

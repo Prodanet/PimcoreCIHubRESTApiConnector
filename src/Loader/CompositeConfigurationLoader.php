@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationReposito
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Webmozart\Assert\Assert;
 
-final class CompositeConfigurationLoader
+final readonly class CompositeConfigurationLoader
 {
     /**
      * @param iterable<ConfigurationLoaderInterface> $loaders

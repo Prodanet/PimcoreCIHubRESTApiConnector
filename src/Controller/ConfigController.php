@@ -35,7 +35,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 final class ConfigController extends AdminAbstractController
 {
     public function __construct(
-        private AssetProvider $assetProvider)
+        private readonly AssetProvider $assetProvider)
     {
     }
 
@@ -52,7 +52,7 @@ final class ConfigController extends AdminAbstractController
             $configuration = $configRepository->findOneByName($name);
 
             if (!$configuration instanceof Configuration) {
-                throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $name));
+                return new JsonResponse(['error' => sprintf('No DataHub configuration found for name "%s".', $name)]);
             }
 
             $config = $configuration->getConfiguration();
@@ -80,7 +80,7 @@ final class ConfigController extends AdminAbstractController
         $configuration = $configRepository->findOneByName($configName);
 
         if (!$configuration instanceof Configuration) {
-            throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $configName));
+            return new JsonResponse(['error' => sprintf('No DataHub configuration found for name "%s".', $configName)]);
         }
 
         // Add endpoint routes to current config
@@ -119,20 +119,20 @@ final class ConfigController extends AdminAbstractController
         $configuration = $configRepository->findOneByName($configName);
 
         if (!$configuration instanceof Configuration) {
-            throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $configName));
+            return new JsonResponse(['error' => sprintf('No DataHub configuration found for name "%s".', $configName)]);
         }
 
         $configReader = new ConfigReader($configuration->getConfiguration());
-        $childrenList = new \Pimcore\Model\Asset\Listing();
+        $listing = new \Pimcore\Model\Asset\Listing();
         $result = [];
-        foreach ($childrenList->getItems(0, 1000) as $child) {
-            $result[] = $this->assetProvider->getIndexData($child, $configReader);
+        foreach ($listing->getItems(0, 1000) as $asset) {
+            $result[] = $this->assetProvider->getIndexData($asset, $configReader);
         }
 
         $labels = [];
         foreach ($result as $item) {
             foreach ($item as $dataKey => $dataList) {
-                foreach ($dataList as $subDataKey => $dataElement) {
+                foreach (array_keys($dataList) as $subDataKey) {
                     $labels[] = $dataKey.'.'.$subDataKey;
                 }
             }
@@ -152,13 +152,13 @@ final class ConfigController extends AdminAbstractController
         try {
             $data = $request->get('data');
             $modificationDate = $request->get('modificationDate', 0);
-            $newConfigReader = new ConfigReader(json_decode($data, true, 512, \JSON_THROW_ON_ERROR));
+            $newConfigReader = new ConfigReader(json_decode((string) $data, true, 512, \JSON_THROW_ON_ERROR));
 
             $name = $newConfigReader->getName();
             $configuration = $configRepository->findOneByName($name);
 
             if (!$configuration instanceof Configuration) {
-                throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $name));
+                return new JsonResponse(['error' => sprintf('No DataHub configuration found for name "%s".', $name)]);
             }
 
             $reader = new ConfigReader($configuration->getConfiguration());

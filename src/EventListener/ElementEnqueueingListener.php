@@ -28,7 +28,7 @@ use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-final class ElementEnqueueingListener implements EventSubscriberInterface
+final readonly class ElementEnqueueingListener implements EventSubscriberInterface
 {
     public function __construct(
         private CompositeConfigurationLoader $compositeConfigurationLoader,

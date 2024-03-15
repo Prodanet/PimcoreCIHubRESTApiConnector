@@ -10,54 +10,32 @@
  */
 declare(strict_types=1);
 
-use Rector\CodeQuality\Rector\Class_\InlineConstructorDefaultToPropertyRector;
 use Rector\Config\RectorConfig;
-use Rector\Php71\Rector\FuncCall\CountOnNullRector;
-use Rector\PHPUnit\CodeQuality\Rector\Class_\AddSeeTestAnnotationRector;
-use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
-use Rector\PHPUnit\Set\PHPUnitLevelSetList;
-use Rector\PHPUnit\Set\PHPUnitSetList;
-use Rector\Privatization\Rector\Class_\FinalizeClassesWithoutChildrenRector;
+use Rector\Doctrine\Set\DoctrineSetList;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
+use Rector\Symfony\Set\SymfonySetList;
 use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromStrictConstructorRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
         __DIR__.'/src',
-        __DIR__.'/tests',
     ]);
-    // register single rule
-    $rectorConfig->rule(TypedPropertyFromStrictConstructorRector::class);
-    $rectorConfig->rule(InlineConstructorDefaultToPropertyRector::class);
-    $rectorConfig->rule(Rector\CodeQuality\Rector\Class_\CompleteDynamicPropertiesRector::class);
-    $rectorConfig->importNames();
 
-    // here we can define, what sets of rules will be applied
-    // tip: use "SetList" class to autocomplete sets with your IDE
+    $rectorConfig->rule(TypedPropertyFromStrictConstructorRector::class);
+
+    $rectorConfig->import(DoctrineSetList::ANNOTATIONS_TO_ATTRIBUTES);
+    $rectorConfig->import(SymfonySetList::ANNOTATIONS_TO_ATTRIBUTES);
+
     $rectorConfig->sets([
-        SetList::CODING_STYLE,
+        DoctrineSetList::DOCTRINE_CODE_QUALITY,
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,
-        SetList::PRIVATIZATION,
-        SetList::NAMING,
-        SetList::INSTANCEOF,
+        SetList::PHP_82,
         SetList::TYPE_DECLARATION,
-        SetList::GMAGICK_TO_IMAGICK,
-        LevelSetList::UP_TO_PHP_80,
-        PHPUnitLevelSetList::UP_TO_PHPUNIT_100,
-        PHPUnitSetList::PHPUNIT_CODE_QUALITY,
-        PHPUnitSetList::ANNOTATIONS_TO_ATTRIBUTES,
+        SetList::NAMING,
+        LevelSetList::UP_TO_PHP_82,
     ]);
 
     $rectorConfig->phpstanConfig(__DIR__.'/phpstan.neon');
-
-    $rectorConfig->importNames();
-    $rectorConfig->importShortClasses(false);
-    $rectorConfig->skip([
-        CountOnNullRector::class,
-        AddSeeTestAnnotationRector::class,
-        PreferPHPUnitThisCallRector::class,
-        FinalizeClassesWithoutChildrenRector::class,
-    ]);
 };

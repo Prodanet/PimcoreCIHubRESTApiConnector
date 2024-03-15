@@ -92,7 +92,7 @@ trait HasDataObjectProvider
             $fieldConfigType = $definition['fieldConfig']['type'] ?? null;
 
             if ('link' == $fieldConfigType) {
-                $data[$field] = (string) Tool\Serialize::unserialize(base64_decode($data[$field], true));
+                $data[$field] = (string) Tool\Serialize::unserialize(base64_decode((string) $data[$field], true));
             }
         }
 
@@ -126,7 +126,7 @@ trait HasDataObjectProvider
 
         $fields = array_keys($helperDefinitions);
         if (\Pimcore\Version::getMajorVersion() >= 11) {
-            $fields = array_map(function ($key, $value) {
+            $fields = array_map(function ($key, array $value): array {
                 $label = $key;
                 if (isset($value['fieldConfig'])) {
                     if (isset($value['fieldConfig']['label']) && $value['fieldConfig']['label']) {
@@ -159,17 +159,17 @@ trait HasDataObjectProvider
 
     protected function mapFieldName($field, $definition): string
     {
-        if (str_starts_with($field, '#') && $definition) {
+        if (str_starts_with((string) $field, '#') && $definition) {
             if (!empty($definition->attributes)) {
                 return $definition->attributes->label ?: $field;
             }
 
             return $field;
-        } elseif (str_starts_with($field, '~')) {
-            $fieldParts = explode('~', $field);
+        } elseif (str_starts_with((string) $field, '~')) {
+            $fieldParts = explode('~', (string) $field);
             $type = $fieldParts[1];
 
-            if ('classificationstore' == $type) {
+            if ('classificationstore' === $type) {
                 $fieldNames = $fieldParts[2];
                 $groupKeyId = explode('-', $fieldParts[3]);
                 $groupId = (int) $groupKeyId[0];

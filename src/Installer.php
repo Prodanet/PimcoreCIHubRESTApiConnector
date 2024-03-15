@@ -12,6 +12,8 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\Schema\SchemaException;
 use Pimcore\Bundle\DataHubBundle\PimcoreDataHubBundle;
 use Pimcore\Db;
 use Pimcore\Extension\Bundle\Installer\Exception\InstallationException;
@@ -90,6 +92,10 @@ final class Installer extends SettingsStoreAwareInstaller
         parent::install();
     }
 
+    /**
+     * @throws SchemaException
+     * @throws Exception
+     */
     public function uninstall(): void
     {
         $connection = Db::get();
@@ -115,6 +121,9 @@ final class Installer extends SettingsStoreAwareInstaller
         }
     }
 
+    /**
+     * @throws Exception
+     */
     public function isInstalled(): bool
     {
         $connection = Db::get();
@@ -127,11 +136,17 @@ final class Installer extends SettingsStoreAwareInstaller
         return $schema->hasTable(self::USER_DATAHUB_CONFIG_TABLE) && $schema->hasTable(self::UPLOAD_SESSION_TABLE);
     }
 
+    /**
+     * @throws Exception
+     */
     public function canBeInstalled(): bool
     {
         return !$this->isInstalled();
     }
 
+    /**
+     * @throws Exception
+     */
     public function canBeUninstalled(): bool
     {
         return $this->isInstalled();

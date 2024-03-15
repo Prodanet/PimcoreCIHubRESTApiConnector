@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
-final class UpdateIndexElementMessage
+final readonly class UpdateIndexElementMessage
 {
     public function __construct(private int $entityId, private string $entityType, private string $endpointName)
     {

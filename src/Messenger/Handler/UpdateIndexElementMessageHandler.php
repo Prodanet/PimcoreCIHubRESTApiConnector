@@ -20,7 +20,7 @@ use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
-final class UpdateIndexElementMessageHandler implements MessageHandlerInterface
+final readonly class UpdateIndexElementMessageHandler implements MessageHandlerInterface
 {
     public function __construct(private IndexManager $indexManager, private IndexPersistenceService $indexPersistenceService)
     {

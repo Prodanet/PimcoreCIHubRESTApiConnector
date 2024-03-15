@@ -50,11 +50,11 @@ final class IndexPersistenceService
      * @param array<string, string|array> $indexSettings
      */
     public function __construct(
-        private Client $client,
-        private DataHubConfigurationRepository $dataHubConfigurationRepository,
-        private ProviderInterface $assetProvider,
-        private ProviderInterface $dataObjectProvider,
-        private array $indexSettings
+        private readonly Client $client,
+        private readonly DataHubConfigurationRepository $dataHubConfigurationRepository,
+        private readonly ProviderInterface $assetProvider,
+        private readonly ProviderInterface $dataObjectProvider,
+        private readonly array $indexSettings
     ) {
     }
 
@@ -102,8 +102,8 @@ final class IndexPersistenceService
     /**
      * Creates a new index either with or without settings/mappings.
      *
-     * @param string $name – The name of the index
-     * @param array $mapping – The mapping for the index
+     * @param string $name    – The name of the index
+     * @param array  $mapping – The mapping for the index
      *
      * @return array<string, mixed>
      *

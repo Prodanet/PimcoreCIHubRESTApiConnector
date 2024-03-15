@@ -11,6 +11,12 @@ To install the Simple REST Adapter complete following steps:
   ```
   bin/console pimcore:bundle:enable SimpleRESTAdapterBundle
   ```
+  
+* Extend security.yaml
+  ```
+  access_control:
+    - { path: ^/datahub, roles: PUBLIC_ACCESS }
+  ```
 * Clear cache and reload Pimcore
   ```
   bin/console cache:clear --no-warmup

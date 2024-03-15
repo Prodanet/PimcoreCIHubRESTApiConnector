@@ -12,7 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
-final class DeleteIndexElementMessage
+final readonly class DeleteIndexElementMessage
 {
     public function __construct(private int $entityId, private string $entityType, private string $indexName)
     {

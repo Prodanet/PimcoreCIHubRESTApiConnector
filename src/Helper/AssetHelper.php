@@ -119,9 +119,9 @@ final class AssetHelper
         $asset->setUserModification($user->getId());
 
         $newFileExt = pathinfo($filename, \PATHINFO_EXTENSION);
-        $currentFileExt = pathinfo($asset->getFilename(), \PATHINFO_EXTENSION);
+        $currentFileExt = pathinfo((string) $asset->getFilename(), \PATHINFO_EXTENSION);
         if ($newFileExt !== $currentFileExt) {
-            $newFilename = preg_replace('/\.'.$currentFileExt.'$/i', '.'.$newFileExt, $asset->getFilename());
+            $newFilename = preg_replace('/\.'.$currentFileExt.'$/i', '.'.$newFileExt, (string) $asset->getFilename());
             $newFilename = Service::getSafeCopyName($newFilename, $asset->getParent());
             $asset->setFilename($newFilename);
         }

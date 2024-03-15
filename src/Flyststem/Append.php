@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Exception\FileNotFoundExcepti
 use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemException;
 
-final class Append
+final readonly class Append
 {
     public function __construct(private Filesystem $filesystem)
     {

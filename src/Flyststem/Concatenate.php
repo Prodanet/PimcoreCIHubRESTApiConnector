@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Flyststem\Exception\FileNotFoundExcepti
 use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperator;
 
-final class Concatenate
+final readonly class Concatenate
 {
     public function __construct(private FilesystemOperator $filesystemOperator)
     {

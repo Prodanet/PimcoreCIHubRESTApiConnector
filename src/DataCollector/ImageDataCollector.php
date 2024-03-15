@@ -17,7 +17,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\Asset\Image;
 use Symfony\Component\Routing\RouterInterface;
 
-final class ImageDataCollector implements DataCollectorInterface
+final readonly class ImageDataCollector implements DataCollectorInterface
 {
     public function __construct(RouterInterface $router, private AssetProvider $assetProvider)
     {

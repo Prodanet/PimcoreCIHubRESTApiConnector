@@ -15,12 +15,15 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\DataCollector;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\DataObject\Data\ImageGallery;
 
-final class ImageGalleryDataCollector implements DataCollectorInterface
+final readonly class ImageGalleryDataCollector implements DataCollectorInterface
 {
     public function __construct(private HotspotImageDataCollector $hotspotImageDataCollector)
     {
     }
 
+    /**
+     * @throws \Exception
+     */
     public function collect(mixed $value, ConfigReader $configReader): array
     {
         $data = [];

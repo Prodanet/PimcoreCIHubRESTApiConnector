@@ -19,7 +19,7 @@ final class AppendStream
     /** @var resource[] */
     private array $streams = [];
 
-    public function __construct(iterable $streams = [], private int $chunkSize = 8192)
+    public function __construct(iterable $streams = [], private readonly int $chunkSize = 8192)
     {
         foreach ($streams as $stream) {
             $this->append($stream);

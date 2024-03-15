@@ -155,7 +155,14 @@ final class UploadController extends BaseEndpointController
     public function startGet(UploadHelper $uploadHelper): Response
     {
         $id = $this->request->get('id');
-        $this->checkRequiredParameters(['id' => $id]);
+        try {
+            $this->checkRequiredParameters(['id' => $id]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
         if ($uploadHelper->hasSession($id)) {
             $session = $uploadHelper->getSession($id);
             $response = $uploadHelper->getSessionResponse(
@@ -451,11 +458,11 @@ final class UploadController extends BaseEndpointController
         $size = (int) $this->request->headers->get('Content-Length', 0);
         $ordinal = (int) $this->request->get('ordinal');
         if (0 === $size) {
-            throw new InvalidParameterException(['Content-Length']);
+            return new JsonResponse(['success' => false, 'message' => 'InvalidParameter Content-Length']);
         }
 
         if (0 === $ordinal) {
-            throw new InvalidParameterException(['ordinal']);
+            return new JsonResponse(['success' => false, 'message' => 'InvalidParameter ordinal']);
         }
 
         $part = $uploadHelper->uploadPart($datahubUploadSession, $content, $size, $ordinal);

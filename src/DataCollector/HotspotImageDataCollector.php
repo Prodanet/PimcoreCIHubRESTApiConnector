@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\DataObject\Data\Hotspotimage;
 
-final class HotspotImageDataCollector implements DataCollectorInterface
+final readonly class HotspotImageDataCollector implements DataCollectorInterface
 {
     public function __construct(private ImageDataCollector $imageDataCollector)
     {

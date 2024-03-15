@@ -21,7 +21,6 @@ use Pimcore\Model\Element\Service;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -129,34 +128,41 @@ final class AssetController extends BaseEndpointController
     public function add(): Response
     {
         $parentId = $this->request->query->getInt('parentId');
-        $this->checkRequiredParameters(['parentId' => $parentId]);
+        try {
+            $this->checkRequiredParameters(['parentId' => $parentId]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
         try {
             /** @var UploadedFile $uploadedFile */
             $uploadedFile = $this->request->files->get('file');
             if (!$uploadedFile) {
-                throw new InvalidParameterException(['file']);
+                return new JsonResponse(['success' => false, 'message' => 'InvalidParameter: file']);
             }
             $sourcePath = $uploadedFile->getRealPath();
             $filename = $uploadedFile->getClientOriginalName();
             $filename = Service::getValidKey($filename, 'asset');
 
             if ('' === $filename) {
-                throw new \Exception('The filename of the asset is empty');
+                return new JsonResponse(['success' => false, 'message' => 'The filename of the asset is empty']);
             }
 
             $parentAsset = Asset::getById($this->request->query->getInt('parentId'));
             if (!$parentAsset instanceof Asset\Folder) {
-                throw new \Exception('Parent does not exist');
+                return new JsonResponse(['success' => false, 'message' => 'Parent does not exist']);
             }
 
             if (is_file($sourcePath) && filesize($sourcePath) < 1) {
-                throw new \Exception('File is empty!');
+                return new JsonResponse(['success' => false, 'message' => 'File is empty!']);
             } elseif (!is_file($sourcePath)) {
-                throw new \Exception('Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.');
+                return new JsonResponse(['success' => false, 'message' => 'Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.']);
             }
 
             if (!$parentAsset->isAllowed('create', $this->user)) {
-                throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
+                return new JsonResponse(['success' => false, 'message' => 'Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath()]);
             }
 
             $asset = Asset::create($parentAsset->getId(), [
@@ -282,7 +288,14 @@ final class AssetController extends BaseEndpointController
         AssetHelper $assetHelper
     ): Response {
         $id = $this->request->query->getInt('id');
-        $this->checkRequiredParameters(['id' => $id]);
+        try {
+            $this->checkRequiredParameters(['id' => $id]);
+        } catch (InvalidParameterException $ex) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
 
         try {
             $asset = Asset::getById($id);
@@ -291,28 +304,28 @@ final class AssetController extends BaseEndpointController
                     /** @var UploadedFile $uploadedFile */
                     $uploadedFile = $this->request->files->get('file');
                     if (!$uploadedFile) {
-                        throw new InvalidParameterException(['file']);
+                        return new JsonResponse(['success' => false, 'message' => 'InvalidParameter file']);
                     }
                     $sourcePath = $uploadedFile->getRealPath();
                     $filename = $uploadedFile->getClientOriginalName();
                     $filename = Service::getValidKey($filename, 'asset');
 
                     if ('' === $filename) {
-                        throw new \Exception('The filename of the asset is empty');
+                        return new JsonResponse(['success' => false, 'message' => 'The filename of the asset is empty']);
                     }
 
                     if (is_file($sourcePath) && filesize($sourcePath) < 1) {
-                        throw new \Exception('File is empty!');
+                        return new JsonResponse(['success' => false, 'message' => 'File is empty!']);
                     } elseif (!is_file($sourcePath)) {
-                        throw new \Exception('Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.');
+                        return new JsonResponse(['success' => false, 'message' => 'Something went wrong, please check upload_max_filesize and post_max_size in your php.ini as well as the write permissions of your temporary directories.']);
                     }
 
                     return $assetHelper->updateAsset($asset, $sourcePath, $filename, $this->user, $translator);
                 } else {
-                    throw new AccessDeniedHttpException('Missing the permission to overwrite asset: '.$asset->getId());
+                    return new JsonResponse(['success' => false, 'message' => 'Missing the permission to overwrite asset: '.$asset->getId()]);
                 }
             } else {
-                throw new \Exception('Asset with id ['.$id."] doesn't exist");
+                return new JsonResponse(['success' => false, 'message' => 'Asset with id ['.$id."] doesn't exist"]);
             }
         } catch (\Exception $exception) {
             return new JsonResponse([

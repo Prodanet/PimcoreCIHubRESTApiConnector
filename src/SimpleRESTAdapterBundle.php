@@ -12,6 +12,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle;
 
+use Nelmio\ApiDocBundle\NelmioApiDocBundle;
 use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
 use Pimcore\Extension\Bundle\Installer\InstallerInterface;
 use Pimcore\Extension\Bundle\PimcoreBundleAdminClassicInterface;
@@ -19,7 +20,6 @@ use Pimcore\Extension\Bundle\Traits\BundleAdminClassicTrait;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
 use Pimcore\HttpKernel\Bundle\DependentBundleInterface;
 use Pimcore\HttpKernel\BundleCollection\BundleCollection;
-use Nelmio\ApiDocBundle\NelmioApiDocBundle;
 
 final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements DependentBundleInterface, PimcoreBundleAdminClassicInterface
 {
@@ -56,8 +56,8 @@ final class SimpleRESTAdapterBundle extends AbstractPimcoreBundle implements Dep
         return self::PACKAGE_NAME;
     }
 
-    public static function registerDependentBundles(BundleCollection $collection): void
+    public static function registerDependentBundles(BundleCollection $bundleCollection): void
     {
-        $collection->addBundle(new NelmioApiDocBundle());
+        $bundleCollection->addBundle(new NelmioApiDocBundle());
     }
 }

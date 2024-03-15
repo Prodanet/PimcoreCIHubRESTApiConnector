@@ -239,9 +239,9 @@ trait HasBaseAssetProvider
     {
         $localFile = $asset->getLocalFile();
         if (is_file($localFile)) {
-            if ('md5' == $type) {
+            if ('md5' === $type) {
                 return md5_file($localFile);
-            } elseif ('sha1' == $type) {
+            } elseif ('sha1' === $type) {
                 return sha1_file($localFile);
             } else {
                 throw new \Exception("hashing algorithm '".$type."' isn't supported");
@@ -288,7 +288,7 @@ trait HasBaseAssetProvider
 
         $currentVersion = null;
         $currentVersionObject = $element->getVersions();
-        if (\count($currentVersionObject) > 0 && end($currentVersionObject) instanceof Version) {
+        if ([] !== $currentVersionObject && end($currentVersionObject) instanceof Version) {
             $currentVersion = end($currentVersionObject)->getId();
         }
         $data = [

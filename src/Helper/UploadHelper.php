@@ -31,15 +31,15 @@ use Symfony\Component\Uid\Ulid;
 
 final class UploadHelper
 {
-    private User $user;
+    private readonly User $user;
 
     /**
      * @throws \Doctrine\DBAL\Exception
      */
     public function __construct(
         private Config $pimcoreConfig,
-        private RouterInterface $router,
-        private AuthManager $authManager
+        private readonly RouterInterface $router,
+        private readonly AuthManager $authManager
     ) {
         $this->user = $this->authManager->authenticate();
     }
@@ -112,7 +112,7 @@ final class UploadHelper
     public function deleteSession(string $id): void
     {
         $datahubUploadSession = DatahubUploadSession::getById($id);
-        if ($datahubUploadSession) {
+        if ($datahubUploadSession instanceof DatahubUploadSession) {
             $datahubUploadSession->delete();
         }
     }
@@ -205,9 +205,9 @@ final class UploadHelper
         $uploadPart->setOrdinal($ordinal);
         rewind($content);
 
-        $merger = new FileMerger('/var/www/html/var/tmp/'.$datahubUploadSession->getTemporaryPath());
-        $merger->appendFile($content);
-        $merger->close();
+        $fileMerger = new FileMerger('/var/www/html/var/tmp/'.$datahubUploadSession->getTemporaryPath());
+        $fileMerger->appendFile($content);
+        $fileMerger->close();
 
         $datahubUploadSession->addPart($uploadPart);
         $datahubUploadSession->save();
@@ -257,7 +257,7 @@ final class UploadHelper
         $originalFileextension = empty($pathinfo['extension']) ? '' : '.'.$pathinfo['extension'];
         $count = 1;
 
-        if ('/' == $targetPath) {
+        if ('/' === $targetPath) {
             $targetPath = '';
         }
 

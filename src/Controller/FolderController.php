@@ -208,7 +208,7 @@ final class FolderController extends BaseEndpointController
         try {
             $element = $this->getElementByIdType();
         } catch (NotFoundException) {
-            throw new NotFoundException('Folder with id ['.$this->request->query->getInt('id')."] doesn't exist");
+            return new JsonResponse(['success' => false, 'message' => 'Folder with id ['.$this->request->query->getInt('id')."] doesn't exist"]);
         }
 
         $success = match ($element::class) {

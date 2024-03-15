@@ -18,7 +18,7 @@ use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use ONGR\ElasticsearchDSL\Search;
 
-final class IndexQueryService
+final readonly class IndexQueryService
 {
     public function __construct(private Client $client, private string $indexNamePrefix)
     {

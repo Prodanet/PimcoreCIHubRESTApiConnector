@@ -40,7 +40,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
      */
     private array $params = [];
 
-    public function __construct(private DataHubConfigurationRepository $dataHubConfigurationRepository, private Connection $connection, private MessageBusInterface $messageBus)
+    public function __construct(private readonly DataHubConfigurationRepository $dataHubConfigurationRepository, private readonly Connection $connection, private readonly MessageBusInterface $messageBus)
     {
     }
 
@@ -102,7 +102,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
         foreach ($workspace as $item) {
             $read = $item['read'];
             $path = $item['cpath'];
-            $pathParts = explode('/', $path);
+            $pathParts = explode('/', (string) $path);
 
             // If not root folder, add distinct conditions
             if (\count($pathParts) > 2 || '' !== $pathParts[1]) {
@@ -117,7 +117,7 @@ final class InitializeEndpointMessageHandler implements MessageHandlerInterface
                 $read ? 'LIKE' : 'NOT LIKE',
                 $pathIndex
             );
-            $this->params[$pathIndex] = rtrim($path, '/').'/%';
+            $this->params[$pathIndex] = rtrim((string) $path, '/').'/%';
         }
     }
 
