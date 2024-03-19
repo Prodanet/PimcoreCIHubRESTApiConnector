@@ -148,7 +148,7 @@ trait HasDataObjectProvider
                 $helperDefinitions[$k] = json_decode(json_encode($v['fieldConfig']));
             }
         }
-        $requestedLanguage = $objectSchema['language'] ?? null;
+        $requestedLanguage = $objectSchema['language'] ?? 'en';
 
         return [
             'fields' => $fields,

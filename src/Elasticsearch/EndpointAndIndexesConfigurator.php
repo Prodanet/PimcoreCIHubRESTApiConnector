@@ -15,22 +15,10 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\AssetMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\DataObjectMapping;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping\FolderMapping;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\ESClientException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Exception\MissingParameterException;
-use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Pimcore\Db;
-use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Folder;
-use Pimcore\Model\DataObject;
-use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 readonly class EndpointAndIndexesConfigurator
@@ -40,7 +28,7 @@ readonly class EndpointAndIndexesConfigurator
         private MessageBusInterface $messageBus,
         private AssetMapping $assetMapping,
         private DataObjectMapping $dataObjectMapping,
-        private FolderMapping $folderMapping
+        private FolderMapping $folderMapping,
     ) {
     }
 
@@ -53,29 +41,11 @@ readonly class EndpointAndIndexesConfigurator
             $this->handleAssetIndices($configReader);
         }
 
-        if ($configReader->isObjectIndexingEnabled()) {
+        if ($configReader->isAssetIndexingEnabled()) {
             $this->handleObjectIndices($configReader);
         }
 
-        $this->initializeEndpoint($configReader);
         $this->initIndex($configReader);
-    }
-
-    /**
-     * @throws ClientResponseException
-     * @throws MissingParameterException
-     * @throws ServerResponseException
-     * @throws ESClientException
-     */
-    private function initializeEndpoint(ConfigReader $configReader): void
-    {
-        $indices = $this->indexManager->getAllIndexNames($configReader);
-
-        foreach ($indices as $index) {
-            $this->indexManager->clearIndexData($index);
-        }
-
-        $this->messageBus->dispatch(new InitializeEndpointMessage($configReader->getName()));
     }
 
     /**
@@ -84,24 +54,7 @@ readonly class EndpointAndIndexesConfigurator
     protected function initIndex(ConfigReader $configReader): void
     {
         if ($configReader->isAssetIndexingEnabled()) {
-            $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName()));
-        }
-    }
-
-    protected function getDb(): Connection
-    {
-        return Db::get();
-    }
-
-    private function enqueueParentFolders(
-        ?ElementInterface $element,
-        string $folderClass,
-        string $type,
-        string $name
-    ): void {
-        while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
-            $element = $element->getParent();
+            $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName(), $configReader));
         }
     }
 
@@ -118,6 +71,12 @@ readonly class EndpointAndIndexesConfigurator
         // Assets
         $this->indexManager->createOrUpdateIndex(
             $this->indexManager->getIndexName(IndexManager::INDEX_ASSET, $endpointName),
+            $this->assetMapping->generate($configReader->toArray())
+        );
+
+        // Multi Assets
+        $this->indexManager->createOrUpdateIndex(
+            $this->indexManager->getIndexName(IndexManager::INDEX_MULTI_ASSET, $endpointName),
             $this->assetMapping->generate($configReader->toArray())
         );
     }

@@ -12,9 +12,11 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+
 final class RebuildIndexElementMessage
 {
-    public function __construct(public string $name)
+    public function __construct(public string $name, public ConfigReader $configReader)
     {
     }
 }

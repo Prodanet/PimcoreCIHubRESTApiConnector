@@ -28,6 +28,7 @@ use Pimcore\Model\Element\ElementInterface;
 final readonly class IndexManager
 {
     public const INDEX_ASSET = 'asset';
+    public const INDEX_MULTI_ASSET = 'multiasset';
 
     public const INDEX_ASSET_FOLDER = 'assetfolder';
 
@@ -71,7 +72,9 @@ final readonly class IndexManager
             $this->updateMapping($indexName, $mapping);
         } else {
             $evenIndexName = sprintf('%s-even', $indexName);
-            $this->indexPersistenceService->createIndex($evenIndexName, $mapping);
+            if (!$this->indexPersistenceService->indexExists($evenIndexName)) {
+                $this->indexPersistenceService->createIndex($evenIndexName, $mapping);
+            }
             $this->indexPersistenceService->createAlias($evenIndexName, $indexName);
         }
     }
@@ -251,10 +254,12 @@ final readonly class IndexManager
         }
 
         if ($force || $this->hasMappingChanged($source, $mapping)) {
-            // Create a new target index with mapping
-            $indexResponse = $this->indexPersistenceService->createIndex($target, $mapping);
-            if (!isset($indexResponse['acknowledged']) || true !== $indexResponse['acknowledged']) {
-                throw new ESClientException(sprintf('Could not create index "%s"', $target));
+            if (!$this->indexPersistenceService->indexExists($target)) {
+                // Create a new target index with mapping
+                $indexResponse = $this->indexPersistenceService->createIndex($target, $mapping);
+                if (!isset($indexResponse['acknowledged']) || true !== $indexResponse['acknowledged']) {
+                    throw new ESClientException(sprintf('Could not create index "%s"', $target));
+                }
             }
 
             if ($reindexData) {
