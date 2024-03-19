@@ -28,7 +28,6 @@ use Pimcore\Model\Element\ElementInterface;
 final readonly class IndexManager
 {
     public const INDEX_ASSET = 'asset';
-    public const INDEX_MULTI_ASSET = 'multiasset';
 
     public const INDEX_ASSET_FOLDER = 'assetfolder';
 

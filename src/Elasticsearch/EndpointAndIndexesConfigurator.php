@@ -41,7 +41,7 @@ readonly class EndpointAndIndexesConfigurator
             $this->handleAssetIndices($configReader);
         }
 
-        if ($configReader->isAssetIndexingEnabled()) {
+        if ($configReader->isObjectIndexingEnabled()) {
             $this->handleObjectIndices($configReader);
         }
 
@@ -53,9 +53,7 @@ readonly class EndpointAndIndexesConfigurator
      */
     protected function initIndex(ConfigReader $configReader): void
     {
-        if ($configReader->isAssetIndexingEnabled()) {
-            $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName(), $configReader));
-        }
+        $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName(), $configReader));
     }
 
     private function handleAssetIndices(ConfigReader $configReader): void
@@ -71,12 +69,6 @@ readonly class EndpointAndIndexesConfigurator
         // Assets
         $this->indexManager->createOrUpdateIndex(
             $this->indexManager->getIndexName(IndexManager::INDEX_ASSET, $endpointName),
-            $this->assetMapping->generate($configReader->toArray())
-        );
-
-        // Multi Assets
-        $this->indexManager->createOrUpdateIndex(
-            $this->indexManager->getIndexName(IndexManager::INDEX_MULTI_ASSET, $endpointName),
             $this->assetMapping->generate($configReader->toArray())
         );
     }

@@ -53,8 +53,13 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
         $this->cleanAliases($rebuildIndexElementMessage);
 
         $todo = 0;
-        $this->rebuildType($rebuildIndexElementMessage, self::TYPE_ASSET, $hash, $todo);
-        $this->rebuildType($rebuildIndexElementMessage, self::TYPE_OBJECT, $hash, $todo);
+
+        if ($rebuildIndexElementMessage->configReader->isAssetIndexingEnabled()) {
+            $this->rebuildType($rebuildIndexElementMessage, self::TYPE_ASSET, $hash, $todo);
+        }
+        if ($rebuildIndexElementMessage->configReader->isObjectIndexingEnabled()) {
+            $this->rebuildType($rebuildIndexElementMessage, self::TYPE_OBJECT, $hash, $todo);
+        }
 
         SettingsStore::set(Installer::RUN_TODO_COUNT, $todo, 'int',Installer::REBUILD_SCOPE);
     }

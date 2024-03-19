@@ -52,10 +52,16 @@ final readonly class UpdateIndexElementMessageHandler implements MessageHandlerI
             return;
         }
 
-        $index = $this->indexManager->findIndexNameByAlias($this->indexManager->getIndexName(
+        $alias = $this->indexManager->getIndexName(
             $element,
             $updateIndexElementMessage->getEndpointName(),
-        ));
+        );
+        if (!$this->indexPersistenceService->aliasExists($alias)) {
+            $this->incrementProgress($updateIndexElementMessage);
+            return;
+        }
+
+        $index = $this->indexManager->findIndexNameByAlias($alias);
         $newIndexName = $this->getNewIndexName($index);
 
         $this->indexPersistenceService->update(
@@ -116,10 +122,12 @@ final readonly class UpdateIndexElementMessageHandler implements MessageHandlerI
     {
         $indices = $this->indexManager->getAllIndexNames($updateIndexElementMessage->getConfigReader());
         foreach ($indices as $alias) {
-            $index = $this->indexManager->findIndexNameByAlias($alias);
-            $newIndexName = $this->getNewIndexName($index);
-            $this->indexPersistenceService->createAlias($newIndexName, $alias);
-            $this->indexPersistenceService->deleteIndex($index);
+            if ($this->indexPersistenceService->aliasExists($alias)) {
+                $index = $this->indexManager->findIndexNameByAlias($alias);
+                $newIndexName = $this->getNewIndexName($index);
+                $this->indexPersistenceService->createAlias($newIndexName, $alias);
+                $this->indexPersistenceService->deleteIndex($index);
+            }
         }
     }
 
