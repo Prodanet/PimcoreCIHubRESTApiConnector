@@ -169,7 +169,7 @@ class DownloadController extends BaseEndpointController
 
         if (!$element->isAllowed('view', $this->user)) {
             return new JsonResponse([
-                'error' => 'Your request to create a folder has been blocked due to missing permissions',
+                'error' => 'Your request to view a folder has been blocked due to missing permissions',
             ]);
         }
 
