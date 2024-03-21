@@ -12,7 +12,6 @@
 declare(strict_types=1);
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\InitializeEndpointMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildIndexElementMessage;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -33,7 +32,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             ],
             'routing' => [
                 DeleteIndexElementMessage::class => 'datahub_es_index_queue',
-                InitializeEndpointMessage::class => 'datahub_es_index_queue',
                 UpdateIndexElementMessage::class => 'datahub_es_index_queue',
                 RebuildIndexElementMessage::class => 'datahub_es_index_queue',
             ],

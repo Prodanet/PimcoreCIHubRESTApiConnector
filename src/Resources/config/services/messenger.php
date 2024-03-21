@@ -14,7 +14,6 @@ declare(strict_types=1);
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\DeleteIndexElementMessageHandler;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\InitializeEndpointMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\UpdateIndexElementMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\RebuildIndexElementMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
@@ -32,14 +31,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('messenger.message_handler');
 
-    $services->set(InitializeEndpointMessageHandler::class)
-        ->args([
-            service(DataHubConfigurationRepository::class),
-            service('database_connection'),
-            service('messenger.default_bus'),
-        ])
-        ->tag('messenger.message_handler');
-
     $services->set(UpdateIndexElementMessageHandler::class)
         ->args([
             service(IndexManager::class),
@@ -50,6 +41,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RebuildIndexElementMessageHandler::class)
         ->args([
             service(MessageBusInterface::class),
+            service(IndexManager::class),
+            service(IndexPersistenceService::class),
         ])
         ->tag('messenger.message_handler');
 };

@@ -18,6 +18,7 @@ use Pimcore\Bundle\DataHubBundle\PimcoreDataHubBundle;
 use Pimcore\Db;
 use Pimcore\Extension\Bundle\Installer\Exception\InstallationException;
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
+use Pimcore\Model\Tool\SettingsStore;
 use Pimcore\Model\User\Permission\Definition;
 
 /**
@@ -30,6 +31,14 @@ final class Installer extends SettingsStoreAwareInstaller
     public const USER_DATAHUB_CONFIG_TABLE = 'users_datahub_config';
 
     public const UPLOAD_SESSION_TABLE = 'datahub_upload_sessions';
+
+    //PIMCORE_CONFIG_SCOPE
+    public const REBUILD_SCOPE = 'datahub_index_rebuild';
+    //PIMCORE_CONFIG_IDs
+    public const RUN_HASH = 'datahub_index_rebuild_run_hash';
+    public const RUN_TODO_COUNT = 'datahub_index_rebuild_run_todo_count';
+    public const RUN_DONE_COUNT = 'datahub_index_rebuild_run_done_count';
+    public const RUN_DONE_DATE = 'datahub_index_rebuild_run_done_date';
 
     public function needsReloadAfterInstall(): bool
     {
@@ -119,6 +128,11 @@ final class Installer extends SettingsStoreAwareInstaller
         if (!empty($sqlStatements)) {
             $connection->exec(implode(';', $sqlStatements));
         }
+
+        SettingsStore::delete(self::RUN_HASH, self::REBUILD_SCOPE);
+        SettingsStore::delete(self::RUN_TODO_COUNT, self::REBUILD_SCOPE);
+        SettingsStore::delete(self::RUN_DONE_COUNT, self::REBUILD_SCOPE);
+        SettingsStore::delete(self::RUN_DONE_DATE, self::REBUILD_SCOPE);
     }
 
     /**
