@@ -12,13 +12,11 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\EndpointExceptionInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 final class ExceptionListener implements EventSubscriberInterface
 {
@@ -33,7 +31,7 @@ final class ExceptionListener implements EventSubscriberInterface
     {
         $throwable = $exceptionEvent->getThrowable();
         if ($throwable instanceof EndpointExceptionInterface
-            || str_starts_with($exceptionEvent->getRequest()->get('_route'), 'datahub_rest_')
+            || str_starts_with($exceptionEvent->getRequest()->get('_route') ?? '', 'datahub_rest_')
             || str_starts_with($exceptionEvent->getRequest()->getPathInfo(), '/datahub/rest/')) {
             $jsonResponse = new JsonResponse([
                 'status' => $throwable->getCode(),
