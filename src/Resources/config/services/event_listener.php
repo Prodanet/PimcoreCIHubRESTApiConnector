@@ -40,5 +40,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(ExceptionListener::class)
+        ->args([
+            service('logger'),
+        ])
         ->tag('kernel.event_subscriber');
 };

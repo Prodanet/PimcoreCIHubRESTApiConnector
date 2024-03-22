@@ -12,16 +12,19 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\AccessDeniedException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\EndpointExceptionInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 final class ExceptionListener implements EventSubscriberInterface
 {
+    public function __construct(private LoggerInterface $logger)
+    {
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -33,11 +36,14 @@ final class ExceptionListener implements EventSubscriberInterface
     {
         $throwable = $exceptionEvent->getThrowable();
         if ($throwable instanceof EndpointExceptionInterface
-            || str_starts_with($exceptionEvent->getRequest()->get('_route'), 'datahub_rest_')
+            || str_starts_with($exceptionEvent->getRequest()->get('_route') ?? '', 'datahub_rest_')
             || str_starts_with($exceptionEvent->getRequest()->getPathInfo(), '/datahub/rest/')) {
+            $this->logger?->error('CIHub exception', [
+                'exception' => $throwable,
+            ]);
             $jsonResponse = new JsonResponse([
                 'status' => $throwable->getCode(),
-                'message' => $throwable->getMessage(),
+                'message' => 'Please try again later or contact your system administrator.',
             ], 400);
 
             $exceptionEvent->setResponse($jsonResponse);
