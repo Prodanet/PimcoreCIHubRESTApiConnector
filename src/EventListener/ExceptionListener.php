@@ -38,13 +38,23 @@ final class ExceptionListener implements EventSubscriberInterface
         if ($throwable instanceof EndpointExceptionInterface
             || str_starts_with($exceptionEvent->getRequest()->get('_route') ?? '', 'datahub_rest_')
             || str_starts_with($exceptionEvent->getRequest()->getPathInfo(), '/datahub/rest/')) {
-            $this->logger?->error('CIHub exception', [
-                'exception' => $throwable,
-            ]);
-            $jsonResponse = new JsonResponse([
-                'status' => $throwable->getCode(),
-                'message' => 'Please try again later or contact your system administrator.',
-            ], 400);
+            if ($throwable->getCode() == 401) {
+                $this->logger->notice('CIHub notice', [
+                    'exception' => $throwable,
+                ]);
+                $jsonResponse = new JsonResponse([
+                    'status' => $throwable->getCode(),
+                    'message' => 'Please log in and then try again',
+                ], 401);
+            } else {
+                $this->logger->error('CIHub exception', [
+                    'exception' => $throwable,
+                ]);
+                $jsonResponse = new JsonResponse([
+                    'status' => $throwable->getCode(),
+                    'message' => 'Please try again later or contact your system administrator.',
+                ], 400);
+            }
 
             $exceptionEvent->setResponse($jsonResponse);
         }
