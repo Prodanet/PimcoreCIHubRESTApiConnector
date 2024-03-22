@@ -12,10 +12,17 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger;
 
-final readonly class UpdateIndexElementMessage
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+
+final readonly class RebuildUpdateIndexElementMessage
 {
-    public function __construct(private int $entityId, private string $entityType, private string $endpointName)
-    {
+    public function __construct(
+        private int $entityId,
+        private string $entityType,
+        private string $endpointName,
+        private string|null $hash,
+        private ConfigReader $configReader
+    ) {
     }
 
     public function getEntityId(): int
@@ -31,5 +38,15 @@ final readonly class UpdateIndexElementMessage
     public function getEndpointName(): string
     {
         return $this->endpointName;
+    }
+
+    public function getHash(): string|null
+    {
+        return $this->hash;
+    }
+
+    public function getConfigReader(): ConfigReader
+    {
+        return $this->configReader;
     }
 }
