@@ -16,6 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\DeleteIndexElementMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\UpdateIndexElementMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\RebuildIndexElementMessageHandler;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler\RebuildUpdateIndexElementMessageHandler;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -41,6 +42,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RebuildIndexElementMessageHandler::class)
         ->args([
             service(MessageBusInterface::class),
+            service(IndexManager::class),
+            service(IndexPersistenceService::class),
+        ])
+        ->tag('messenger.message_handler');
+
+    $services->set(RebuildUpdateIndexElementMessageHandler::class)
+        ->args([
             service(IndexManager::class),
             service(IndexPersistenceService::class),
         ])

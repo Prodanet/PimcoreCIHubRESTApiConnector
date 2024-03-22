@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceSer
 use CIHub\Bundle\SimpleRESTAdapterBundle\Installer;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildUpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Doctrine\DBAL\Connection;
 use Pimcore\Db;
@@ -81,7 +81,7 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
             if (!empty($items)) {
                 foreach ($items as $item) {
                     $this->messageBus->dispatch(
-                        new UpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name, $hash, $rebuildIndexElementMessage->configReader));
+                        new RebuildUpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name, $hash, $rebuildIndexElementMessage->configReader));
                     $this->enqueueParentFolders(
                         $type == self::TYPE_ASSET ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
                         $type == self::TYPE_ASSET ? Folder::class : DataObject\Folder::class,
@@ -107,7 +107,7 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
         ConfigReader $configReader
     ): void {
         while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name, $hash, $configReader));
+            $this->messageBus->dispatch(new RebuildUpdateIndexElementMessage($element->getId(), $type, $name, $hash, $configReader));
             $element = $element->getParent();
             $todo++;
         }
