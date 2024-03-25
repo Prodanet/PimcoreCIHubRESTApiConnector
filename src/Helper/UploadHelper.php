@@ -242,7 +242,7 @@ final class UploadHelper
                 throw new NotFoundException('Asset does not exist');
             }
 
-            if (!$asset->isAllowed('update', $this->user)) {
+            if (!$asset->isAllowed('save', $this->user)) {
                 throw new AccessDeniedHttpException('Missing the permission to update asset: '.$asset->getId());
             }
         }
