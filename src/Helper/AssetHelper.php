@@ -97,7 +97,7 @@ final class AssetHelper
     public function updateAsset(Asset $asset, string $sourcePath, string $filename, User $user, TranslatorInterface $translator): JsonResponse
     {
         $parentAsset = $asset->getParent();
-        if (!$parentAsset->isAllowed('update', $user)) {
+        if (!$parentAsset->isAllowed('create', $user)) {
             throw new AccessDeniedHttpException('Missing the permission to create new assets in the folder: '.$parentAsset->getRealFullPath());
         }
 
