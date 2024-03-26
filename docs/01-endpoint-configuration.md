@@ -17,7 +17,7 @@ be considered in tree items and search requests and if originals and/or what thu
 Define workspaces for Assets and DataObjects and so manage what data should be actually exposed via the endpoint.
 It is possible to include and explicitly exclude folders.
 
-![Workspace settings](images/workspaces.png "Workspace settings")
+[Workspace settings](https://pimcore.com/docs/platform/Pimcore/Administration_of_Pimcore/Users_and_Roles/#element-permissions---workspaces)
 
 ### Label Settings
 Define nice looking labels for different languages for each field. Each request includes the labels for used fields in
