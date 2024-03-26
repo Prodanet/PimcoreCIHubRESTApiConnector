@@ -46,13 +46,21 @@ final class ExceptionListener implements EventSubscriberInterface
                     'status' => $throwable->getCode(),
                     'message' => 'Please log in and then try again',
                 ], 401);
-            } else {
+            } elseif ($throwable->getCode() >= 500) {
                 $this->logger->error('CIHub exception', [
                     'exception' => $throwable,
                 ]);
                 $jsonResponse = new JsonResponse([
                     'status' => $throwable->getCode(),
                     'message' => 'Please try again later or contact your system administrator.',
+                ], 400);
+            } else {
+                $this->logger->error('CIHub exception', [
+                    'exception' => $throwable,
+                ]);
+                $jsonResponse = new JsonResponse([
+                    'status' => $throwable->getCode(),
+                    'message' => $throwable->getMessage(),
                 ], 400);
             }
 
