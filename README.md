@@ -41,6 +41,8 @@ Therefore, it can be used to connect Pimcore to other systems or to connect Fron
 * [User authorization](docs/00-user-authorization.md)
 * [Endpoint Configuration Details](docs/01-endpoint-configuration.md)
 * [Indexing Details](docs/02-indexing.md)
+* [CI HUB Connector Configuration](docs/04-connector.md)
+* [Development](docs/05-development.md)
 
 ## License
 
