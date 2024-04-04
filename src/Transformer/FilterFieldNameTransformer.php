@@ -16,6 +16,6 @@ class FilterFieldNameTransformer implements FilterFieldNameTransformerInterface
 {
     public function transform(string $field): string
     {
-        return 'metaData.'.$field.'.keyword';
+        return 'metaData.'.$field;
     }
 }
