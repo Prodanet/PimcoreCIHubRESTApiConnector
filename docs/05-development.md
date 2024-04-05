@@ -28,7 +28,7 @@ Add the following as the first elements in the `repositories` section of the `co
       "options": {
         "symlink": true
       }
-    },
+    }
 ```
 
 Replace installation with the local version.
