@@ -136,7 +136,7 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function getElementAction(AssetHelper $assetHelper, AssetProvider $assetProvider): JsonResponse
+    public function getElementAction(AssetHelper $assetHelper): JsonResponse
     {
         $this->authManager->checkAuthentication();
         try {
@@ -276,6 +276,16 @@ final class ElementController extends BaseEndpointController
                 required: true,
                 schema: new OA\Schema(
                     type: 'string'
+                )
+            ),
+            new OA\Parameter(
+                name: 'type',
+                description: 'Type of elements – asset or object.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['asset', 'object']
                 )
             ),
             new OA\Parameter(
@@ -834,12 +844,14 @@ final class ElementController extends BaseEndpointController
         if (($model instanceof Asset || $model instanceof Version) && !$model instanceof Asset\Folder) {
             if ($model instanceof Version) {
                 $version = $model->getData();
-                $result = array_merge($result, [
-                    'mimeType' => $version->getMimeType(),
-                    'fileSize' => $version->getFileSize(),
-                    'binaryData' => $this->getAssetProvider()->getBinaryDataValues($model, $configReader),
-                    'metaData' => $this->getAssetProvider()->getMetaDataValues($version),
-                ]);
+                if ($version) {
+                    $result = array_merge($result, [
+                        'mimeType' => $version->getMimeType(),
+                        'fileSize' => $version->getFileSize(),
+                        'binaryData' => $this->getAssetProvider()->getBinaryDataValues($model, $configReader),
+                        'metaData' => $this->getAssetProvider()->getMetaDataValues($version),
+                    ]);
+                }
             } else {
                 $result = array_merge($result, [
                     'mimeType' => $model->getMimeType(),
