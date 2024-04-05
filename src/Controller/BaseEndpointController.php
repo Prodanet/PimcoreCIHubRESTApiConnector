@@ -38,7 +38,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 abstract class BaseEndpointController extends FrontendController
 {
     protected const OPERATOR_MAP = [
-        '$and' => BoolQuery::MUST,
+        '$and' => BoolQuery::FILTER,
         '$not' => BoolQuery::MUST_NOT,
         '$or' => BoolQuery::SHOULD,
     ];
