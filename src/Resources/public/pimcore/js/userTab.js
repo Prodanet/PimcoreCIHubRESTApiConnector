@@ -36,7 +36,7 @@ pimcore.plugin.simpleRestAdapterBundle.user.profile = Class.create(pimcore.setti
             this.ciHubLoadPanel().then(res => {
                 this.cihub = res;
             }).then(res => {
-                this.currentItems.insert(0, this.getPanel());
+                this.currentItems.insert(1, this.getPanel());
             });
             this.panel = new Ext.Panel({
                 id: "my_profile",
@@ -86,31 +86,34 @@ pimcore.plugin.simpleRestAdapterBundle.user.profile = Class.create(pimcore.setti
             defaults: {
                 labelWidth: 200,
             },
-            title: t('CI-HUB Settings'),
-            items: [
-                {
-                    xtype: 'fieldcontainer',
-                    layout: 'hbox',
-                    items: [
-                        apikeyField,
-                        {
-                            xtype: 'button',
-                            width: 32,
-                            style: 'margin-left: 8px',
-                            iconCls: 'pimcore_icon_clear_cache',
-                            handler: () => {
-                                apikeyField.setValue(generateToken(32));
+            items: [{
+                xtype: 'fieldset',
+                title: t('CI-HUB Settings'),
+                items: [
+                    {
+                        xtype: 'fieldcontainer',
+                        layout: 'hbox',
+                        items: [
+                            apikeyField,
+                            {
+                                xtype: 'button',
+                                width: 32,
+                                style: 'margin-left: 8px',
+                                iconCls: 'pimcore_icon_clear_cache',
+                                handler: () => {
+                                    apikeyField.setValue(generateToken(32));
+                                },
                             },
-                        },
-                        {
-                            xtype: 'button',
-                            text: t("save"),
-                            handler: this.save.bind(this),
-                            iconCls: "pimcore_icon_accept"
-                        },
-                    ],
-                },
-            ],
+                            {
+                                xtype: 'button',
+                                text: t("save"),
+                                handler: this.save.bind(this),
+                                iconCls: "pimcore_icon_accept"
+                            },
+                        ],
+                    },
+                ]
+            }],
         });
 
         return this.deliverySettingsForm;
