@@ -2,23 +2,25 @@
 This bundle depends on the [Pimcore DataHub](https://github.com/pimcore/data-hub), which needs to be installed first.
 
 To install the Simple REST Adapter complete following steps:
-* Install via composer
-  ```
+1. Install via composer
+  ```shell
   composer require bo-hub/ci-hub-adapter-bundle
   composer require bo-hub/ci-hub-api-bundle
   ```
-* Enable via command-line (or inside the Pimcore extension manager)
-  ```
+
+2. Enable via command-line (or inside the Pimcore extension manager)
+  ```shell
   bin/console pimcore:bundle:enable SimpleRESTAdapterBundle
   ```
   
-* Extend security.yaml
-  ```
+3. Extend security.yaml
+  ```yaml
   access_control:
     - { path: ^/datahub, roles: PUBLIC_ACCESS }
   ```
-* Clear cache and reload Pimcore
-  ```
+
+4. Clear cache and reload Pimcore
+  ```shell
   bin/console cache:clear --no-warmup
   ```
 
@@ -90,11 +92,11 @@ datahub_rest_adapter:
 > Supported Elasticsearch version: ^7.0
 
 **Notice:** If you are using Elasticsearch version 8.0 and above, you should
-set `rest_adapter.index_settings.analysis.tokenizer.datahub_ngram_tokenizer.type` as `ngram`, not `nGram`.
+set `datahub_rest_adapter.index_settings.analysis.tokenizer.datahub_ngram_tokenizer.type` in the above configuration as `ngram`, not `nGram`.
 
-To make sure the indexing queue is processed and index is filled, following command has to be executed on
+To make sure the indexing queue is processed and index is filled, the following command has to be executed on
 a regular basis, e.g. every 5 minutes.
 
-```
+```cron
 */5 * * * * php /var/www/html/bin/console messenger:consume datahub_es_index_queue --limit=20 --time-limit=240 >/dev/null 2>&1
 ```
