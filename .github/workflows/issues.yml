@@ -2,7 +2,7 @@ name: issues
 
 on:
   issues:
-    types: [labeled]
+    types: [opened]
 
 permissions:
   issues: write
