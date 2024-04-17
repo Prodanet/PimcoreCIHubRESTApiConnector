@@ -30,10 +30,10 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
 {
-    const CHUNK_SIZE  = 100;
+    public const CHUNK_SIZE = 100;
 
-    const TYPE_ASSET  = 'asset';
-    const TYPE_OBJECT = 'object';
+    public const TYPE_ASSET = 'asset';
+    public const TYPE_OBJECT = 'object';
 
     public function __construct(
         private MessageBusInterface $messageBus,
@@ -47,8 +47,8 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
      */
     public function __invoke(RebuildIndexElementMessage $rebuildIndexElementMessage): void
     {
-        SettingsStore::set(Installer::RUN_HASH, $hash = uniqid('run', true), 'string',Installer::REBUILD_SCOPE);
-        SettingsStore::set(Installer::RUN_DONE_COUNT, 0, 'int',Installer::REBUILD_SCOPE);
+        SettingsStore::set(Installer::RUN_HASH, $hash = uniqid('run', true), 'string', Installer::REBUILD_SCOPE);
+        SettingsStore::set(Installer::RUN_DONE_COUNT, 0, 'int', Installer::REBUILD_SCOPE);
 
         $this->cleanAliases($rebuildIndexElementMessage);
 
@@ -61,7 +61,7 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
             $this->rebuildType($rebuildIndexElementMessage, self::TYPE_OBJECT, $hash, $todo);
         }
 
-        SettingsStore::set(Installer::RUN_TODO_COUNT, $todo, 'int',Installer::REBUILD_SCOPE);
+        SettingsStore::set(Installer::RUN_TODO_COUNT, $todo, 'int', Installer::REBUILD_SCOPE);
     }
 
     /**
@@ -70,7 +70,6 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
     private function rebuildType(
         RebuildIndexElementMessage $rebuildIndexElementMessage, string $type, string $hash, int &$todo): void
     {
-
         $maxId = $this->getDb()->executeQuery("SELECT MAX(id) FROM {$type}s")->fetchNumeric()[0];
         for ($start = 0; $start <= $maxId; $start += self::CHUNK_SIZE) {
             $end = $start + self::CHUNK_SIZE;
@@ -83,15 +82,15 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
                     $this->messageBus->dispatch(
                         new RebuildUpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name, $hash, $rebuildIndexElementMessage->configReader));
                     $this->enqueueParentFolders(
-                        $type == self::TYPE_ASSET ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
-                        $type == self::TYPE_ASSET ? Folder::class : DataObject\Folder::class,
+                        self::TYPE_ASSET == $type ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
+                        self::TYPE_ASSET == $type ? Folder::class : DataObject\Folder::class,
                         $type,
                         $rebuildIndexElementMessage->name,
                         $hash,
                         $todo,
                         $rebuildIndexElementMessage->configReader
                     );
-                    $todo++;
+                    ++$todo;
                 }
             }
         }
@@ -109,7 +108,7 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
         while ($element instanceof $folderClass && 1 !== $element->getId()) {
             $this->messageBus->dispatch(new RebuildUpdateIndexElementMessage($element->getId(), $type, $name, $hash, $configReader));
             $element = $element->getParent();
-            $todo++;
+            ++$todo;
         }
     }
 
@@ -139,6 +138,6 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
 
     public function getNewIndexName(string $index): string
     {
-        return str_ends_with($index, '-odd') ? str_replace('-odd', '', $index) . '-even' : str_replace('-even', '', $index) . '-odd';
+        return str_ends_with($index, '-odd') ? str_replace('-odd', '', $index).'-even' : str_replace('-even', '', $index).'-odd';
     }
 }

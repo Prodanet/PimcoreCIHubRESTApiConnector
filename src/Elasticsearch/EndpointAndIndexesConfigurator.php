@@ -19,6 +19,9 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\RebuildIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Doctrine\DBAL\Exception;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 readonly class EndpointAndIndexesConfigurator
@@ -56,6 +59,11 @@ readonly class EndpointAndIndexesConfigurator
         $this->messageBus->dispatch(new RebuildIndexElementMessage($configReader->getName(), $configReader));
     }
 
+    /**
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     * @throws MissingParameterException
+     */
     private function handleAssetIndices(ConfigReader $configReader): void
     {
         $endpointName = $configReader->getName();
@@ -73,6 +81,11 @@ readonly class EndpointAndIndexesConfigurator
         );
     }
 
+    /**
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     * @throws MissingParameterException
+     */
     private function handleObjectIndices(ConfigReader $configReader): void
     {
         $endpointName = $configReader->getName();
