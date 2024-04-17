@@ -113,6 +113,12 @@ final class UploadController extends BaseEndpointController
         ));
     }
 
+    #[Route('/start', name: 'upload_start', methods: ['OPTIONS'])]
+    public function startOptions(): JsonResponse
+    {
+        return new JsonResponse([]);
+    }
+
     #[OA\Get(
         description: 'Return information about an upload session.',
         summary: 'Get upload session',
