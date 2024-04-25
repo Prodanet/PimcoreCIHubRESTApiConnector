@@ -16,131 +16,87 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class AssetMapping extends DefaultMapping
 {
-    public function generate(array $config = []): array
+    public function extractMapping(): array
     {
-        if ([] === $config) {
-            throw new \RuntimeException('No configuration provided.');
-        }
+        $systemDataMapping = $this->createSystemAttributesMapping();
+        $systemDataMapping['properties']['checksum'] = ['type' => 'keyword'];
+        $systemDataMapping['properties']['mimeType'] = ['type' => 'keyword'];
+        $systemDataMapping['properties']['fileSize'] = ['type' => 'long'];
+        $systemDataMapping['properties']['versionCount'] = ['type' => 'integer'];
 
-        return array_merge($this->getCommonProperties(), [
-            'properties' => [
-                'binaryData' => [
-                    'dynamic' => 'false',
-                    'properties' => $this->generateBinaryDataProperties($config),
-                ],
-                'dimensionData' => [
-                    'dynamic' => 'false',
-                    'properties' => [
-                        'width' => [
-                            'type' => 'integer',
-                        ],
-                        'height' => [
-                            'type' => 'integer',
-                        ],
-                    ],
-                ],
-                'exifData' => [
-                    'dynamic' => 'true',
-                    'type' => 'object',
-                ],
-                'iptcData' => [
-                    'dynamic' => 'true',
-                    'type' => 'object',
-                ],
-                'metaData' => [
-                    'dynamic' => 'true',
-                    'type' => 'object',
-                ],
-                'system' => [
-                    'dynamic' => 'false',
-                    'properties' => [
-                        'id' => [
-                            'type' => 'long',
-                        ],
-                        'key' => [
-                            'type' => 'keyword',
-                            'fields' => [
-                                'analyzed' => [
-                                    'type' => 'text',
-                                    'term_vector' => 'yes',
-                                    'analyzer' => 'datahub_ngram_analyzer',
-                                    'search_analyzer' => 'datahub_whitespace_analyzer',
-                                ],
-                            ],
-                        ],
-                        'fullPath' => [
-                            'type' => 'keyword',
-                            'fields' => [
-                                'analyzed' => [
-                                    'type' => 'text',
-                                    'term_vector' => 'yes',
-                                    'analyzer' => 'datahub_ngram_analyzer',
-                                    'search_analyzer' => 'datahub_whitespace_analyzer',
-                                ],
-                            ],
-                        ],
-                        'type' => [
-                            'type' => 'constant_keyword',
-                        ],
-                        'parentId' => [
-                            'type' => 'keyword',
-                        ],
-                        'hasChildren' => [
-                            'type' => 'boolean',
-                        ],
-                        'creationDate' => [
-                            'type' => 'date',
-                        ],
-                        'modificationDate' => [
-                            'type' => 'date',
-                        ],
-                        'subtype' => [
-                            'type' => 'keyword',
-                        ],
-                        'checksum' => [
-                            'type' => 'keyword',
-                        ],
-                        'mimeType' => [
-                            'type' => 'keyword',
-                        ],
-                        'fileSize' => [
-                            'type' => 'long',
-                        ],
-                    ],
-                ],
-                'xmpData' => [
-                    'dynamic' => 'true',
-                    'type' => 'object',
-                ],
+        $data = [
+
+            'system' => $systemDataMapping,
+
+            'dimensionData' => [
+                'type' => 'object',
+                'dynamic' => false,
+                'properties' => [
+                    'height' => ['type' => 'integer'],
+                    'width' => ['type' => 'integer']
+                ]
             ],
-        ]);
-    }
 
-    /**
-     * @param array<string, array> $config
-     *
-     * @return array<string, array>
-     */
-    private function generateBinaryDataProperties(array $config): array
-    {
-        $properties = [];
+            'xmpData' => [
+                'type' => 'object',
+                'dynamic' => true,
+            ],
 
-        $configReader = new ConfigReader($config);
-        $thumbnails = $configReader->getAssetThumbnails();
-        $binaryMapping = [
-            'dynamic' => 'false',
-            'type' => 'object',
-            'properties' => $this->getBinaryDataProperties(),
+            'exifData' => [
+                'type' => 'object',
+                'dynamic' => true,
+            ],
+
+            'iptcData' => [
+                'type' => 'object',
+                'dynamic' => true,
+            ],
+
+            'metaData' => [
+                'type' => 'object',
+                'dynamic' => true
+            ],
         ];
 
-        if ($configReader->isOriginalImageAllowed()) {
-            $properties['original'] = $binaryMapping;
+        $thumbnails = [
+            'original' => [
+                'type' => 'object',
+                'dynamic' => false,
+                'properties' => [
+                    'path' => ['type' => 'keyword'],
+                    'checksum' => ['type' => 'keyword']
+                ]
+            ]
+        ];
+
+        if (!empty($this->config['thumbnails'])) {
+            foreach ($this->config['thumbnails'] as $thumbnail) {
+                $thumbnails[$thumbnail] = [
+                    'type' => 'object',
+                    'dynamic' => false,
+                    'properties' => [
+                        'path' => ['type' => 'keyword'],
+                        'checksum' => ['type' => 'keyword']
+                    ]
+                ];
+            }
         }
 
-        foreach ($thumbnails as $thumbnail) {
-            $properties[$thumbnail] = $binaryMapping;
-        }
+        $data['binaryData'] = [
+            'type' => 'object',
+            'dynamic' => false,
+            'properties' => $thumbnails
+        ];
 
-        return $properties;
+        return $data;
+    }
+
+    public function generate(array $config = []): array
+    {
+        $mappingProperties = $this->extractMapping();
+        $mappings = $this->mappingTemplate;
+        $mappings['properties'] = $mappingProperties;
+
+        return $mappings;
     }
 }

@@ -41,11 +41,17 @@ readonly class EndpointAndIndexesConfigurator
     public function createOrUpdate(ConfigReader $configReader): void
     {
         if ($configReader->isAssetIndexingEnabled()) {
-            $this->handleAssetIndices($configReader);
+            try {
+                $this->handleAssetIndices($configReader);
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+            }
         }
 
         if ($configReader->isObjectIndexingEnabled()) {
-            $this->handleObjectIndices($configReader);
+            try {
+                $this->handleObjectIndices($configReader);
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+            }
         }
 
         $this->initIndex($configReader);

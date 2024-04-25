@@ -25,19 +25,19 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
+//
+//    $services->set(DeleteIndexElementMessageHandler::class)
+//        ->args([
+//            service(IndexPersistenceService::class),
+//        ])
+//        ->tag('messenger.message_handler');
 
-    $services->set(DeleteIndexElementMessageHandler::class)
-        ->args([
-            service(IndexPersistenceService::class),
-        ])
-        ->tag('messenger.message_handler');
-
-    $services->set(UpdateIndexElementMessageHandler::class)
-        ->args([
-            service(IndexManager::class),
-            service(IndexPersistenceService::class),
-        ])
-        ->tag('messenger.message_handler');
+//    $services->set(UpdateIndexElementMessageHandler::class)
+//        ->args([
+//            service(IndexManager::class),
+//            service(IndexPersistenceService::class),
+//        ])
+//        ->tag('messenger.message_handler');
 
     $services->set(RebuildIndexElementMessageHandler::class)
         ->args([

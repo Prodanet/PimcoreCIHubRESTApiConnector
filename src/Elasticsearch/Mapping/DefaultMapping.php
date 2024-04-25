@@ -14,6 +14,79 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
 abstract class DefaultMapping implements MappingInterface
 {
+    const INTERNAL_ENTITY_TYPE = '__internal_entity_type';
+    const INTERNAL_CHECKSUM = '__internal_checksum';
+    const INTERNAL_ORIGINAL_FULL_PATH = '__internal_original_full_path';
+
+    protected array $mappingTemplate =  [
+        'dynamic_templates' => [
+            [
+                'strings' => [
+                    'match_mapping_type' => 'string',
+                    'mapping' => [
+                        'type' => 'keyword',
+                        'fields' => [
+                            'analyzed' => [
+                                'type' => 'text',
+                                'analyzer' => 'datahub_ngram_analyzer',
+                                'search_analyzer' => 'datahub_whitespace_analyzer'
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    protected function createSystemAttributesMapping(): array
+    {
+        return [
+            'type' => 'object',
+            'dynamic' => false,
+            'properties' => [
+                'id' => ['type' => 'long'],
+                'key' => [
+                    'type' => 'keyword',
+                    'fields' => [
+                        'analyzed' => [
+                            'type' => 'text',
+                            'analyzer' => 'datahub_ngram_analyzer',
+                            'search_analyzer' => 'datahub_whitespace_analyzer'
+                        ]
+                    ]
+                ],
+                'fullPath' => [
+                    'type' => 'keyword',
+                    'fields' => [
+                        'path_analyzed' => [
+                            'type' => 'text',
+                            'analyzer' => 'path_analyzer',
+                            'search_analyzer' => 'keyword'
+                        ]
+                    ]
+                ],
+                'type' => ['type' => 'keyword'],
+                'subtype' => ['type' => 'keyword'],
+                'parentId' => ['type' => 'long'],
+                'hasChildren' => ['type' => 'boolean'],
+                'creationDate' => ['type' => 'date'],
+                'modificationDate' => ['type' => 'date'],
+                self::INTERNAL_ENTITY_TYPE => ['type' => 'keyword'],
+                self::INTERNAL_CHECKSUM => ['type' => 'keyword'],
+                self::INTERNAL_ORIGINAL_FULL_PATH => [
+                    'type' => 'keyword',
+                    'fields' => [
+                        'path_analyzed' => [
+                            'type' => 'text',
+                            'analyzer' => 'path_analyzer',
+                            'search_analyzer' => 'keyword'
+                        ]
+                    ]
+                ],
+            ]
+        ];
+    }
+
     /**
      * @return array<string, array>
      */
@@ -37,34 +110,6 @@ abstract class DefaultMapping implements MappingInterface
                     ],
                 ],
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, array|bool>
-     */
-    public function getCommonProperties(): array
-    {
-        return [
-            'dynamic_templates' => [
-                [
-                    'strings' => [
-                        'match_mapping_type' => 'string',
-                        'mapping' => [
-                            'type' => 'keyword',
-                            'fields' => [
-                                'analyzed' => [
-                                    'type' => 'text',
-                                    'term_vector' => 'yes',
-                                    'analyzer' => 'datahub_ngram_analyzer',
-                                    'search_analyzer' => 'datahub_whitespace_analyzer',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            'numeric_detection' => false,
         ];
     }
 

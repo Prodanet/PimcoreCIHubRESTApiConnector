@@ -318,8 +318,19 @@ final class SearchController extends BaseEndpointController
         $this->applyQueriesAndAggregations($search, $configReader);
 
         $result = $indexService->search(implode(',', $indices), $search->toArray());
+        $result = $this->buildResponse($result, $configReader);
+        $pageCursor = $result['page_cursor'] ?? '';
 
-        return $this->json($this->buildResponse($result, $configReader));
+        $allParams = $this->request->query->all();
+        $allParams['page_cursor'] = $pageCursor;
+        $allParams['config'] = $configuration->getName();
+        $result['items'] ??= [];
+        $headers = [];
+        if (count($result['items']) == $this->request->get('size', 200)) {
+            $headers['link'] = $this->generateUrl('datahub_rest_endpoints_search', $allParams) . '; rel="next"';
+        }
+
+        return new JsonResponse($result, 200, $headers);
     }
 
     /**

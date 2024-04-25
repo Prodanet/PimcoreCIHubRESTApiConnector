@@ -12,17 +12,24 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Event\AssetEvents;
 use Pimcore\Event\DataObjectEvents;
 use Pimcore\Event\Model\AssetEvent;
 use Pimcore\Event\Model\DataObjectEvent;
+use Pimcore\Logger;
+use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
+use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -33,7 +40,7 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
     public function __construct(
         private CompositeConfigurationLoader $compositeConfigurationLoader,
         private IndexManager $indexManager,
-        private MessageBusInterface $messageBus
+        private IndexPersistenceService $indexPersistenceService
     ) {
     }
 
@@ -64,9 +71,21 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
             if (!$reader->isAssetIndexingEnabled()) {
                 continue;
             }
+            $element = Asset::getById($asset->getId());
+            if (!$element instanceof ElementInterface) {
+                return;
+            }
 
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($asset->getId(), $type, $name));
-            $this->enqueueParentFolders($asset->getParent(), Folder::class, $type, $name);
+            try {
+                $this->indexPersistenceService->update(
+                    $element,
+                    $name,
+                    $this->indexManager->getIndexName($element, $name)
+                );
+            } catch (\Exception $e) {
+                Logger::crit($e->getMessage());
+            }
+            $this->enqueueParentFolders($asset->getParent(), Folder::class, $name);
         }
     }
 
@@ -91,10 +110,23 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
                 continue;
             }
 
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($object->getId(), $type, $name));
+            $element = AbstractObject::getById($object->getId());
+            if (!$element instanceof ElementInterface) {
+                return;
+            }
+
+            try {
+                $this->indexPersistenceService->update(
+                    $element,
+                    $name,
+                    $this->indexManager->getIndexName($element, $name)
+                );
+            } catch (\Exception $e) {
+                Logger::crit($e->getMessage());
+            }
 
             // Index all folders above the object
-            $this->enqueueParentFolders($object->getParent(), DataObject\Folder::class, $type, $name);
+            $this->enqueueParentFolders($object->getParent(), DataObject\Folder::class, $name);
         }
     }
 
@@ -114,13 +146,11 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
                 continue;
             }
 
-            $this->messageBus->dispatch(
-                new DeleteIndexElementMessage(
-                    $asset->getId(),
-                    $type,
-                    $this->indexManager->getIndexName($asset, $name)
-                )
-            );
+            try {
+                $this->indexPersistenceService->delete($asset->getId(), $name);
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+                Logger::crit($e->getMessage());
+            }
         }
     }
 
@@ -145,24 +175,29 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
                 continue;
             }
 
-            $this->messageBus->dispatch(
-                new DeleteIndexElementMessage(
-                    $object->getId(),
-                    $type,
-                    $this->indexManager->getIndexName($object, $name)
-                )
-            );
+            try {
+                $this->indexPersistenceService->delete($object->getId(), $name);
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+                Logger::crit($e->getMessage());
+            }
         }
     }
 
     private function enqueueParentFolders(
         ?ElementInterface $element,
         string $folderClass,
-        string $type,
         string $name
     ): void {
         while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            $this->messageBus->dispatch(new UpdateIndexElementMessage($element->getId(), $type, $name));
+            try {
+                $this->indexPersistenceService->update(
+                    $element,
+                    $name,
+                    $this->indexManager->getIndexName($element, $name)
+                );
+            } catch (\Exception $e) {
+                Logger::crit($e->getMessage());
+            }
             $element = $element->getParent();
         }
     }

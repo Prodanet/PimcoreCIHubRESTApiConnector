@@ -24,37 +24,17 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\Element\ElementInterface;
 
-final class IndexPersistenceService
+final readonly class IndexPersistenceService
 {
-    protected array $mappingTemplate = [
-        'dynamic_templates' => [
-            [
-                'strings' => [
-                    'match_mapping_type' => 'string',
-                    'mapping' => [
-                        'type' => 'keyword',
-                        'fields' => [
-                            'analyzed' => [
-                                'type' => 'text',
-                                'analyzer' => 'datahub_ngram_analyzer',
-                                'search_analyzer' => 'datahub_whitespace_analyzer',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ],
-    ];
-
     /**
      * @param array<string, string|array> $indexSettings
      */
     public function __construct(
-        private readonly Client $client,
-        private readonly DataHubConfigurationRepository $dataHubConfigurationRepository,
-        private readonly ProviderInterface $assetProvider,
-        private readonly ProviderInterface $dataObjectProvider,
-        private readonly array $indexSettings
+        private Client                         $client,
+        private DataHubConfigurationRepository $dataHubConfigurationRepository,
+        private ProviderInterface              $assetProvider,
+        private ProviderInterface              $dataObjectProvider,
+        private array                          $indexSettings
     ) {
     }
 
@@ -114,13 +94,47 @@ final class IndexPersistenceService
      */
     public function createIndex(string $name, array $mapping = []): array
     {
-        $mappings = array_merge_recursive($mapping, $this->mappingTemplate);
+        $indexSettings = [
+            'number_of_replicas' => 0,
+            'max_ngram_diff' => 30,
+            'analysis' => [
+                'analyzer' => [
+                    'path_analyzer' => [
+                        'tokenizer' => 'path_tokenizer'
+                    ],
+                    'datahub_ngram_analyzer' => [
+                        'tokenizer' => 'datahub_ngram_tokenizer',
+                        'filter' => ['lowercase']
+                    ],
+                    'datahub_whitespace_analyzer' => [
+                        'tokenizer' => 'datahub_whitespace_tokenizer',
+                        'filter' => ['lowercase']
+                    ]
+
+                ],
+                'tokenizer' => [
+                    'path_tokenizer' => [
+                        'type' => 'path_hierarchy',
+                    ],
+                    'datahub_ngram_tokenizer' => [
+                        'type' => 'ngram',
+                        'min_gram' => 3,
+                        'max_gram' => 25,
+                        'token_chars' => ['letter', 'digit']
+                    ],
+                    'datahub_whitespace_tokenizer' => [
+                        'type' => 'whitespace'
+                    ]
+                ]
+            ]
+        ];
+        $indexSettings['number_of_shards'] = $this->indexSettings['number_of_shards'];
 
         $result = $this->client->indices()->create([
             'index' => $name,
             'body' => [
-                'mappings' => $mappings,
-                'settings' => $this->indexSettings,
+                'mappings' => $mapping,
+                'settings' => $indexSettings,
             ],
         ])->asArray();
 

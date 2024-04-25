@@ -12,6 +12,7 @@
 declare(strict_types=1);
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\EndpointAndIndexesConfigurator;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ConfigModificationListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ElementEnqueueingListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ExceptionListener;
@@ -35,7 +36,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(CompositeConfigurationLoader::class),
             service(IndexManager::class),
-            service('messenger.default_bus'),
+            service(IndexPersistenceService::class),
         ])
         ->tag('kernel.event_subscriber');
 

@@ -86,9 +86,6 @@ final class Configuration implements ConfigurationInterface
                             'max_gram' => 20,
                             'token_chars' => ['letter', 'digit'],
                         ],
-                        'datahub_whitespace_tokenizer' => [
-                            'type' => 'whitespace',
-                        ],
                     ],
                 ],
             ])

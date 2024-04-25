@@ -24,6 +24,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformerI
 use Doctrine\DBAL\Exception;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\TermsAggregation;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
@@ -166,8 +167,10 @@ abstract class BaseEndpointController extends FrontendController
     {
         $output = [];
         if ($this->request->query->has('filter')) {
-            $rawData = $this->request->get('filter');
-            if (\is_string($rawData)) {
+            $rawData = $this->request->query->getString('filter');
+            if(is_json($rawData)) {
+                $filter = \GuzzleHttp\json_decode($rawData, true);
+            } else if (\is_string($rawData)) {
                 $filter = $this->getValidFilter($rawData);
             } elseif (\is_array($rawData)) {
                 $items = $rawData;
@@ -217,12 +220,15 @@ abstract class BaseEndpointController extends FrontendController
                 }
 
                 foreach ($value as $field => $condition) {
-                    if (!\is_array($condition)) {
-                        continue;
-                    }
-
                     $field = $this->filterFieldNameTransformer->transform($field);
-                    $search->addQuery(new TermsQuery($field, $condition), $operator);
+                    if (\is_array($condition)) {
+                        $operator = BoolQuery::SHOULD;
+                        foreach ($condition as $data) {
+                            $search->addQuery(new MatchQuery($field, $data), $operator);
+                        }
+                    } else {
+                        $search->addQuery(new MatchQuery($field, $condition), $operator);
+                    }
                 }
             } elseif (\is_array($value)) {
                 foreach ($value as $subKey => $subValue) {
@@ -263,7 +269,7 @@ abstract class BaseEndpointController extends FrontendController
             }
 
             $response = [
-                'total_count' => $result['hits']['total']['value'] ?? 0,
+                'total_count' => $result['hits']['total']['value'] ?? $result['hits']['total'] ?? 0,
                 'items' => $items,
             ];
 
