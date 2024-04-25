@@ -137,7 +137,11 @@ abstract class BaseEndpointController extends FrontendController
         );
 
         if (!empty($fulltext)) {
-            $search->addQuery(new SimpleQueryStringQuery($fulltext));
+            if(is_json($fulltext)) {
+                $filter = json_encode($fulltext, true);
+            } else {
+                $search->addQuery(new SimpleQueryStringQuery($fulltext));
+            }
         }
 
         if ([] !== $filter) {
