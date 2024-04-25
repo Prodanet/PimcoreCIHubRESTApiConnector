@@ -15,8 +15,6 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
