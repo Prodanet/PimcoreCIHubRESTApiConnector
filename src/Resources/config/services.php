@@ -11,6 +11,7 @@
  */
 declare(strict_types=1);
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Command\RebuildIndexCommand;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Installer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -28,6 +29,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->load('CIHub\Bundle\SimpleRESTAdapterBundle\Controller\\', __DIR__.'/../../Controller')
         ->tag('controller.service_arguments');
 
+    $services->set(RebuildIndexCommand::class);
     $services->set(Installer::class)
         ->public()
         ->arg('$bundle', expr("service('kernel').getBundle('SimpleRESTAdapterBundle')"));
