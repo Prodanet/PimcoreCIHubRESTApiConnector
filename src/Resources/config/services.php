@@ -29,7 +29,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->load('CIHub\Bundle\SimpleRESTAdapterBundle\Controller\\', __DIR__.'/../../Controller')
         ->tag('controller.service_arguments');
 
-    $services->set(RebuildIndexCommand::class);
+    $services->load('CIHub\Bundle\SimpleRESTAdapterBundle\Command\\', __DIR__.'/../../Command')
+        ->tag('console.command');
+
     $services->set(Installer::class)
         ->public()
         ->arg('$bundle', expr("service('kernel').getBundle('SimpleRESTAdapterBundle')"));

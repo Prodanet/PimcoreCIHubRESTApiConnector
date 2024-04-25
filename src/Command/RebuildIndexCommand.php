@@ -16,16 +16,18 @@ use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Db;
 use Pimcore\Logger;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Version;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand('datahub:index:rebuild')]
-readonly class RebuildIndexCommand
+class RebuildIndexCommand extends Command
 {
     public const CHUNK_SIZE = 100;
 
@@ -33,10 +35,11 @@ readonly class RebuildIndexCommand
     public const TYPE_OBJECT = 'object';
 
     public function __construct(
-        private IndexManager            $indexManager,
-        private IndexPersistenceService $indexPersistenceService,
-        private DataHubConfigurationRepository $dataHubConfigurationRepository,
+        private readonly IndexManager                   $indexManager,
+        private readonly IndexPersistenceService        $indexPersistenceService,
+        private readonly DataHubConfigurationRepository $dataHubConfigurationRepository,
     ) {
+        parent::__construct();
     }
     protected function configure(): void
     {
@@ -58,28 +61,27 @@ readonly class RebuildIndexCommand
         $endpointName = $input->getArgument('name');
         $output->writeln('Starting index rebuilding for configuration: '.$endpointName);
 
-       try {
-           $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
+        try {
+            $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
 
-           if (!$configuration instanceof Configuration) {
-               throw new \InvalidArgumentException(sprintf('No DataHub configuration found for name "%s".', $endpointName));
-           }
+            if ($configuration instanceof Configuration) {
 
-           $configReader = new ConfigReader($configuration->getConfiguration());
+                $configReader = new ConfigReader($configuration->getConfiguration());
 
-           $this->cleanAliases($configReader);
+                $this->cleanAliases($configReader);
 
-           if ($configReader->isAssetIndexingEnabled()) {
-               $this->rebuildType(self::TYPE_ASSET, $endpointName, $output);
-           }
-           if ($configReader->isObjectIndexingEnabled()) {
-               $this->rebuildType(self::TYPE_OBJECT, $endpointName, $output);
-           }
-       } catch (\Exception $e) {
-           Logger::crit($e->getMessage());
-       }
+                if ($configReader->isAssetIndexingEnabled()) {
+                    $this->rebuildType(self::TYPE_ASSET, $endpointName, $output);
+                }
+                if ($configReader->isObjectIndexingEnabled()) {
+                    $this->rebuildType(self::TYPE_OBJECT, $endpointName, $output);
+                }
+            }
+        } catch (\Exception $e) {
+            Logger::crit($e->getMessage());
+        }
 
-       return 0;
+        return Command::SUCCESS;;
     }
 
     /**
@@ -135,18 +137,18 @@ readonly class RebuildIndexCommand
                 };
                 $elementType = $element instanceof Asset ? 'asset' : 'object';
                 try {
-
                     $output->writeln(sprintf("Indexing element %s (%s)", $elementType, $id));
                     $this->indexPersistenceService->update(
                         $element,
-                        $elementType,
-                        $endpointName
+                        $endpointName,
+                        $this->indexManager->getIndexName($element, $endpointName)
                     );
                     $this->enqueueParentFolders(
-                        $element,
-                        $elementType,
+                        $element->getParent(),
+                        $elementType === 'asset'? Folder::class : DataObject\Folder::class,
                         $endpointName
                     );
+
                 } catch (\Exception $e) {
                     Logger::crit($e->getMessage());
                     $output->writeln("Error: " . $e->getMessage());
