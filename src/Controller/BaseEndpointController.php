@@ -222,7 +222,6 @@ abstract class BaseEndpointController extends FrontendController
                 foreach ($value as $field => $condition) {
                     $field = $this->filterFieldNameTransformer->transform($field);
                     if (\is_array($condition)) {
-                        $operator = BoolQuery::SHOULD;
                         foreach ($condition as $data) {
                             $search->addQuery(new MatchQuery($field, $data), $operator);
                         }
