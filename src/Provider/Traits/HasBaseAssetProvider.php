@@ -260,9 +260,10 @@ trait HasBaseAssetProvider
     {
         $data = null;
         $metaData = $asset->getMetadata();
-
         foreach ($metaData as $metumData) {
             $data[$metumData['name']] = $metumData['data'];
+            $nameArray = explode('.', $metumData['name']);
+            $data[end($nameArray)] = $metumData['data'];
         }
 
         return $data;
