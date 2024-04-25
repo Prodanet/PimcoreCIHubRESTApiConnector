@@ -12,13 +12,13 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Helper\AssetHelper;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
+use Pimcore\Logger;
 use Pimcore\Model\AbstractModel;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Image;
@@ -718,7 +718,7 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function lock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
+    public function lock(AssetHelper $assetHelper, IndexPersistenceService $indexPersistenceService): Response
     {
         $elementByIdType = $this->getElementByIdType();
         $elementType = $elementByIdType instanceof Asset ? 'asset' : 'object';
@@ -731,7 +731,15 @@ final class ElementController extends BaseEndpointController
             }
 
             $assetHelper->lock($elementByIdType->getId(), $elementType, $this->user->getId());
-            $messageBus->dispatch(new UpdateIndexElementMessage($elementByIdType->getId(), $elementType, $this->request->get('config')));
+            try {
+                $indexPersistenceService->update(
+                    $elementByIdType,
+                    $elementType,
+                    $this->request->get('config')
+                );
+            } catch (\Exception $e) {
+                Logger::crit($e->getMessage());
+            }
 
             return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] was just locked']);
         }
@@ -812,7 +820,7 @@ final class ElementController extends BaseEndpointController
             ),
         ],
     )]
-    public function unlock(AssetHelper $assetHelper, MessageBusInterface $messageBus): Response
+    public function unlock(AssetHelper $assetHelper, IndexPersistenceService $indexPersistenceService): Response
     {
         $elementByIdType = $this->getElementByIdType();
         $elementType = $elementByIdType instanceof Asset ? 'asset' : 'object';
@@ -823,7 +831,16 @@ final class ElementController extends BaseEndpointController
                 if ($unlocked) {
                     return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] has been unlocked for editing']);
                 }
-                $messageBus->dispatch(new UpdateIndexElementMessage($elementByIdType->getId(), $elementType, $this->request->get('config')));
+
+                try {
+                    $indexPersistenceService->update(
+                        $elementByIdType,
+                        $elementType,
+                        $this->request->get('config')
+                    );
+                } catch (\Exception $e) {
+                    Logger::crit($e->getMessage());
+                }
 
                 return new JsonResponse(['success' => true, 'message' => $elementType.' with id ['.$elementByIdType->getId().'] is locked for editing'], 403);
             }
