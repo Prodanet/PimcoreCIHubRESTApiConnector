@@ -1,7 +1,7 @@
 <?php
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Command;
-
+gc_enabled();
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
@@ -13,8 +13,6 @@ use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Bundle\DataHubBundle\Configuration;
-use Pimcore\Db;
-use Pimcore\Logger;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
@@ -78,8 +76,9 @@ class RebuildIndexCommand extends Command
                 }
             }
         } catch (\Exception $e) {
-            Logger::crit($e->getMessage());
         }
+
+        $output->writeln('Peak usage: ' . memory_get_peak_usage() / 1024 / 1024 . ' MBs');
 
         return Command::SUCCESS;;
     }
@@ -100,90 +99,119 @@ class RebuildIndexCommand extends Command
             }
             $mapping = $this->indexPersistenceService->getMapping($index)[$index]['mappings'];
             $this->indexPersistenceService->createIndex($newIndexName, $mapping);
+
+            $index = null;
+            $mapping = null;
+            $newIndexName = null;
+            unset($index, $mapping, $newIndexName);
+            gc_collect_cycles();
         }
+
+        $indices = null;
+        unset($indices);
     }
 
     /**
      * @throws Exception
      */
-    private function rebuildType(string $type, string $endpointName, OutputInterface &$output): void
+    private function rebuildType(string $type, string $endpointName, OutputInterface $output): void
     {
-        $conn = Db::getConnection();
-        $sql = "SELECT id, parentId FROM {$type}s";
-
-        $totalRecords = $conn->executeQuery("SELECT COUNT(id) FROM {$type}s")->fetchNumeric()[0];
-        // Calculate the number of batches
+        $asset = new Asset();
+        $sql = "SELECT id FROM {$type}s";
+        $totalRecords = $asset->getDao()->db->fetchNumeric("SELECT COUNT(id) FROM {$type}s")[0];
         $batchSize = self::CHUNK_SIZE;
         $totalBatches = ceil($totalRecords / $batchSize);
-        // Fetch records in batches
         for ($i = 0; $i < $totalBatches; $i++) {
-            $offset = $i * $batchSize;
-
-            // Add LIMIT and OFFSET to the query
-            $batchQuery = $sql . " LIMIT $batchSize OFFSET $offset";
-
-            // Execute the query and fetch results
-            $stmt = $conn->executeQuery($batchQuery);
-            $batchResults = $stmt->fetchAllAssociative();
-
-            // Process the batch results here
-            foreach ($batchResults as $result) {
-                $id = (int)$result['id'];
-                $element = match ($type) {
-                    'asset' => Asset::getById($id),
-                    'object' => DataObject::getById($id),
-                    'version' => Version::getById($id),
-                    default => throw new NotFoundException($type.' with id ['.$id."] doesn't exist"),
-                };
-                $elementType = $element instanceof Asset ? 'asset' : 'object';
-                try {
-                    $output->writeln(sprintf("Indexing element %s (%s)", $elementType, $id));
-                    $this->indexPersistenceService->update(
-                        $element,
-                        $endpointName,
-                        $this->indexManager->getIndexName($element, $endpointName)
-                    );
-                    $this->enqueueParentFolders(
-                        $element->getParent(),
-                        $elementType === 'asset'? Folder::class : DataObject\Folder::class,
-                        $endpointName
-                    );
-
-                } catch (\Exception $e) {
-                    Logger::crit($e->getMessage());
-                    $output->writeln("Error: " . $e->getMessage());
-                }
-
-                $element = null;
-                unset($element);
-            }
-
-            // Free the statement resources
-            $stmt->free();
+            $this->doBatch($i, $batchSize, $sql, $asset, $type, $output, $endpointName);
+            gc_collect_cycles();
         }
+        $conn = null;
+        unset($conn);
+        gc_collect_cycles();
     }
 
     private function enqueueParentFolders(
         ?ElementInterface $element,
         string $folderClass,
-        string $name
+        string $indexName,
+        string $endpointName
     ): void {
         while ($element instanceof $folderClass && 1 !== $element->getId()) {
             try {
                 $this->indexPersistenceService->update(
                     $element,
-                    $name,
-                    $this->indexManager->getIndexName($element, $name)
+                    $endpointName,
+                    $indexName
                 );
             } catch (\Exception $e) {
-                Logger::crit($e->getMessage());
             }
             $element = $element->getParent();
+            gc_collect_cycles();
         }
+        $element = null;
+        unset($element);
+        gc_collect_cycles();
     }
 
     public function getNewIndexName(string $index): string
     {
         return str_ends_with($index, '-odd') ? str_replace('-odd', '', $index).'-even' : str_replace('-even', '', $index).'-odd';
+    }
+
+    private function getElement(int $id, string $type): Asset|DataObject
+    {
+        $asset = match($type){
+            'asset' => new Asset(),
+            'object' => new DataObject()
+        };
+        $asset->getDao()->getById($id);
+
+        return $asset;
+    }
+
+    /**
+     * @param int $i
+     * @param int $batchSize
+     * @param string $sql
+     * @param Asset $asset
+     * @param string $type
+     * @param OutputInterface $output
+     * @param string $endpointName
+     * @return void
+     * @throws Exception
+     */
+    private function doBatch(int $i, int $batchSize, string $sql, Asset $asset, string $type, OutputInterface $output, string $endpointName): void
+    {
+        $offset = $i * $batchSize;
+        $batchQuery = $sql . " LIMIT $batchSize OFFSET $offset";
+        $batchResults = $asset->getDao()->db->fetchAllAssociative($batchQuery);
+        foreach ($batchResults as $result) {
+            $id = (int)$result['id'];
+            $element = $this->getElement($id, $type);
+            $elementType = $element instanceof Asset ? 'asset' : 'object';
+            try {
+                $output->writeln(sprintf("Indexing element %s (%s)", $elementType, $id));
+                $indexName = $this->indexManager->getIndexName($element, $endpointName);
+                $this->indexPersistenceService->update(
+                    $element,
+                    $endpointName,
+                    $indexName
+                );
+                $folderClass = $element instanceof DataObject ? DataObject\Folder::class : Folder::class;
+                $this->enqueueParentFolders($element, $folderClass, $indexName, $endpointName);
+                $indexName = null;
+                unset($indexName);
+
+            } catch (\Exception $e) {
+                $output->writeln("Error: " . $e->getMessage());
+            }
+
+            $result = null;
+            $element = null;
+            unset($result, $element);
+            $output->writeln('Usage: ' . memory_get_usage() / 1024 / 1024 . ' MBs');
+        }
+        $batchResults = null;
+        unset($batchResults);
     }
 }
