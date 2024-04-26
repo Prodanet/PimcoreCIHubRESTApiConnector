@@ -238,9 +238,9 @@ trait HasBaseAssetProvider
     public function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
         if ('md5' === $type) {
-            return md5_file($asset->getChecksum());
+            return md5((string)$asset->getId());
         } elseif ('sha1' === $type) {
-            return sha1_file($asset->getChecksum());
+            return sha1((string)$asset->getId());
         } else {
             return null;
         }
