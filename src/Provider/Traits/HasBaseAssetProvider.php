@@ -237,18 +237,13 @@ trait HasBaseAssetProvider
      */
     public function getChecksum(Asset $asset, string $type = 'md5'): ?string
     {
-        $localFile = $asset->getLocalFile();
-        if (is_file($localFile)) {
-            if ('md5' === $type) {
-                return md5_file($localFile);
-            } elseif ('sha1' === $type) {
-                return sha1_file($localFile);
-            } else {
-                throw new \Exception("hashing algorithm '".$type."' isn't supported");
-            }
+        if ('md5' === $type) {
+            return md5_file($asset->getChecksum());
+        } elseif ('sha1' === $type) {
+            return sha1_file($asset->getChecksum());
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     /**
