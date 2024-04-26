@@ -57,7 +57,7 @@ final class SearchController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'size',
-                description: 'Max items of response, default 200.',
+                description: 'Max items of response, default 50.',
                 in: 'query',
                 required: true,
                 schema: new OA\Schema(
@@ -326,7 +326,7 @@ final class SearchController extends BaseEndpointController
         $allParams['config'] = $configuration->getName();
         $result['items'] ??= [];
         $headers = [];
-        if (count($result['items']) == $this->request->get('size', 200)) {
+        if (count($result['items']) == $this->request->get('size', 50)) {
             $headers['link'] = $this->generateUrl('datahub_rest_endpoints_search', $allParams) . '; rel="next"';
         }
 
@@ -376,7 +376,7 @@ final class SearchController extends BaseEndpointController
             ),
             new OA\Parameter(
                 name: 'size',
-                description: 'Max items of response, default 200.',
+                description: 'Max items of response, default 50.',
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(
@@ -636,7 +636,7 @@ final class SearchController extends BaseEndpointController
         $allParams['config'] = $configuration->getName();
         $result['items'] ??= [];
         $headers = [];
-        if (count($result['items']) == $this->request->get('size', 200)) {
+        if (count($result['items']) == $this->request->get('size', 50)) {
             $headers['link'] = $this->generateUrl('datahub_rest_endpoints_search', $allParams) . '; rel="next"';
         }
 

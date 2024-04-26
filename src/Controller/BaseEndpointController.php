@@ -86,7 +86,7 @@ abstract class BaseEndpointController extends FrontendController
 
     public function applySearchSettings(Search $search): void
     {
-        $size = max($this->request->query->getInt('size', 200), 1);
+        $size = max($this->request->query->getInt('size', 50), 1);
         $pageCursor = max($this->request->query->getInt('page_cursor', 0), 0);
         $orderBy = $this->request->query->getString('order_by', '');
 
@@ -137,11 +137,7 @@ abstract class BaseEndpointController extends FrontendController
         );
 
         if (!empty($fulltext)) {
-            if(is_json($fulltext)) {
-                $filter = json_encode($fulltext, true);
-            } else {
-                $search->addQuery(new SimpleQueryStringQuery($fulltext));
-            }
+            $search->addQuery(new SimpleQueryStringQuery($fulltext));
         }
 
         if ([] !== $filter) {
@@ -171,12 +167,9 @@ abstract class BaseEndpointController extends FrontendController
     {
         $output = [];
         if ($this->request->query->has('filter')) {
-            $rawData = $this->request->query->getString('filter');
-            if(is_json($rawData)) {
-                $filter = \GuzzleHttp\json_decode($rawData, true);
-            } else if (\is_string($rawData)) {
-                $filter = $this->getValidFilter($rawData);
-            } elseif (\is_array($rawData)) {
+            $filter = null;
+            $rawData = $this->request->query->get('filter');
+            if (\is_array($rawData)) {
                 $items = $rawData;
                 $filter = [];
                 foreach ($items as $item) {
@@ -184,8 +177,14 @@ abstract class BaseEndpointController extends FrontendController
                         $filter = $this->getValidFilter($item, $filter);
                     }
                 }
+            } else if(is_json($rawData)) {
+                $filter = \GuzzleHttp\json_decode($rawData, true);
+            } else if (\is_string($rawData)) {
+                $filter = $this->getValidFilter($rawData);
             }
-            $output = ['$and' => $filter];
+            if(!empty($filter)) {
+                $output = ['$and' => $filter];
+            }
         }
 
         return $output;
