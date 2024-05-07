@@ -65,7 +65,6 @@ class RebuildIndexCommand extends Command
             if ($configuration instanceof Configuration) {
 
                 $configReader = new ConfigReader($configuration->getConfiguration());
-                $this->indexManager->deleteAllIndices($endpointName);
                 $this->cleanAliases($configReader);
 
                 if ($configReader->isAssetIndexingEnabled()) {
@@ -76,6 +75,7 @@ class RebuildIndexCommand extends Command
                 }
             }
         } catch (\Exception $e) {
+            throw $e;
         }
 
         $output->writeln('Peak usage: ' . memory_get_peak_usage() / 1024 / 1024 . ' MBs');

@@ -56,7 +56,6 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
 
     public function enqueueAsset(AssetEvent $assetEvent): void
     {
-        $type = 'asset';
         $asset = $assetEvent->getAsset();
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
@@ -69,16 +68,11 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
             if (!$reader->isAssetIndexingEnabled()) {
                 continue;
             }
-            $element = Asset::getById($asset->getId());
-            if (!$element instanceof ElementInterface) {
-                return;
-            }
-
             try {
                 $this->indexPersistenceService->update(
-                    $element,
+                    $asset,
                     $name,
-                    $this->indexManager->getIndexName($element, $name)
+                    $this->indexManager->getIndexName($asset, $name)
                 );
             } catch (\Exception $e) {
                 Logger::crit($e->getMessage());
@@ -89,7 +83,6 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
 
     public function enqueueObject(DataObjectEvent $dataObjectEvent): void
     {
-        $type = 'object';
         $object = $dataObjectEvent->getObject();
 
         if (!$object instanceof Concrete) {
@@ -108,16 +101,11 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
                 continue;
             }
 
-            $element = AbstractObject::getById($object->getId());
-            if (!$element instanceof ElementInterface) {
-                return;
-            }
-
             try {
                 $this->indexPersistenceService->update(
-                    $element,
+                    $object,
                     $name,
-                    $this->indexManager->getIndexName($element, $name)
+                    $this->indexManager->getIndexName($object, $name)
                 );
             } catch (\Exception $e) {
                 Logger::crit($e->getMessage());
@@ -172,7 +160,7 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
             }
 
             try {
-                $this->indexPersistenceService->delete($object->getId(), $this->$object->getIndexName($object, $name));
+                $this->indexPersistenceService->delete($object->getId(), $this->indexManager->getIndexName($object, $name));
             } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
                 Logger::crit($e->getMessage());
             }
