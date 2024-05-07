@@ -85,7 +85,7 @@ final class UploadHelper
         if (0 !== $assetId) {
             $asset = Asset::getById($assetId);
             if ($asset instanceof Asset) {
-                if (!$asset->isAllowed('update', $this->user)) {
+                if (!$asset->isAllowed('create', $this->user)) {
                     throw new AccessDeniedHttpException('Missing the permission to overwrite asset: '.$asset->getId());
                 }
             } else {
