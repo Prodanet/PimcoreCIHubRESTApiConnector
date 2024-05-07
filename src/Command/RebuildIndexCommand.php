@@ -65,7 +65,7 @@ class RebuildIndexCommand extends Command
             if ($configuration instanceof Configuration) {
 
                 $configReader = new ConfigReader($configuration->getConfiguration());
-
+                $this->indexManager->deleteAllIndices($endpointName);
                 $this->cleanAliases($configReader);
 
                 if ($configReader->isAssetIndexingEnabled()) {

@@ -130,7 +130,6 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
 
     public function removeAsset(AssetEvent $assetEvent): void
     {
-        $type = 'asset';
         $asset = $assetEvent->getAsset();
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
@@ -145,7 +144,7 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
             }
 
             try {
-                $this->indexPersistenceService->delete($asset->getId(), $name);
+                $this->indexPersistenceService->delete($asset->getId(), $this->indexManager->getIndexName($asset, $name));
             } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
                 Logger::crit($e->getMessage());
             }
@@ -154,7 +153,6 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
 
     public function removeObject(DataObjectEvent $dataObjectEvent): void
     {
-        $type = 'object';
         $object = $dataObjectEvent->getObject();
 
         if (!$object instanceof Concrete) {
@@ -174,7 +172,7 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
             }
 
             try {
-                $this->indexPersistenceService->delete($object->getId(), $name);
+                $this->indexPersistenceService->delete($object->getId(), $this->$object->getIndexName($object, $name));
             } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
                 Logger::crit($e->getMessage());
             }
