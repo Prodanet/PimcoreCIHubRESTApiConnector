@@ -113,7 +113,7 @@ final class UploadController extends BaseEndpointController
         ));
     }
 
-    #[Route('/start', name: 'upload_start', methods: ['OPTIONS'])]
+    #[Route('/start', name: 'upload_start_options', methods: ['OPTIONS'])]
     public function startOptions(): JsonResponse
     {
         return new JsonResponse([]);
