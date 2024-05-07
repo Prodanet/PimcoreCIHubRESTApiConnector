@@ -175,7 +175,13 @@ final readonly class IndexManager
         $indexName = $value;
 
         if ($value instanceof ElementInterface) {
-            if ($value instanceof Folder) {
+            if ($value instanceof Asset\Unknown) {
+                if(str_starts_with($value->getPath(), '/') && str_ends_with($value->getPath(), "/")) {
+                    $indexName = self::INDEX_ASSET_FOLDER;
+                } else {
+                    $indexName = self::INDEX_ASSET;
+                }
+            } elseif ($value instanceof Folder) {
                 $indexName = self::INDEX_ASSET_FOLDER;
             } elseif ($value instanceof Asset) {
                 $indexName = self::INDEX_ASSET;
@@ -208,9 +214,9 @@ final readonly class IndexManager
         $currentMapping = $this->getIndexMapping($indexName);
 
         return [] !== array_merge(
-            DiffArray::diffAssocRecursive($mapping, $currentMapping),
-            DiffArray::diffAssocRecursive($currentMapping, $mapping)
-        );
+                DiffArray::diffAssocRecursive($mapping, $currentMapping),
+                DiffArray::diffAssocRecursive($currentMapping, $mapping)
+            );
     }
 
     /**
