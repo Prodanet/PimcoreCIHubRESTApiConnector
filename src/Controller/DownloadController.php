@@ -130,8 +130,9 @@ class DownloadController extends BaseEndpointController
         $crossOriginHeaders = [
             'Allow' => 'GET, OPTIONS',
             'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-            'Access-Control-Allow-Headers' => 'authorization',
+            'Access-Control-Allow-Headers' => 'Origin, Accept, DNT, X-User-Token, Keep-Alive, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type',
         ];
 
         // Send empty response for OPTIONS requests

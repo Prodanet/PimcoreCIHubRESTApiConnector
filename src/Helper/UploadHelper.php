@@ -37,9 +37,9 @@ final class UploadHelper
      * @throws \Doctrine\DBAL\Exception
      */
     public function __construct(
-        private Config $pimcoreConfig,
+        private readonly Config          $pimcoreConfig,
         private readonly RouterInterface $router,
-        private readonly AuthManager $authManager
+        private readonly AuthManager     $authManager
     ) {
         $this->user = $this->authManager->authenticate();
     }
@@ -132,6 +132,8 @@ final class UploadHelper
             if (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName())) {
                 $asset = Asset::getByPath($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName());
                 $asset->setStream($filesystemOperator->readStream($uploadSession->getTemporaryPath()));
+                $asset->setUserModification($this->user->getId());
+                $asset->updateModificationInfos();
                 $asset->save();
             } elseif (Asset\Service::pathExists($parentAsset->getRealFullPath().'/'.$uploadSession->getFileName())) {
                 $filename = $this->getSafeFilename($parentAsset->getRealFullPath(), $uploadSession->getFileName());
