@@ -205,7 +205,14 @@ final class UploadHelper
         $uploadPart->setOrdinal($ordinal);
         rewind($content);
 
-        $fileMerger = new FileMerger('/var/www/html/var/tmp/'.$datahubUploadSession->getTemporaryPath());
+        /** @var \League\Flysystem\Filesystem $assetStorage */
+        $assetStorage = Storage::get('temp');
+
+        $assetStorageReflection = new \ReflectionClass($assetStorage);
+        $assetStorageAdapter = $assetStorageReflection->getProperty('adapter')->getValue($assetStorage);
+        $directoryPath = (new \ReflectionClass($assetStorageAdapter))->getProperty('rootLocation')->getValue($assetStorageAdapter);
+
+        $fileMerger = new FileMerger($directoryPath.DIRECTORY_SEPARATOR.$datahubUploadSession->getTemporaryPath());
         $fileMerger->appendFile($content);
         $fileMerger->close();
 
