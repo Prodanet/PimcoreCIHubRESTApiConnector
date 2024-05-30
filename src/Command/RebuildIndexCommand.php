@@ -20,6 +20,7 @@ use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Version;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -209,7 +210,7 @@ class RebuildIndexCommand extends Command
             $result = null;
             $element = null;
             unset($result, $element);
-            $output->writeln('Usage: ' . memory_get_usage() / 1024 / 1024 . ' MBs');
+            $output->writeln('Usage: ' . Helper::formatMemory(memory_get_usage(true)));
         }
         $batchResults = null;
         unset($batchResults);
