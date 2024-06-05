@@ -19,6 +19,7 @@ use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -159,13 +160,10 @@ class RebuildIndexCommand extends Command
 
     private function getElement(int $id, string $type): Asset|DataObject
     {
-        $asset = match($type){
-            'asset' => new Asset(),
-            'object' => new DataObject()
+        return match($type) {
+            'asset' => Asset::getById($id),
+            'object' => DataObject::getById($id),
         };
-        $asset->getDao()->getById($id);
-
-        return $asset;
     }
 
     /**
@@ -208,7 +206,7 @@ class RebuildIndexCommand extends Command
             $result = null;
             $element = null;
             unset($result, $element);
-            $output->writeln('Usage: ' . memory_get_usage() / 1024 / 1024 . ' MBs');
+            $output->writeln('Usage: ' . Helper::formatMemory(memory_get_usage(true)));
         }
         $batchResults = null;
         unset($batchResults);
