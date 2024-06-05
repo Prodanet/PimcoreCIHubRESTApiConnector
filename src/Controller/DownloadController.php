@@ -413,7 +413,7 @@ class DownloadController extends BaseEndpointController
         }
 
         $fileExtension = $format;
-        if ('original' == $format) {
+        if ('original' === $format) {
             $fileExtension = $fileExt;
         } elseif ('pjpeg' === $format || 'jpeg' === $format) {
             $fileExtension = 'jpg';

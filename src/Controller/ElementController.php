@@ -852,8 +852,6 @@ final class ElementController extends BaseEndpointController
     }
 
     /**
-     * @param mixed $model
-     *
      * @throws \Exception
      */
     private function getAssetMetaData(AbstractModel $model, $result, ConfigReader $configReader): array

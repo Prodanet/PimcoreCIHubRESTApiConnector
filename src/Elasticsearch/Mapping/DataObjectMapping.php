@@ -14,9 +14,9 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
 final class DataObjectMapping extends DefaultMapping
 {
-    public function generate(array $config = []): array
+    public function generate(array $objectClassConfig = []): array
     {
-        if ([] === $config) {
+        if ([] === $objectClassConfig) {
             throw new \RuntimeException('No DataObject class configuration provided.');
         }
 
@@ -24,7 +24,7 @@ final class DataObjectMapping extends DefaultMapping
         $mappings['properties'] = [
             'data' => [
                 'dynamic' => 'true',
-                'properties' => $this->generateDataProperties($config),
+                'properties' => $this->generateDataProperties($objectClassConfig),
             ],
             'system' => [
                 'dynamic' => 'false',
@@ -82,14 +82,13 @@ final class DataObjectMapping extends DefaultMapping
     /**
      * Generates all data properties for the given DataObject class config.
      *
-     * @param array<string, array|string> $config
      *
      * @return array<string, array>
      */
-    private function generateDataProperties(array $config): array
+    private function generateDataProperties(array $objectClassConfig): array
     {
         $properties = [];
-        $columnConfig = $config['columnConfig'] ?? [];
+        $columnConfig = $objectClassConfig['columnConfig'] ?? [];
 
         foreach ($columnConfig as $column) {
             if (true === $column['hidden']) {
@@ -105,13 +104,13 @@ final class DataObjectMapping extends DefaultMapping
     /**
      * Generates the property definition for a given field config.
      *
-     * @param array<string, array|string> $config
+     * @param array<string, array|string> $objectClassConfig
      *
      * @return array<string, array|string>
      */
-    private function getPropertiesForFieldConfig(array $config): array
+    private function getPropertiesForFieldConfig(array $objectClassConfig): array
     {
-        return match ($config['type']) {
+        return match ($objectClassConfig['type']) {
             'hotspotimage', 'image' => array_merge($this->getImageProperties(), [
                 'dynamic' => 'false',
                 'type' => 'object',
@@ -121,7 +120,7 @@ final class DataObjectMapping extends DefaultMapping
                 'type' => 'nested',
             ]),
             'numeric' => [
-                'type' => $config['layout']['integer'] ? 'integer' : 'float',
+                'type' => $objectClassConfig['layout']['integer'] ? 'integer' : 'float',
             ],
             default => [
                 'type' => 'keyword',

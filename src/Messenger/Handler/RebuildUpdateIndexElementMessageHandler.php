@@ -95,7 +95,7 @@ final readonly class RebuildUpdateIndexElementMessageHandler implements MessageH
 
         $todo = SettingsStore::get(Installer::RUN_TODO_COUNT, Installer::REBUILD_SCOPE)->getData();
         $done = SettingsStore::get(Installer::RUN_DONE_COUNT, Installer::REBUILD_SCOPE)->getData();
-        if ($todo == $done) {
+        if ($todo === $done) {
             $this->switchNewIndexToAlias($updateIndexElementMessage);
 
             SettingsStore::set(

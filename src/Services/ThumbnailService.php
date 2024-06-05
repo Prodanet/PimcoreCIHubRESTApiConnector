@@ -24,12 +24,6 @@ class ThumbnailService
             $format = $typeMappings[$format];
         }
 
-        if (\in_array($format, $allowed, true)) {
-            $target = $format;
-        } else {
-            $target = $fallback;
-        }
-
-        return $target;
+        return \in_array($format, $allowed, true) ? $format : $fallback;
     }
 }

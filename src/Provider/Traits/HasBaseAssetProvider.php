@@ -257,7 +257,7 @@ trait HasBaseAssetProvider
         $metaData = $asset->getMetadata();
         foreach ($metaData as $metumData) {
             $data[$metumData['name']] = $metumData['data'];
-            $nameArray = explode('.', $metumData['name']);
+            $nameArray = explode('.', (string) $metumData['name']);
             $data[end($nameArray)] = $metumData['data'];
         }
 

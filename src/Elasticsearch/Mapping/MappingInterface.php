@@ -12,14 +12,8 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
+use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+
 interface MappingInterface
 {
-    /**
-     * Generates a flat representation of the data properties, which then gets mapped to the Elasticsearch index.
-     *
-     * @param array<string, array|string> $config
-     *
-     * @return array<string, array|bool>
-     */
-    public function generate(array $config = []): array;
 }
