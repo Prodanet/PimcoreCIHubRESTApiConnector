@@ -318,7 +318,11 @@ final readonly class IndexPersistenceService
         $configReader = new ConfigReader($configuration->getConfiguration());
 
         if ($element instanceof AbstractObject) {
-            $body = $this->dataObjectProvider->getIndexData($element, $configReader);
+            if(in_array($element, $configReader->getObjectClassNames())) {
+                $body = $this->dataObjectProvider->getIndexData($element, $configReader);
+            } else {
+                return [];
+            }
         } elseif ($element instanceof Asset) {
             $body = $this->assetProvider->getIndexData($element, $configReader);
         } else {
