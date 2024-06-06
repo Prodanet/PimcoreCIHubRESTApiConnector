@@ -27,3 +27,4 @@ jobs:
           issuetype: Bug
           summary: (${{ github.event.issue.number }}) ${{ github.event.issue.title }}
           description: ${{ github.event.issue.body }}
+          components: ["CI-HUB"]
