@@ -177,9 +177,9 @@ abstract class BaseEndpointController extends FrontendController
                         $filter = $this->getValidFilter($item, $filter);
                     }
                 }
-            } else if(is_json($rawData)) {
+            } elseif (is_json($rawData)) {
                 $filter = \GuzzleHttp\json_decode($rawData, true);
-            } else if (\is_string($rawData)) {
+            } elseif (\is_string($rawData)) {
                 $filter = $this->getValidFilter($rawData);
             }
             if(!empty($filter)) {

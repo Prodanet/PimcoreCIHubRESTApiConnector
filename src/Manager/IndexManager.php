@@ -167,7 +167,6 @@ final readonly class IndexManager
     /**
      * Builds the index name for a given name or element and the endpoint's name.
      *
-     * @param mixed  $value        – A string or a Pimcore element
      * @param string $endpointName – The endpoint's name
      */
     public function getIndexName(mixed $value, string $endpointName): string
@@ -176,7 +175,7 @@ final readonly class IndexManager
 
         if ($value instanceof ElementInterface) {
             if ($value instanceof Asset\Unknown) {
-                if(str_starts_with($value->getPath(), '/') && str_ends_with($value->getPath(), "/")) {
+                if(str_starts_with((string) $value->getPath(), '/') && str_ends_with((string) $value->getPath(), "/")) {
                     $indexName = self::INDEX_ASSET_FOLDER;
                 } else {
                     $indexName = self::INDEX_ASSET;

@@ -54,26 +54,15 @@ trait HasDataObjectProvider
     {
         $objectSchema = $configReader->extractObjectSchema($concrete->getClassName());
         $gridConfigData = $this->getGridConfigData($objectSchema);
-        if (\Pimcore\Version::getMajorVersion() >= 11) {
-            $data = DataObject\Service::getCsvDataForObject(
-                $concrete,
-                $gridConfigData['language'],
-                $gridConfigData['fields'],
-                $gridConfigData['helperDefinitions'],
-                new LocaleService(),
-                'title',
-                false
-            );
-        } else {
-            $data = DataObject\Service::getCsvDataForObject(
-                $concrete,
-                $gridConfigData['language'],
-                $gridConfigData['fields'],
-                $gridConfigData['helperDefinitions'],
-                new LocaleService(),
-                true
-            );
-        }
+        $data = DataObject\Service::getCsvDataForObject(
+            $concrete,
+            $gridConfigData['language'],
+            $gridConfigData['fields'],
+            $gridConfigData['helperDefinitions'],
+            new LocaleService(),
+            'title',
+            false
+        );
 
         return $this->prepareExportDataForExtraction($gridConfigData['helperDefinitions'], $data);
     }
@@ -124,31 +113,29 @@ trait HasDataObjectProvider
     {
         $helperDefinitions = $objectSchema['columnConfig'] ?? [];
 
-        $fields = array_keys($helperDefinitions);
-        if (\Pimcore\Version::getMajorVersion() >= 11) {
-            $fields = array_map(function ($key, array $value): array {
-                $label = $key;
-                if (isset($value['fieldConfig'])) {
-                    if (isset($value['fieldConfig']['label']) && $value['fieldConfig']['label']) {
-                        $label = $value['fieldConfig']['label'];
-                    } elseif (isset($value['fieldConfig']['attributes']['label'])) {
-                        $label = $value['fieldConfig']['attributes']['label'] ?: $key;
-                    }
+        $fields = array_map(function ($key, array $value): array {
+            $label = $key;
+            if (isset($value['fieldConfig'])) {
+                if (isset($value['fieldConfig']['label']) && $value['fieldConfig']['label']) {
+                    $label = $value['fieldConfig']['label'];
+                } elseif (isset($value['fieldConfig']['attributes']['label'])) {
+                    $label = $value['fieldConfig']['attributes']['label'] ?: $key;
                 }
+            }
 
-                return [
-                    'key' => $key,
-                    'label' => $label,
-                ];
-            },
-                array_keys($helperDefinitions), $helperDefinitions);
-        }
+            return [
+                'key' => $key,
+                'label' => $label,
+            ];
+        }, array_keys($helperDefinitions),
+            $helperDefinitions
+        );
         foreach ($helperDefinitions as $k => $v) {
             if (DataObject\Service::isHelperGridColumnConfig($k)) {
                 $helperDefinitions[$k] = json_decode(json_encode($v['fieldConfig']));
             }
         }
-        $requestedLanguage = null === $objectSchema['language'] ? '' : $objectSchema['language'];
+        $requestedLanguage = $objectSchema['language'] ?? '';
 
         return [
             'fields' => $fields,

@@ -43,14 +43,14 @@ readonly class EndpointAndIndexesConfigurator
         if ($configReader->isAssetIndexingEnabled()) {
             try {
                 $this->handleAssetIndices($configReader);
-            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException) {
             }
         }
 
         if ($configReader->isObjectIndexingEnabled()) {
             try {
                 $this->handleObjectIndices($configReader);
-            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
+            } catch (ClientResponseException|MissingParameterException|ServerResponseException) {
             }
         }
 
@@ -83,7 +83,7 @@ readonly class EndpointAndIndexesConfigurator
         // Assets
         $this->indexManager->createOrUpdateIndex(
             $this->indexManager->getIndexName(IndexManager::INDEX_ASSET, $endpointName),
-            $this->assetMapping->generate($configReader->toArray())
+            $this->assetMapping->generate($configReader)
         );
     }
 

@@ -16,7 +16,7 @@ use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 
 final class AssetMapping extends DefaultMapping
 {
-    public function extractMapping(): array
+    public function extractMapping(ConfigReader $config = null): array
     {
         $systemDataMapping = $this->createSystemAttributesMapping();
         $systemDataMapping['properties']['checksum'] = ['type' => 'keyword'];
@@ -69,17 +69,15 @@ final class AssetMapping extends DefaultMapping
             ]
         ];
 
-        if (!empty($this->config['thumbnails'])) {
-            foreach ($this->config['thumbnails'] as $thumbnail) {
-                $thumbnails[$thumbnail] = [
-                    'type' => 'object',
-                    'dynamic' => false,
-                    'properties' => [
-                        'path' => ['type' => 'keyword'],
-                        'checksum' => ['type' => 'keyword']
-                    ]
-                ];
-            }
+        foreach ($config->getAssetThumbnails() as $thumbnail) {
+            $thumbnails[$thumbnail] = [
+                'type' => 'object',
+                'dynamic' => false,
+                'properties' => [
+                    'path' => ['type' => 'keyword'],
+                    'checksum' => ['type' => 'keyword']
+                ]
+            ];
         }
 
         $data['binaryData'] = [
@@ -91,9 +89,9 @@ final class AssetMapping extends DefaultMapping
         return $data;
     }
 
-    public function generate(array $config = []): array
+    public function generate(ConfigReader $config = null): array
     {
-        $mappingProperties = $this->extractMapping();
+        $mappingProperties = $this->extractMapping($config);
         $mappings = $this->mappingTemplate;
         $mappings['properties'] = $mappingProperties;
 

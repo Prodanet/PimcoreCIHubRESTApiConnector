@@ -28,7 +28,7 @@ use Pimcore\Model\Tool\SettingsStore;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
+final readonly class RebuildIndexElementMessageHandler implements MessageHandlerInterface
 {
     public const CHUNK_SIZE = 100;
 
@@ -77,21 +77,19 @@ final class RebuildIndexElementMessageHandler implements MessageHandlerInterface
                 ->executeQuery("SELECT id, parentId FROM {$type}s WHERE id >= $start AND id < $end")
                 ->fetchAllAssociative()
             ;
-            if (!empty($items)) {
-                foreach ($items as $item) {
-                    $this->messageBus->dispatch(
-                        new RebuildUpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name, $hash, $rebuildIndexElementMessage->configReader));
-                    $this->enqueueParentFolders(
-                        self::TYPE_ASSET == $type ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
-                        self::TYPE_ASSET == $type ? Folder::class : DataObject\Folder::class,
-                        $type,
-                        $rebuildIndexElementMessage->name,
-                        $hash,
-                        $todo,
-                        $rebuildIndexElementMessage->configReader
-                    );
-                    ++$todo;
-                }
+            foreach ($items as $item) {
+                $this->messageBus->dispatch(
+                    new RebuildUpdateIndexElementMessage($item['id'], $type, $rebuildIndexElementMessage->name, $hash, $rebuildIndexElementMessage->configReader));
+                $this->enqueueParentFolders(
+                    self::TYPE_ASSET === $type ? Asset::getById($item['parentId']) : DataObject::getById($item['parentId']),
+                    self::TYPE_ASSET === $type ? Folder::class : DataObject\Folder::class,
+                    $type,
+                    $rebuildIndexElementMessage->name,
+                    $hash,
+                    $todo,
+                    $rebuildIndexElementMessage->configReader
+                );
+                ++$todo;
             }
         }
     }

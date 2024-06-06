@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-final class ExceptionListener implements EventSubscriberInterface
+final readonly class ExceptionListener implements EventSubscriberInterface
 {
     public function __construct(private LoggerInterface $logger)
     {

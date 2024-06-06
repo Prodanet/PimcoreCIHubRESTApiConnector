@@ -14,9 +14,9 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Mapping;
 
 abstract class DefaultMapping implements MappingInterface
 {
-    const INTERNAL_ENTITY_TYPE = '__internal_entity_type';
-    const INTERNAL_CHECKSUM = '__internal_checksum';
-    const INTERNAL_ORIGINAL_FULL_PATH = '__internal_original_full_path';
+    public const INTERNAL_ENTITY_TYPE = '__internal_entity_type';
+    public const INTERNAL_CHECKSUM = '__internal_checksum';
+    public const INTERNAL_ORIGINAL_FULL_PATH = '__internal_original_full_path';
 
     protected array $mappingTemplate =  [
         'dynamic_templates' => [

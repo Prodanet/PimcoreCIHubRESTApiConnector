@@ -17,9 +17,9 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
-use Pimcore\Model\Version;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -50,32 +50,27 @@ class RebuildIndexCommand extends Command
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return int
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     * @throws Exception
+     * @throws MissingParameterException
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $endpointName = $input->getArgument('name');
         $output->writeln('Starting index rebuilding for configuration: '.$endpointName);
+        $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
+        if ($configuration instanceof Configuration) {
 
-        try {
-            $configuration = $this->dataHubConfigurationRepository->findOneByName($endpointName);
+            $configReader = new ConfigReader($configuration->getConfiguration());
+            $this->cleanAliases($configReader);
 
-            if ($configuration instanceof Configuration) {
-
-                $configReader = new ConfigReader($configuration->getConfiguration());
-                $this->cleanAliases($configReader);
-
-                if ($configReader->isAssetIndexingEnabled()) {
-                    $this->rebuildType(self::TYPE_ASSET, $endpointName, $output);
-                }
-                if ($configReader->isObjectIndexingEnabled()) {
-                    $this->rebuildType(self::TYPE_OBJECT, $endpointName, $output);
-                }
+            if ($configReader->isAssetIndexingEnabled()) {
+                $this->rebuildType(self::TYPE_ASSET, $endpointName, $output);
             }
-        } catch (\Exception $e) {
-            throw $e;
+            if ($configReader->isObjectIndexingEnabled()) {
+                $this->rebuildType(self::TYPE_OBJECT, $endpointName, $output);
+            }
         }
 
         $output->writeln('Peak usage: ' . memory_get_peak_usage() / 1024 / 1024 . ' MBs');
@@ -143,7 +138,7 @@ class RebuildIndexCommand extends Command
                     $endpointName,
                     $indexName
                 );
-            } catch (\Exception $e) {
+            } catch (\Exception) {
             }
             $element = $element->getParent();
             gc_collect_cycles();
@@ -160,24 +155,13 @@ class RebuildIndexCommand extends Command
 
     private function getElement(int $id, string $type): Asset|DataObject
     {
-        $asset = match($type){
-            'asset' => new Asset(),
-            'object' => new DataObject()
+        return match($type) {
+            'asset' => Asset::getById($id),
+            'object' => DataObject::getById($id),
         };
-        $asset->getDao()->getById($id);
-
-        return $asset;
     }
 
     /**
-     * @param int $i
-     * @param int $batchSize
-     * @param string $sql
-     * @param Asset $asset
-     * @param string $type
-     * @param OutputInterface $output
-     * @param string $endpointName
-     * @return void
      * @throws Exception
      */
     private function doBatch(int $i, int $batchSize, string $sql, Asset $asset, string $type, OutputInterface $output, string $endpointName): void
@@ -209,7 +193,7 @@ class RebuildIndexCommand extends Command
             $result = null;
             $element = null;
             unset($result, $element);
-            $output->writeln('Usage: ' . memory_get_usage() / 1024 / 1024 . ' MBs');
+            $output->writeln('Usage: ' . Helper::formatMemory(memory_get_usage(true)));
         }
         $batchResults = null;
         unset($batchResults);

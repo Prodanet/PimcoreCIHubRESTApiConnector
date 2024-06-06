@@ -29,17 +29,17 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Uid\Ulid;
 
-final class UploadHelper
+final readonly class UploadHelper
 {
-    private readonly User $user;
+    private User $user;
 
     /**
      * @throws \Doctrine\DBAL\Exception
      */
     public function __construct(
-        private readonly Config          $pimcoreConfig,
-        private readonly RouterInterface $router,
-        private readonly AuthManager     $authManager
+        private Config          $pimcoreConfig,
+        private RouterInterface $router,
+        private AuthManager     $authManager
     ) {
         $this->user = $this->authManager->authenticate();
     }
