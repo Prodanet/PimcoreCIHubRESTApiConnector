@@ -27,4 +27,4 @@ jobs:
           issuetype: Bug
           summary: (${{ github.event.issue.number }}) ${{ github.event.issue.title }}
           description: ${{ github.event.issue.body }}
-          fields: '{"components": ["CI-HUB"]}'
+          fields: '{"components": [10198]}'
