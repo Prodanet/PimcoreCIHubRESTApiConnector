@@ -73,7 +73,7 @@ class RebuildIndexCommand extends Command
             }
         }
 
-        $output->writeln('Peak usage: ' . memory_get_peak_usage() / 1024 / 1024 . ' MBs');
+        $output->writeln('Peak usage: ' . Helper::formatMemory(memory_get_usage(true)));
 
         return Command::SUCCESS;;
     }
