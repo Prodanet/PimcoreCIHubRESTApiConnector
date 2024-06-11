@@ -95,14 +95,10 @@ class RebuildIndexCommand extends Command
             $mapping = $this->indexPersistenceService->getMapping($index)[$index]['mappings'];
             $this->indexPersistenceService->createIndex($newIndexName, $mapping);
 
-            $index = null;
-            $mapping = null;
-            $newIndexName = null;
             unset($index, $mapping, $newIndexName);
             gc_collect_cycles();
         }
 
-        $indices = null;
         unset($indices);
     }
 
@@ -120,7 +116,7 @@ class RebuildIndexCommand extends Command
             $this->doBatch($i, $batchSize, $sql, $asset, $type, $output, $endpointName);
             gc_collect_cycles();
         }
-        $conn = null;
+
         unset($conn);
         gc_collect_cycles();
     }
@@ -143,7 +139,7 @@ class RebuildIndexCommand extends Command
             $element = $element->getParent();
             gc_collect_cycles();
         }
-        $element = null;
+
         unset($element);
         gc_collect_cycles();
     }
@@ -189,19 +185,17 @@ class RebuildIndexCommand extends Command
                 );
                 $folderClass = $element instanceof DataObject ? DataObject\Folder::class : Folder::class;
                 $this->enqueueParentFolders($element, $folderClass, $indexName, $endpointName);
-                $indexName = null;
+
                 unset($indexName);
 
             } catch (\Exception $e) {
                 $output->writeln("Error: " . $e->getMessage());
             }
 
-            $result = null;
-            $element = null;
             unset($result, $element);
             $output->writeln('Usage: ' . Helper::formatMemory(memory_get_usage(true)));
         }
-        $batchResults = null;
+
         unset($batchResults);
     }
 }
