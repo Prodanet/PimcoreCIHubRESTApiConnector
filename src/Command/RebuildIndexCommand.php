@@ -156,8 +156,8 @@ class RebuildIndexCommand extends Command
     private function getElement(int $id, string $type): Asset|DataObject
     {
         return match($type) {
-            'asset' => Asset::getById($id),
-            'object' => DataObject::getById($id),
+            self::TYPE_ASSET => Asset::getById($id),
+            self::TYPE_OBJECT => DataObject::getById($id),
         };
     }
 
