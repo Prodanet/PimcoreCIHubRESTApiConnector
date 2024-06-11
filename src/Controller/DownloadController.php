@@ -145,6 +145,9 @@ class DownloadController extends BaseEndpointController
                 'Content-Type'
             ]),
         ];
+        if($this->request->headers->has('Origin')) {
+            $crossOriginHeaders['Access-Control-Allow-Origin'] = $this->request->headers->get('Origin');
+        }
 
         // Send empty response for OPTIONS requests
         if ($this->request->isMethod('OPTIONS')) {
