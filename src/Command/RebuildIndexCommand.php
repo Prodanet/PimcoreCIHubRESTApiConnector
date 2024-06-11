@@ -172,7 +172,13 @@ class RebuildIndexCommand extends Command
         foreach ($batchResults as $result) {
             $id = (int)$result['id'];
             $element = $this->getElement($id, $type);
-            $elementType = $element instanceof Asset ? 'asset' : 'object';
+
+            $elementType = match ($element) {
+                $element instanceof Asset => $element->getType(),
+                $element instanceof DataObject\Concrete => $element->getClass()->getName(),
+                default => 'object',
+            };
+
             try {
                 $output->writeln(sprintf("Indexing element %s (%s)", $elementType, $id));
                 $indexName = $this->indexManager->getIndexName($element, $endpointName);
