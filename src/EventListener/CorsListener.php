@@ -24,7 +24,7 @@ class CorsListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::RESPONSE => 'onKernelRequest',
+            KernelEvents::RESPONSE => 'onKernelResponse',
         ];
     }
 
