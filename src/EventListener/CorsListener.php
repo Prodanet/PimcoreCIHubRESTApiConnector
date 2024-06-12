@@ -46,14 +46,14 @@ class CorsListener implements EventSubscriberInterface
             'Allow' => 'GET, OPTIONS',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Allow-Methods' => [
+            'Access-Control-Allow-Methods' => implode(',', [
                 Request::METHOD_GET,
                 Request::METHOD_POST,
                 Request::METHOD_OPTIONS,
                 Request::METHOD_DELETE,
                 Request::METHOD_PUT,
                 Request::METHOD_HEAD,
-            ],
+            ]),
             'Access-Control-Allow-Headers' => implode(',', [
                 'Origin',
                 'Accept',
