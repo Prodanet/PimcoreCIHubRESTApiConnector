@@ -4,13 +4,12 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
-class CorsListener
+class CorsListener implements EventSubscriberInterface
 {
     private LoggerInterface|NullLogger|null $logger;
 
@@ -22,7 +21,14 @@ class CorsListener
         $this->logger = $logger;
     }
 
-    public function onKernelRequest(RequestEvent $event): void
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            KernelEvents::RESPONSE => 'onKernelRequest',
+        ];
+    }
+
+    public function onKernelResponse(ResponseEvent $event): void
     {
 
         if (HttpKernelInterface::MAIN_REQUEST !== $event->getRequestType()) {

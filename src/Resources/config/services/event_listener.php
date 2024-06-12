@@ -14,6 +14,7 @@ declare(strict_types=1);
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\EndpointAndIndexesConfigurator;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ConfigModificationListener;
+use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\CorsListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ElementEnqueueingListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\EventListener\ExceptionListener;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
@@ -41,6 +42,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('kernel.event_subscriber');
 
     $services->set(ExceptionListener::class)
+        ->args([
+            service('logger'),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(CorsListener::class)
         ->args([
             service('logger'),
         ])
