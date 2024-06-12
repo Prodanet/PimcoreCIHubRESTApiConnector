@@ -43,7 +43,7 @@ class CorsListener implements EventSubscriberInterface
             return;
         }
         $crossOriginHeaders = [
-            'Allow' => 'GET, OPTIONS',
+            'Access-Control-Max-Age' => 600,
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Allow-Methods' => implode(',', [
@@ -64,7 +64,9 @@ class CorsListener implements EventSubscriberInterface
                 'X-Requested-With',
                 'If-Modified-Since',
                 'Cache-Control',
-                'Content-Type'
+                'Content-Type',
+                'Access-Control-Request-Method',
+                'Access-Control-Request-Headers'
             ]),
         ];
         $request = $event->getRequest();
