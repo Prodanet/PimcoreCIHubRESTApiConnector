@@ -127,31 +127,9 @@ class DownloadController extends BaseEndpointController
     )]
     public function download(): Response
     {
-        $crossOriginHeaders = [
-            'Allow' => 'GET, OPTIONS',
-            'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-            'Access-Control-Allow-Headers' => implode(',', [
-                'Origin',
-                'Accept',
-                'DNT',
-                'X-User-Token',
-                'Keep-Alive',
-                'User-Agent',
-                'X-Requested-With',
-                'If-Modified-Since',
-                'Cache-Control',
-                'Content-Type'
-            ]),
-        ];
-        if($this->request->headers->has('Origin')) {
-            $crossOriginHeaders['Access-Control-Allow-Origin'] = $this->request->headers->get('Origin');
-        }
-
         // Send empty response for OPTIONS requests
         if ($this->request->isMethod('OPTIONS')) {
-            return new Response('', 204, $crossOriginHeaders);
+            return new Response('', 204);
         }
         try {
             // Check if request is authenticated properly
@@ -238,7 +216,6 @@ class DownloadController extends BaseEndpointController
             }
         }
 
-        $response->headers->add($crossOriginHeaders);
         try {
             // Add cache to headers
             $this->addThumbnailCacheHeaders($response);
