@@ -73,6 +73,9 @@ class CorsListener implements EventSubscriberInterface
         if($request->headers->has('Origin')) {
             $crossOriginHeaders['Access-Control-Allow-Origin'] = $request->headers->get('Origin');
         }
+        if($request->headers->has('Access-Control-Allow-Headers')) {
+            $crossOriginHeaders['Access-Control-Allow-Headers'][] = $request->headers->get('Access-Control-Allow-Headers');
+        }
 
         $event->getResponse()->headers->add($crossOriginHeaders);
     }
