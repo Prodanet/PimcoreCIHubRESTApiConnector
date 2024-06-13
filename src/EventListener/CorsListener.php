@@ -82,6 +82,7 @@ class CorsListener implements EventSubscriberInterface
             $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Methods']);
         }
 
+        $event->getResponse()->headers->set('X-Powered-By', 'https://brandoriented.io');
         $event->getResponse()->headers->add($crossOriginHeaders);
     }
 }
