@@ -75,6 +75,11 @@ class CorsListener implements EventSubscriberInterface
         }
         if($request->headers->has('Access-Control-Allow-Headers')) {
             $crossOriginHeaders['Access-Control-Allow-Headers'][] = $request->headers->get('Access-Control-Allow-Headers');
+            $crossOriginHeaders['Access-Control-Allow-Headers'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Headers']);
+        }
+        if($request->headers->has('Access-Control-Request-Method')) {
+            $crossOriginHeaders['Access-Control-Allow-Methods'][] = $request->headers->get('Access-Control-Request-Method');
+            $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Methods']);
         }
 
         $event->getResponse()->headers->add($crossOriginHeaders);
