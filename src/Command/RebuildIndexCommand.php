@@ -73,7 +73,7 @@ class RebuildIndexCommand extends Command
             }
         }
 
-        $output->writeln('Peak usage: ' . memory_get_peak_usage() / 1024 / 1024 . ' MBs');
+        $output->writeln('Peak usage: ' . Helper::formatMemory(memory_get_peak_usage(true)));
 
         return Command::SUCCESS;;
     }
@@ -95,14 +95,10 @@ class RebuildIndexCommand extends Command
             $mapping = $this->indexPersistenceService->getMapping($index)[$index]['mappings'];
             $this->indexPersistenceService->createIndex($newIndexName, $mapping);
 
-            $index = null;
-            $mapping = null;
-            $newIndexName = null;
             unset($index, $mapping, $newIndexName);
             gc_collect_cycles();
         }
 
-        $indices = null;
         unset($indices);
     }
 
@@ -120,7 +116,7 @@ class RebuildIndexCommand extends Command
             $this->doBatch($i, $batchSize, $sql, $asset, $type, $output, $endpointName);
             gc_collect_cycles();
         }
-        $conn = null;
+
         unset($conn);
         gc_collect_cycles();
     }
@@ -143,7 +139,7 @@ class RebuildIndexCommand extends Command
             $element = $element->getParent();
             gc_collect_cycles();
         }
-        $element = null;
+
         unset($element);
         gc_collect_cycles();
     }
@@ -156,8 +152,8 @@ class RebuildIndexCommand extends Command
     private function getElement(int $id, string $type): Asset|DataObject
     {
         return match($type) {
-            'asset' => Asset::getById($id),
-            'object' => DataObject::getById($id),
+            self::TYPE_ASSET => Asset::getById($id),
+            self::TYPE_OBJECT => DataObject::getById($id),
         };
     }
 
@@ -172,7 +168,13 @@ class RebuildIndexCommand extends Command
         foreach ($batchResults as $result) {
             $id = (int)$result['id'];
             $element = $this->getElement($id, $type);
-            $elementType = $element instanceof Asset ? 'asset' : 'object';
+
+            $elementType = match ($element) {
+                $element instanceof Asset => $element->getType(),
+                $element instanceof DataObject\Concrete => $element->getClass()->getName(),
+                default => 'object',
+            };
+
             try {
                 $output->writeln(sprintf("Indexing element %s (%s)", $elementType, $id));
                 $indexName = $this->indexManager->getIndexName($element, $endpointName);
@@ -183,19 +185,17 @@ class RebuildIndexCommand extends Command
                 );
                 $folderClass = $element instanceof DataObject ? DataObject\Folder::class : Folder::class;
                 $this->enqueueParentFolders($element, $folderClass, $indexName, $endpointName);
-                $indexName = null;
+
                 unset($indexName);
 
             } catch (\Exception $e) {
                 $output->writeln("Error: " . $e->getMessage());
             }
 
-            $result = null;
-            $element = null;
             unset($result, $element);
             $output->writeln('Usage: ' . Helper::formatMemory(memory_get_usage(true)));
         }
-        $batchResults = null;
+
         unset($batchResults);
     }
 }
