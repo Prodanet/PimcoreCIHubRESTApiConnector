@@ -4,7 +4,6 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Command;
 gc_enabled();
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
-use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
