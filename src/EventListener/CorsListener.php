@@ -31,7 +31,6 @@ class CorsListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event): void
     {
-
         if (HttpKernelInterface::MAIN_REQUEST !== $event->getRequestType()) {
             $this->logger->debug('Not a master type request, skipping CORS checks.');
 
@@ -46,15 +45,15 @@ class CorsListener implements EventSubscriberInterface
             'Access-Control-Max-Age' => 600,
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Allow-Methods' => implode(',', [
+            'Access-Control-Allow-Methods' => [
                 Request::METHOD_GET,
                 Request::METHOD_POST,
                 Request::METHOD_OPTIONS,
                 Request::METHOD_DELETE,
                 Request::METHOD_PUT,
                 Request::METHOD_HEAD,
-            ]),
-            'Access-Control-Allow-Headers' => implode(',', [
+            ],
+            'Access-Control-Allow-Headers' => [
                 'Origin',
                 'Accept',
                 'DNT',
@@ -67,20 +66,22 @@ class CorsListener implements EventSubscriberInterface
                 'Content-Type',
                 'Access-Control-Request-Method',
                 'Access-Control-Request-Headers'
-            ]),
+            ],
         ];
+
         $request = $event->getRequest();
         if($request->headers->has('Origin')) {
             $crossOriginHeaders['Access-Control-Allow-Origin'] = $request->headers->get('Origin');
         }
         if($request->headers->has('Access-Control-Allow-Headers')) {
             $crossOriginHeaders['Access-Control-Allow-Headers'][] = $request->headers->get('Access-Control-Allow-Headers');
-            $crossOriginHeaders['Access-Control-Allow-Headers'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Headers']);
         }
         if($request->headers->has('Access-Control-Request-Method')) {
             $crossOriginHeaders['Access-Control-Allow-Methods'][] = $request->headers->get('Access-Control-Request-Method');
-            $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Methods']);
         }
+
+        $crossOriginHeaders['Access-Control-Allow-Headers'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Headers']);
+        $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Methods']);
 
         $event->getResponse()->headers->set('X-Powered-By', 'https://brandoriented.io');
         $event->getResponse()->headers->add($crossOriginHeaders);
