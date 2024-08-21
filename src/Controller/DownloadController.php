@@ -199,12 +199,14 @@ class DownloadController extends BaseEndpointController
                 ]);
             }
         } else {
+            $elementFile = $element->getThumbnail();
             $storagePath = $this->getStoragePath($elementFile,
                 $element->getId(),
                 $element->getFilename(),
                 $element->getRealPath(),
                 $element->getChecksum()
             );
+
             if (!$storage->fileExists($storagePath)) {
                 \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
                     new AssetPreviewImageMessage($element->getId())
