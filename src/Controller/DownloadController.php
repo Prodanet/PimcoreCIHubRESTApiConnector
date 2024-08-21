@@ -173,7 +173,7 @@ class DownloadController extends BaseEndpointController
         $storage = Storage::get('thumbnail');
         $elementFile = $element;
 
-        Logger::warning('Requested download action', [
+        Logger::error('Requested download action', [
             'thumbnail' => $thumbnail,
             'configReaderType' => $configReader->getType(),
             'id' => $id,
@@ -202,7 +202,7 @@ class DownloadController extends BaseEndpointController
             $element->getChecksum()
         );
 
-        Logger::warning('Storage path is '.$storagePath);
+        Logger::error('Storage path is '.$storagePath);
 
         if (!$storage->fileExists($storagePath)) {
             \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
@@ -382,7 +382,7 @@ class DownloadController extends BaseEndpointController
 
     public function getStoragePath(ThumbnailInterface $thumb, int $id, string $filename, string $realPlace, string $checksum): string
     {
-        Logger::warning('Getting storage path', [
+        Logger::error('Getting storage path', [
             'id' => $id,
             'filename' => $filename,
             'realPlace' => $realPlace,
