@@ -171,7 +171,6 @@ class DownloadController extends BaseEndpointController
 
         $thumbnail = (string) $this->request->get('thumbnail');
         $storage = Storage::get('thumbnail');
-        $elementFile = $element;
 
         Logger::error('Requested download action', [
             'thumbnail' => $thumbnail,
@@ -184,15 +183,46 @@ class DownloadController extends BaseEndpointController
             $thumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
         }
 
+        $elementFile = $element;
+        $thumbnailConfig = null;
+
         if ($element instanceof Image) {
-            if (Thumbnail\Config::getByAutoDetect($thumbnail) instanceof Thumbnail\Config) {
-                $elementFile = $element->getThumbnail($thumbnail);
-            }
-            else {
-                $elementFile = $element->getThumbnail();
-            }
+            $thumbnailConfig = Thumbnail\Config::getByAutoDetect($thumbnail);
+            $elementFile = $element->getThumbnail($thumbnailConfig);
 
             assert($elementFile instanceof Image\Thumbnail);
+            if ($elementFile->exists()) {
+                $stream = $elementFile->getStream();
+
+                if (!$stream) {
+                    \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
+                        new AssetPreviewImageMessage($element->getId())
+                    );
+                    return $this->getNoThumbnailResponse();
+                }
+
+                $mimeType = $elementFile->getMimeType();
+                $response = new StreamedResponse(function () use ($stream, $mimeType): void {
+                    fpassthru($stream);
+                }, 200, [
+                    'Content-Type' => $mimeType,
+                    'Access-Control-Allow-Origin', '*',
+                ]);
+
+                try {
+                    // Add cache to headers
+                    $this->addThumbnailCacheHeaders($response);
+                } catch (\Exception $e) {
+                    Logger::err($e->getMessage(), [
+                        'id' => $element->getId(),
+                        'filename' => $element->getFilename(),
+                        'realpath' => $element->getRealPath(),
+                        'checksum' => $element->getChecksum()
+                    ]);
+                }
+
+                return $response;
+            }
         }
 
         $storagePath = $this->getStoragePath($elementFile,
