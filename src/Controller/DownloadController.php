@@ -24,6 +24,7 @@ use League\Flysystem\FilesystemException;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
+use Pimcore\Logger;
 use Pimcore\Messenger\AssetPreviewImageMessage;
 use Pimcore\Model\Asset\Image;
 use Pimcore\Model\Asset\Image\Thumbnail;
@@ -137,6 +138,8 @@ class DownloadController extends BaseEndpointController
             $configuration = $this->getDataHubConfiguration();
             $configReader = new ConfigReader($configuration->getConfiguration());
         } catch (\Exception $ex) {
+            Logger::err($ex->getMessage());
+
             return new JsonResponse([
                 'success' => false,
                 'message' => $ex->getMessage(),
@@ -169,72 +172,70 @@ class DownloadController extends BaseEndpointController
         $thumbnail = (string) $this->request->get('thumbnail');
         $storage = Storage::get('thumbnail');
         $elementFile = $element;
-        if ('' !== $thumbnail && '0' !== $thumbnail && $element instanceof Image) {
-            if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
-                $defaultPreviewThumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
-                $elementFile = $element->getThumbnail($defaultPreviewThumbnail);
-            } elseif (Thumbnail\Config::getByAutoDetect($thumbnail) instanceof Thumbnail\Config) {
+
+        Logger::log('Requested download action', [
+            'thumbnail' => $thumbnail,
+            'configReaderType' => $configReader->getType(),
+            'id' => $id,
+            'element::class' => get_class($element),
+        ]);
+
+        if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnail && 'ciHub' === $configReader->getType()) {
+            $thumbnail = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
+        }
+
+        if ($element instanceof Image) {
+            if (Thumbnail\Config::getByAutoDetect($thumbnail) instanceof Thumbnail\Config) {
                 $elementFile = $element->getThumbnail($thumbnail);
-            } else {
+            }
+            else {
                 $elementFile = $element->getThumbnail();
             }
 
-            $storagePath = $this->getStoragePath($elementFile,
-                $element->getId(),
-                $element->getFilename(),
-                $element->getRealPath(),
-                $element->getChecksum()
-            );
+            assert($elementFile instanceof Image\Thumbnail);
+        }
 
-            if (!$storage->fileExists($storagePath)) {
-                \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
-                    new AssetPreviewImageMessage($element->getId())
-                );
-                $response = $this->getNoThumbnailResponse();
-            } else {
-                $response = new StreamedResponse(function () use ($storagePath, $storage): void {
-                    fpassthru($storage->readStream($storagePath));
-                }, 200, [
-                    'Content-Type' => $storage->mimeType($storagePath),
-                    'Access-Control-Allow-Origin', '*',
-                ]);
-            }
+        $storagePath = $this->getStoragePath($elementFile,
+            $element->getId(),
+            $element->getFilename(),
+            $element->getRealPath(),
+            $element->getChecksum()
+        );
+
+        Logger::log('Storage path is '.$storagePath);
+
+        if (!$storage->fileExists($storagePath)) {
+            \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
+                new AssetPreviewImageMessage($element->getId())
+            );
+            $response = $this->getNoThumbnailResponse();
         } else {
-            $elementFile = $element->getThumbnail();
-            $storagePath = $this->getStoragePath($elementFile,
-                $element->getId(),
-                $element->getFilename(),
-                $element->getRealPath(),
-                $element->getChecksum()
-            );
+            $response = new StreamedResponse(function () use ($storagePath, $storage): void {
+                fpassthru($storage->readStream($storagePath));
+            }, 200, [
+                'Content-Type' => $storage->mimeType($storagePath),
+                'Access-Control-Allow-Origin', '*',
+            ]);
 
-            if (!$storage->fileExists($storagePath)) {
-                \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
-                    new AssetPreviewImageMessage($element->getId())
-                );
-                $response = $this->getNoThumbnailResponse();
-            } else {
-
-                $response = new StreamedResponse(function () use ($storagePath, $storage): void {
-                    fpassthru($storage->readStream($storagePath));
-                }, 200, [
-                    'Content-Type' => $storage->mimeType($storagePath),
-                    'Access-Control-Allow-Origin', '*',
-                ]);
-                // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
-                if (!$this->request->request->has('thumbnail')) {
-                    $filename = basename(rawurldecode((string) $elementFile->getPath()));
-                    $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
-                    $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
-                    $response->headers->set('Content-Length', $storage->fileSize($storagePath));
-                }
+            // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
+            if (!$this->request->request->has('thumbnail')) {
+                $filename = basename(rawurldecode((string) $elementFile->getPath()));
+                $filenameFallback = preg_replace("/[^\w\-\.]/", '', $filename);
+                $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename, $filenameFallback);
+                $response->headers->set('Content-Length', $storage->fileSize($storagePath));
             }
         }
 
         try {
             // Add cache to headers
             $this->addThumbnailCacheHeaders($response);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            Logger::err($e->getMessage(), [
+                'id' => $element->getId(),
+                'filename' => $element->getFilename(),
+                'realpath' => $element->getRealPath(),
+                'checksum' => $element->getChecksum()
+            ]);
         }
 
         return $response;
@@ -381,6 +382,13 @@ class DownloadController extends BaseEndpointController
 
     public function getStoragePath(ThumbnailInterface $thumb, int $id, string $filename, string $realPlace, string $checksum): string
     {
+        Logger::log('Getting storage path', [
+            'id' => $id,
+            'filename' => $filename,
+            'realPlace' => $realPlace,
+            'checksum' => $checksum,
+        ]);
+
         $thumbnail = $thumb->getConfig();
         $format = mb_strtolower($thumbnail->getFormat());
         $fileExt = pathinfo($filename, \PATHINFO_EXTENSION);
