@@ -191,38 +191,37 @@ class DownloadController extends BaseEndpointController
             $elementFile = $element->getThumbnail($thumbnailConfig);
 
             assert($elementFile instanceof Image\Thumbnail);
-            if ($elementFile->exists()) {
-                $stream = $elementFile->getStream();
 
-                if (!$stream) {
-                    \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
-                        new AssetPreviewImageMessage($element->getId())
-                    );
-                    return $this->getNoThumbnailResponse();
-                }
+            $stream = $elementFile->getStream();
 
-                $mimeType = $elementFile->getMimeType();
-                $response = new StreamedResponse(function () use ($stream, $mimeType): void {
-                    fpassthru($stream);
-                }, 200, [
-                    'Content-Type' => $mimeType,
-                    'Access-Control-Allow-Origin', '*',
-                ]);
-
-                try {
-                    // Add cache to headers
-                    $this->addThumbnailCacheHeaders($response);
-                } catch (\Exception $e) {
-                    Logger::err($e->getMessage(), [
-                        'id' => $element->getId(),
-                        'filename' => $element->getFilename(),
-                        'realpath' => $element->getRealPath(),
-                        'checksum' => $element->getChecksum()
-                    ]);
-                }
-
-                return $response;
+            if (!$stream) {
+                \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
+                    new AssetPreviewImageMessage($element->getId())
+                );
+                return $this->getNoThumbnailResponse();
             }
+
+            $mimeType = $elementFile->getMimeType();
+            $response = new StreamedResponse(function () use ($stream, $mimeType): void {
+                fpassthru($stream);
+            }, 200, [
+                'Content-Type' => $mimeType,
+                'Access-Control-Allow-Origin', '*',
+            ]);
+
+            try {
+                // Add cache to headers
+                $this->addThumbnailCacheHeaders($response);
+            } catch (\Exception $e) {
+                Logger::err($e->getMessage(), [
+                    'id' => $element->getId(),
+                    'filename' => $element->getFilename(),
+                    'realpath' => $element->getRealPath(),
+                    'checksum' => $element->getChecksum()
+                ]);
+            }
+
+            return $response;
         }
 
         $storagePath = $this->getStoragePath($elementFile,
@@ -232,14 +231,24 @@ class DownloadController extends BaseEndpointController
             $element->getChecksum()
         );
 
-        Logger::error('Storage path is '.$storagePath);
+        Logger::error('Storage path is '.$storagePath, [
+            '$elementFile::class' => get_class($elementFile),
+            '$element::class' => get_class($element),
+
+            'id'       => $element->getId(),
+            'filename' => $element->getFilename(),
+            'realpath' => $element->getRealPath(),
+            'checksum' => $element->getChecksum()
+        ]);
 
         if (!$storage->fileExists($storagePath)) {
+            Logger::error('Storage file does not exists, queue generation');
             \Pimcore::getContainer()->get('messenger.bus.pimcore-core')->dispatch(
                 new AssetPreviewImageMessage($element->getId())
             );
             $response = $this->getNoThumbnailResponse();
         } else {
+            Logger::error('Storage file does exists');
             $response = new StreamedResponse(function () use ($storagePath, $storage): void {
                 fpassthru($storage->readStream($storagePath));
             }, 200, [
