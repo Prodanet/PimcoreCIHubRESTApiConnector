@@ -7,6 +7,16 @@ for better query performance and scalability.
 
 Therefore, it can be used to connect Pimcore to other systems or to connect Front-End applications.
 
+## Support
+
+We are the owner of The Pimcore Connector Bundle due to our commitment to the Open Source community and the amazing users of Pimcore Systems around the world. An as any OpenSource Project the support if provided by the community for free.
+ 
+Here is the GitHub Community Board if you like to collaborate with the community on how to improve or enhance the Pimcore Connector Bundle.
+ 
+In addition, if you consider commercial Pimcore Implementation we are ready to help with Implementation and adapting it to your Corporate needs. We do offer commercial support as BrandOriented for specific commercial Pimcore implementations. To get more details about the process and maybe involved cost, please contact us: sales@brandoriented.io, https://pimcore.effiana.com.
+ 
+So you can choose what works best for you.
+
 ## Features in a nutshell
 * Configure a schema and expose data like with other DataHub adapters via Drag & Drop.
 * All data gets indexed in Elasticsearch indices and delivered from there (no additional load on the database
