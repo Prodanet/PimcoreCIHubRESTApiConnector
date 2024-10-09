@@ -253,7 +253,7 @@ class DownloadController extends BaseEndpointController
                 fpassthru($storage->readStream($storagePath));
             }, 200, [
                 'Content-Type' => $storage->mimeType($storagePath),
-                'Access-Control-Allow-Origin', '*',
+                'Access-Control-Allow-Origin' => '*',
             ]);
 
             // If it is not a thumbnail then send DISPOSITION_ATTACHMENT of the download.
