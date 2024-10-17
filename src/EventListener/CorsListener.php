@@ -70,18 +70,24 @@ class CorsListener implements EventSubscriberInterface
         ];
 
         $request = $event->getRequest();
-        if($request->headers->has('Origin')) {
+        if ($request->headers->has('Origin')) {
             $crossOriginHeaders['Access-Control-Allow-Origin'] = $request->headers->get('Origin');
         }
-        if($request->headers->has('Access-Control-Allow-Headers')) {
+        if ($request->headers->has('Access-Control-Allow-Headers')) {
             $crossOriginHeaders['Access-Control-Allow-Headers'][] = $request->headers->get('Access-Control-Allow-Headers');
         }
-        if($request->headers->has('Access-Control-Request-Method')) {
+        if ($request->headers->has('Access-Control-Request-Headers')) {
+            $crossOriginHeaders['Access-Control-Allow-Headers'][] = $request->headers->get('Access-Control-Request-Headers');
+        }
+        if ($request->headers->has('Access-Control-Request-Method')) {
             $crossOriginHeaders['Access-Control-Allow-Methods'][] = $request->headers->get('Access-Control-Request-Method');
         }
 
-        $crossOriginHeaders['Access-Control-Allow-Headers'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Headers']);
-        $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $crossOriginHeaders['Access-Control-Allow-Methods']);
+        $uniqueAllowHeaders = array_unique($crossOriginHeaders['Access-Control-Allow-Headers']);
+        $uniqueAllowMethods = array_unique($crossOriginHeaders['Access-Control-Allow-Methods']);
+
+        $crossOriginHeaders['Access-Control-Allow-Headers'] = implode(',', $uniqueAllowHeaders);
+        $crossOriginHeaders['Access-Control-Allow-Methods'] = implode(',', $uniqueAllowMethods);
 
         $event->getResponse()->headers->set('X-Powered-By', 'https://brandoriented.io');
         $event->getResponse()->headers->add($crossOriginHeaders);
