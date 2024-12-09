@@ -21,7 +21,7 @@ use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Bundle\DataHubBundle\Configuration;
 use Pimcore\Model\Asset;
-use Pimcore\Model\DataObject\AbstractObject;
+use Pimcore\Model\DataObject;
 use Pimcore\Model\Element\ElementInterface;
 
 final readonly class IndexPersistenceService
@@ -317,16 +317,19 @@ final readonly class IndexPersistenceService
 
         $configReader = new ConfigReader($configuration->getConfiguration());
 
-        if ($element instanceof AbstractObject) {
-            if(in_array($element, $configReader->getObjectClassNames()) ||
-            in_array((new \ReflectionClass($this))->getShortName(), $configReader->getObjectClassNames())) {
-                $body = $this->dataObjectProvider->getIndexData($element, $configReader);
-            } else {
+        if ($element instanceof DataObject\AbstractObject) {
+            if (!$configReader->isObjectIndexingEnabled()) {
                 return [];
             }
-        } elseif ($element instanceof Asset) {
+            $body = $this->dataObjectProvider->getIndexData($element, $configReader);
+        }
+        elseif ($element instanceof Asset) {
+            if (!$configReader->isAssetIndexingEnabled()) {
+                return [];
+            }
             $body = $this->assetProvider->getIndexData($element, $configReader);
-        } else {
+        }
+        else {
             throw new \InvalidArgumentException('This element type is currently not supported.');
         }
 
@@ -336,5 +339,9 @@ final readonly class IndexPersistenceService
             'id' => $element->getId(),
             'body' => $body,
         ])->asArray();
+    }
+
+    public function bulk(array $params = []) {
+        return $this->client->bulk($params);
     }
 }

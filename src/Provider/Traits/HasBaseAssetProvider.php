@@ -25,6 +25,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
 
+/**
+ * @TODO This trait should be refactored, especially ::getBinaryDataValues() method
+ */
 trait HasBaseAssetProvider
 {
     use LockedTrait;
@@ -87,27 +90,27 @@ trait HasBaseAssetProvider
             $checksum = null;
         }
 
+        if ($configReader->isOriginalImageAllowed()) {
+            $data['original'] = [
+                'checksum' => $checksum,
+                'filename' => $object->getFilename(),
+            ];
+            if ($asset instanceof Version) {
+                $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'config' => $configReader->getName(),
+                    'id' => $asset->getId(),
+                    'type' => 'version',
+                ], UrlGeneratorInterface::ABSOLUTE_PATH);
+            } else {
+                $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
+                    'config' => $configReader->getName(),
+                    'id' => $id,
+                ], UrlGeneratorInterface::ABSOLUTE_PATH);
+            }
+        }
+
         if ($object instanceof Image) {
             $thumbnails = $configReader->getAssetThumbnails();
-
-            if ($configReader->isOriginalImageAllowed()) {
-                $data['original'] = [
-                    'checksum' => $checksum,
-                    'filename' => $object->getFilename(),
-                ];
-                if ($asset instanceof Version) {
-                    $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
-                        'config' => $configReader->getName(),
-                        'id' => $asset->getId(),
-                        'type' => 'version',
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
-                } else {
-                    $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
-                        'config' => $configReader->getName(),
-                        'id' => $id,
-                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
-                }
-            }
 
             foreach ($thumbnails as $thumbnailName) {
                 $thumbnail = $object->getThumbnail($thumbnailName);
@@ -173,26 +176,6 @@ trait HasBaseAssetProvider
                 }
             }
         } else {
-            $data['original'] = [
-                'checksum' => $checksum,
-                'filename' => $object->getFilename(),
-            ];
-
-            if ($asset instanceof Version) {
-                $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
-                    'config' => $configReader->getName(),
-                    'id' => $asset->getId(),
-                    'type' => 'version',
-                    'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
-                ], UrlGeneratorInterface::ABSOLUTE_PATH);
-            } else {
-                $data['original']['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
-                    'config' => $configReader->getName(),
-                    'id' => $id,
-                    'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
-                ], UrlGeneratorInterface::ABSOLUTE_PATH);
-            }
-
             // Add the preview thumbnail for CI HUB
             if ($object instanceof Document && 'ciHub' === $configReader->getType()) {
                 if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {

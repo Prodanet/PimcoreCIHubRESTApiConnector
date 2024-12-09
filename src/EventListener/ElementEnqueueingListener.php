@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This source file is subject to the GNU General Public License version 3 (GPLv3)
  * For the full copyright and license information, please view the LICENSE.md and gpl-3.0.txt
@@ -12,35 +14,28 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\EventListener;
 
-use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexPersistenceService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Loader\CompositeConfigurationLoader;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\DeleteIndexElementMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\UpdateIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Pimcore\Event\AssetEvents;
 use Pimcore\Event\DataObjectEvents;
 use Pimcore\Event\Model\AssetEvent;
 use Pimcore\Event\Model\DataObjectEvent;
-use Pimcore\Logger;
 use Pimcore\Model\Asset;
-use Pimcore\Model\Asset\Folder;
 use Pimcore\Model\DataObject;
-use Pimcore\Model\DataObject\AbstractObject;
-use Pimcore\Model\DataObject\Concrete;
 use Pimcore\Model\Element\ElementInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class ElementEnqueueingListener implements EventSubscriberInterface
 {
-    public function __construct(
-        private CompositeConfigurationLoader $compositeConfigurationLoader,
-        private IndexManager $indexManager,
-        private IndexPersistenceService $indexPersistenceService
-    ) {
-    }
+    public const TYPE_ASSET = 'asset';
+    public const TYPE_OBJECT = 'object';
 
     public static function getSubscribedEvents(): array
     {
@@ -54,135 +49,144 @@ final readonly class ElementEnqueueingListener implements EventSubscriberInterfa
         ];
     }
 
+    public function __construct(
+        private CompositeConfigurationLoader $compositeConfigurationLoader,
+        private IndexManager $indexManager,
+        private MessageBusInterface $messageBus,
+        private LoggerInterface $logger,
+    ) {
+    }
+
     public function enqueueAsset(AssetEvent $assetEvent): void
     {
-        $asset = $assetEvent->getAsset();
+        $this->logger->debug(sprintf(
+            'CIHub integration requested to enqueueAsset: %d',
+            $assetEvent->getAsset()->getId()
+        ), $assetEvent->getArguments());
+
+        if (
+            ($assetEvent->hasArgument('isAutoSave') && $assetEvent->getArgument('isAutoSave')) ||
+            ($assetEvent->hasArgument('saveVersionOnly') && $assetEvent->getArgument('saveVersionOnly'))
+        ) {
+            $this->logger->debug(sprintf(
+                'Skipping CIHub for asset: %d',
+                $assetEvent->getAsset()->getId()
+            ), $assetEvent->getArguments());
+            return;
+        }
+
+        $element = $assetEvent->getElement();
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
-            $name = $configuration->getName();
-            $reader = new ConfigReader($configuration->getConfiguration());
+            $hash = null;
+            $endpointName = $configuration->getName();
+            $configReader = new ConfigReader($configuration->getConfiguration());
 
             // Check if assets are enabled
-            if (!$reader->isAssetIndexingEnabled()) {
+            if (!$configReader->isAssetIndexingEnabled()) {
                 continue;
             }
-            try {
-                $this->indexPersistenceService->update(
-                    $asset,
-                    $name,
-                    $this->indexManager->getIndexName($asset, $name)
-                );
-            } catch (\Exception $e) {
-                Logger::crit($e->getMessage());
-            }
-            $this->enqueueParentFolders($asset->getParent(), Folder::class, $name);
+
+            $this->messageBus->dispatch(
+                new UpdateIndexElementMessage($element->getId(), self::TYPE_ASSET, $endpointName, $hash, $configReader)
+            );
         }
     }
 
     public function enqueueObject(DataObjectEvent $dataObjectEvent): void
     {
+        $this->logger->debug(sprintf(
+            'CIHub integration requested to enqueueObject: %d',
+            $dataObjectEvent->getObject()->getId()
+        ), $dataObjectEvent->getArguments());
+
         $object = $dataObjectEvent->getObject();
 
-        if (!$object instanceof Concrete) {
+        if (!$object instanceof DataObject\Concrete) {
             return;
         }
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
-            $name = $configuration->getName();
-            $reader = new ConfigReader($configuration->getConfiguration());
-            $objectClassNames = $reader->getObjectClassNames();
+            $hash = null;
+            $endpointName = $configuration->getName();
+            $configReader = new ConfigReader($configuration->getConfiguration());
 
-            // Check if object class is configured
-            if (!\in_array($object->getClassName(), $objectClassNames, true)) {
+            // Check if objects are enabled
+            if (!$configReader->isObjectIndexingEnabled()) {
                 continue;
             }
 
-            try {
-                $this->indexPersistenceService->update(
-                    $object,
-                    $name,
-                    $this->indexManager->getIndexName($object, $name)
-                );
-            } catch (\Exception $e) {
-                Logger::crit($e->getMessage());
+            // Check if object class is configured
+            if (!\in_array($object->getClassName(), $configReader->getObjectClassNames(), true)) {
+                continue;
             }
 
-            // Index all folders above the object
-            $this->enqueueParentFolders($object->getParent(), DataObject\Folder::class, $name);
+            $this->messageBus->dispatch(
+                new UpdateIndexElementMessage($object->getId(), self::TYPE_OBJECT, $endpointName, $hash, $configReader)
+            );
         }
     }
 
     public function removeAsset(AssetEvent $assetEvent): void
     {
-        $asset = $assetEvent->getAsset();
+        $this->logger->debug(sprintf(
+            'CIHub integration requested to removeAsset: %d',
+            $assetEvent->getAsset()->getId()
+        ), $assetEvent->getArguments());
+        $element = $assetEvent->getElement();
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
-            $name = $configuration->getName();
-            $reader = new ConfigReader($configuration->getConfiguration());
+            $endpointName = $configuration->getName();
+            $configReader = new ConfigReader($configuration->getConfiguration());
 
             // Check if assets are enabled
-            if (!$reader->isAssetIndexingEnabled()) {
+            if (!$configReader->isAssetIndexingEnabled()) {
                 continue;
             }
 
-            try {
-                $this->indexPersistenceService->delete($asset->getId(), $this->indexManager->getIndexName($asset, $name));
-            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
-                Logger::crit($e->getMessage());
-            }
+            $indexName = $this->indexManager->getIndexName($element, $endpointName);
+
+            $this->messageBus->dispatch(
+                new DeleteIndexElementMessage($element->getId(), self::TYPE_ASSET, $endpointName, $indexName)
+            );
         }
     }
 
     public function removeObject(DataObjectEvent $dataObjectEvent): void
     {
+        $this->logger->debug(sprintf(
+            'CIHub integration requested to removeObject: %d',
+            $dataObjectEvent->getObject()->getId()
+        ), $dataObjectEvent->getArguments());
+
         $object = $dataObjectEvent->getObject();
 
-        if (!$object instanceof Concrete) {
+        if (!$object instanceof DataObject\Concrete) {
             return;
         }
 
         $configurations = $this->compositeConfigurationLoader->loadConfigs();
 
         foreach ($configurations as $configuration) {
-            $name = $configuration->getName();
-            $reader = new ConfigReader($configuration->getConfiguration());
-            $objectClassNames = $reader->getObjectClassNames();
+            $endpointName = $configuration->getName();
+            $configReader = new ConfigReader($configuration->getConfiguration());
 
             // Check if object class is configured
-            if (!\in_array($object->getClassName(), $objectClassNames, true)) {
+            if (!\in_array($object->getClassName(), $configReader->getObjectClassNames(), true)) {
                 continue;
             }
 
-            try {
-                $this->indexPersistenceService->delete($object->getId(), $this->indexManager->getIndexName($object, $name));
-            } catch (ClientResponseException|MissingParameterException|ServerResponseException $e) {
-                Logger::crit($e->getMessage());
-            }
-        }
-    }
+            $indexName = $this->indexManager->getIndexName($object, $endpointName);
 
-    private function enqueueParentFolders(
-        ?ElementInterface $element,
-        string $folderClass,
-        string $name
-    ): void {
-        while ($element instanceof $folderClass && 1 !== $element->getId()) {
-            try {
-                $this->indexPersistenceService->update(
-                    $element,
-                    $name,
-                    $this->indexManager->getIndexName($element, $name)
-                );
-            } catch (\Exception $e) {
-                Logger::crit($e->getMessage());
-            }
-            $element = $element->getParent();
+            $this->messageBus->dispatch(
+                new DeleteIndexElementMessage($object->getId(), self::TYPE_OBJECT, $endpointName, $indexName)
+            );
         }
     }
 }

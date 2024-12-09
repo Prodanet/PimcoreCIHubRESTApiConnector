@@ -31,16 +31,19 @@ class CorsListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event): void
     {
-        if (HttpKernelInterface::MAIN_REQUEST !== $event->getRequestType()) {
-            $this->logger->debug('Not a master type request, skipping CORS checks.');
+        if (!$event->isMainRequest()) {
+            $this->logger->debug('CIHUB: Not a master type request, skipping CORS checks.');
 
             return;
         }
-        if (!str_starts_with($event->getRequest()->get('_route'), 'datahub_rest_endpoints')) {
-            $this->logger->debug('Not a datahub request, skipping CORS checks.');
+
+        $route = $event->getRequest()->get('_route');
+        if (!is_string($route) || !str_starts_with($route, 'datahub_rest_endpoints')) {
+            $this->logger->debug('CIHUB: Not a datahub request, skipping CORS checks.');
 
             return;
         }
+
         $crossOriginHeaders = [
             'Access-Control-Max-Age' => 600,
             'Access-Control-Allow-Origin' => '*',
