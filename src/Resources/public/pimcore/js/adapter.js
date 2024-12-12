@@ -27,14 +27,11 @@ pimcore.plugin.datahub.adapter.simpleRest = Class.create(pimcore.plugin.datahub.
                     },
                     success: function(response) {
                         const res = Ext.decode(response.responseText);
-                        if (res === null) {
-                            pimcore.helpers.showNotification(t("error"), "Deletion failed", "error");
-                        }
-                        else if (res.success === false) {
-                            pimcore.helpers.showNotification(t("error"), "Deletion failed", "error", res.message);
+                        if (res && res.success) {
+                            record.remove();
                         }
                         else {
-                            record.remove();
+                            pimcore.helpers.showNotification(t("error"), t("error_deleting_item"), "error", res ? res.message : false);
                         }
                     }
                 });
