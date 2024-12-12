@@ -25,10 +25,17 @@ pimcore.plugin.datahub.adapter.simpleRest = Class.create(pimcore.plugin.datahub.
                     params: {
                         name: record.data.id,
                     },
+                    success: function(response) {
+                        const res = Ext.decode(response.responseText);
+                        if (res && res.success) {
+                            record.remove();
+                        }
+                        else {
+                            pimcore.helpers.showNotification(t("error"), t("error_deleting_item"), "error", res ? res.message : false);
+                        }
+                    }
                 });
-
                 this.configPanel.getEditPanel().removeAll();
-                record.remove();
             }
         }.bind(this));
     },
