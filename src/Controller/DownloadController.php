@@ -224,10 +224,11 @@ class DownloadController extends BaseEndpointController
 
         $noThumbnailResponse = $this->getNoThumbnailResponse();
 
+        /** @var Asset\Document\ImageThumbnailInterface|Asset\Image\ThumanailInterface|Asset\Video\ImageThumbnailInterface|false|null $thumbnailFile */
         $thumbnailFile = null;
         try {
             $thumbnailFile = match(true) {
-                $element instanceof Asset\Document => $element->getImageThumbnail($thumbnailName),
+                $element instanceof Asset\Document => $element->getImageThumbnail($thumbnailName, 1, true),
                 $element instanceof Asset\Image => $element->getThumbnail($thumbnailConfig),
                 $element instanceof Asset\Video => $element->getImageThumbnail($thumbnailName),
                 $element instanceof Asset\Archive => false,
