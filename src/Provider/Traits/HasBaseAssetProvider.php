@@ -210,6 +210,40 @@ trait HasBaseAssetProvider
                     ], UrlGeneratorInterface::ABSOLUTE_PATH);
                 }
             }
+
+            if ($object instanceof Asset\Video && 'ciHub' === $configReader->getType()) {
+                if (Config::getByName(self::CIHUB_PREVIEW_THUMBNAIL) instanceof Config) {
+                    $thumbnail = $object->getImageThumbnail(self::CIHUB_PREVIEW_THUMBNAIL);
+                } else {
+                    $thumbnail = $object->getImageThumbnail($this->defaultPreviewThumbnail);
+                }
+
+                try {
+                    $thumbChecksum = $this->getChecksum($thumbnail->getAsset());
+                } catch (\Exception) {
+                    $thumbChecksum = null;
+                }
+
+                $data[self::CIHUB_PREVIEW_THUMBNAIL] = [
+                    'checksum' => $thumbChecksum,
+                    'filename' => $thumbnail->getAsset()->getFilename(), // pathinfo($thumbnail->getFileSystemPath(), PATHINFO_BASENAME),
+                ];
+
+                if ($asset instanceof Version) {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $asset->getId(),
+                        'type' => 'version',
+                        'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                } else {
+                    $data[self::CIHUB_PREVIEW_THUMBNAIL]['path'] = $this->router->generate('datahub_rest_endpoints_asset_download', [
+                        'config' => $configReader->getName(),
+                        'id' => $id,
+                        'thumbnail' => self::CIHUB_PREVIEW_THUMBNAIL,
+                    ], UrlGeneratorInterface::ABSOLUTE_PATH);
+                }
+            }
         }
 
         return $data;
