@@ -47,7 +47,7 @@ final class UpdateIndexElementMessageHandler implements BatchHandlerInterface
     public function __invoke(UpdateIndexElementMessage $message, Acknowledger $ack = null)
     {
         $this->logger->debug(sprintf(
-            'CIHub integration requested to update %s element: %d',
+            'CIHUB: Integration requested to update %s element: %d',
             $message->getEntityType(),
             $message->getEntityId()
         ), [

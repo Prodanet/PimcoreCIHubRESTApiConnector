@@ -213,7 +213,7 @@ class DownloadController extends BaseEndpointController
             default => null,
         };
 
-        if ($thumbnailConfig === null) {
+        if (true || $thumbnailConfig === null) {
             $thumbnailConfig = match(true) {
                 $element instanceof Asset\Image => Asset\Image\Thumbnail\Config::getPreviewConfig(),
                 $element instanceof Asset\Video => Asset\Image\Thumbnail\Config::getPreviewConfig(),
