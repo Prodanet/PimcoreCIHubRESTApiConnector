@@ -323,11 +323,13 @@ class DownloadController extends BaseEndpointController
             $response->headers->set('Content-Length', $storage->fileSize($storagePath));
         }
 
+        $timestamp = $storage->lastModified($storagePath);
+        $lastModified = (new \DateTime())->setTimestamp($timestamp);
+
         // Add cache to headers
         $this->addThumbnailCacheHeaders($response);
-        $lastModified = $storage->lastModified($storagePath);
+        $response->setEtag(md5($element->getId() . $timestamp));
         $response->setLastModified($lastModified);
-        $response->setEtag(md5($element->getId() . $lastModified));
 
         return $response;
     }
