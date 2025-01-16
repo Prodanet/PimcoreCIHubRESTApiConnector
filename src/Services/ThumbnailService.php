@@ -13,6 +13,7 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Services;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\AssetPreviewImageMessage;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\SharedLockInterface;
 
 class ThumbnailService
 {
@@ -30,31 +31,35 @@ class ThumbnailService
         return \in_array($format, $allowed, true) ? $format : $fallback;
     }
 
-    public static function isMessageQueued(AssetPreviewImageMessage $message): bool
-    {
+    private static function getLock(AssetPreviewImageMessage $message): SharedLockInterface {
         /** @var LockFactory $lockFactory */
         $lockFactory = \Pimcore::getContainer()->get(LockFactory::class);
 
-        $lock = $lockFactory->createLock(sprintf('ciHub-preview-%d', $message->getId()));
+        return $lockFactory->createLock(
+            sprintf('ciHub-preview-%d', $message->getId()),
+            null,
+            false,// no auto-release
+        );
+    }
 
-        return $lock->isAcquired();
+    public static function isMessageQueued(AssetPreviewImageMessage $message): bool
+    {
+        $lock = self::getLock($message);
+        $alreadyInQueue = $lock->isAcquired();
+
+        if ($lock->isExpired()) {
+            $lock->release();
+        }
+        return $alreadyInQueue;
     }
 
     public static function lockMessage(AssetPreviewImageMessage $message): bool
     {
-        /** @var LockFactory $lockFactory */
-        $lockFactory = \Pimcore::getContainer()->get(LockFactory::class);
-
-        $lock = $lockFactory->createLock(sprintf('ciHub-preview-%d', $message->getId()));
-        return $lock->acquire(false);
+        return self::getLock($message)->acquire(false);
     }
 
     public static function releaseMessage(AssetPreviewImageMessage $message): void
     {
-        /** @var LockFactory $lockFactory */
-        $lockFactory = \Pimcore::getContainer()->get(LockFactory::class);
-
-        $lock = $lockFactory->createLock(sprintf('ciHub-preview-%d', $message->getId()));
-        $lock->release();
+        self::getLock($message)->release();
     }
 }
