@@ -228,8 +228,8 @@ class DownloadController extends BaseEndpointController
         $thumbnailFile = null;
         try {
             $thumbnailFile = match(true) {
-                $element instanceof Asset\Document  => $element->getImageThumbnail($thumbnailConfig, 1, true),
-                $element instanceof Asset\Image     => $element->getThumbnail($thumbnailConfig, true),
+                $element instanceof Asset\Document  => $element->getImageThumbnail($thumbnailConfig),
+                $element instanceof Asset\Image     => $element->getThumbnail($thumbnailConfig),
                 $element instanceof Asset\Video     => $element->getImageThumbnail($thumbnailConfig),
                 $element instanceof Asset\Archive   => false,
                 $element instanceof Asset\Audio     => false,

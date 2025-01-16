@@ -54,6 +54,7 @@ class AssetPreviewImageMessageHandler implements BatchHandlerInterface
     {
         foreach ($jobs as [$message, $ack]) {
             assert($message instanceof AssetPreviewImageMessage);
+            assert($ack instanceof Acknowledger);
 
             $id = $message->getId();
             $thumbnailName = $message->getThumbnailName();
