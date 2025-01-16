@@ -30,6 +30,7 @@ use Pimcore\Logger;
 use Pimcore\Messenger\AssetPreviewImageMessage as PimcoreAssetPreviewMessage;
 use Pimcore\Messenger\AssetUpdateTasksMessage;
 use Pimcore\Model\Asset;
+use Pimcore\Model\Asset\Image\Thumbnail\Config;
 use Pimcore\Model\Version;
 use Pimcore\Tool\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -204,7 +205,9 @@ class DownloadController extends BaseEndpointController
         }
 
         if (AssetProvider::CIHUB_PREVIEW_THUMBNAIL === $thumbnailName && 'ciHub' === $configReader->getType()) {
-            $thumbnailName = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
+            //$thumbnailName = $this->getParameter('pimcore_ci_hub_adapter.default_preview_thumbnail');
+            // Asset\Image\Thumbnail\Config::PREVIEW_THUMBNAIL_NAME
+            $thumbnailName = 'pimcore-system-treepreview';
         }
 
         $thumbnailConfig = match(true) {

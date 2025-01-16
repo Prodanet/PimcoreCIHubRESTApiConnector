@@ -270,5 +270,8 @@ trait RestHelperTrait
         $response->setPublic();
         $response->setExpires($dateTime);
         $response->headers->set('Pragma', '');
+        $response->setCache([
+            'must_revalidate'  => true,
+        ]);
     }
 }
