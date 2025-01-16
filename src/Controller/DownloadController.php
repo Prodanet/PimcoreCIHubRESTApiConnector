@@ -271,6 +271,7 @@ class DownloadController extends BaseEndpointController
                     Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
                     $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                     $bus->dispatch($message);
+                    $bus->dispatch(new AssetPreviewImageMessage($message->getId()));
                 }
 
                 return $noThumbnailResponse;
@@ -337,6 +338,7 @@ class DownloadController extends BaseEndpointController
                 Logger::debug('CIHUB: Storage file does not exists, queue generation');
                 $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                 $bus->dispatch($message);
+                $bus->dispatch(new AssetPreviewImageMessage($message->getId()));
             }
 
             return $noThumbnailResponse;
