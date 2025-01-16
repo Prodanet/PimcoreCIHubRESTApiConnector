@@ -261,12 +261,18 @@ class DownloadController extends BaseEndpointController
 
         if ($thumbnailFile instanceof Asset\Thumbnail\ThumbnailInterface) {
             if (!$thumbnailFile->exists()) {
-                Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
-                $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
-                $bus->dispatch(new AssetPreviewImageMessage(
-                    $element->getId(),
-                    $thumbnailName,
-                ));
+                $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
+
+                if (ThumbnailService::isMessageQueued($message)) {
+                    Logger::debug('CIHUB: No stream found yet preview generation is already queued, responding with no thumbnail');
+                }
+                else {
+                    Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
+                    ThumbnailService::lockMessage($message);
+                    $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
+                    $bus->dispatch($message);
+                }
+
                 return $noThumbnailResponse;
             }
 
@@ -322,12 +328,18 @@ class DownloadController extends BaseEndpointController
 
         $storage = Storage::get('thumbnail');
         if (!$storage->fileExists($storagePath)) {
-            Logger::debug('CIHUB: Storage file does not exists, queue generation');
-            $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
-            $bus->dispatch(new AssetPreviewImageMessage(
-                $element->getId(),
-                $thumbnailName,
-            ));
+            $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
+
+            if (ThumbnailService::isMessageQueued($message)) {
+                Logger::debug('CIHUB: Storage file does not exists yet preview generation is already queued, responding with no thumbnail');
+            }
+            else {
+                Logger::debug('CIHUB: Storage file does not exists, queue generation');
+                ThumbnailService::lockMessage($message);
+                $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
+                $bus->dispatch($message);
+            }
+
             return $noThumbnailResponse;
         }
 

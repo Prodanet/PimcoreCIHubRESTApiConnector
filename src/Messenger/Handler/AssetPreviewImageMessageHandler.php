@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\Handler;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\AssetPreviewImageMessage;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Services\ThumbnailService;
 use Pimcore\Model\Asset;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -81,6 +82,7 @@ class AssetPreviewImageMessageHandler implements BatchHandlerInterface
 
                     if ($thumbnail instanceof Asset\Thumbnail\ThumbnailInterface) {
                         $thumbnail->generate(false);
+                        ThumbnailService::releaseMessage($message);
                     }
                 }
 
