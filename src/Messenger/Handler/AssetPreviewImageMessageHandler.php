@@ -67,11 +67,21 @@ class AssetPreviewImageMessageHandler implements BatchHandlerInterface
                 $asset = Asset::getById($id);
 
                 $thumbnailConfig = match(true) {
-                    $asset instanceof Asset\Image    => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
-                    $asset instanceof Asset\Document => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
-                    $asset instanceof Asset\Video    => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
+                    $asset instanceof Asset\Image       => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
+                    $asset instanceof Asset\Document    => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
+                    //$element instanceof Asset\Video     => Asset\Image\Thumbnail\Config::getByAutoDetect($thumbnailName),
+                    $element instanceof Asset\Video     => Asset\Image\Thumbnail\Config::getPreviewConfig(),
                     default => null,
                 };
+
+                if ($thumbnailConfig === null) {
+                    $thumbnailConfig = match(true) {
+                        $element instanceof Asset\Image     => Asset\Image\Thumbnail\Config::getPreviewConfig(),
+                        $element instanceof Asset\Document  => Asset\Image\Thumbnail\Config::getPreviewConfig(),
+                        $element instanceof Asset\Video     => Asset\Image\Thumbnail\Config::getPreviewConfig(),
+                        default => null,
+                    };
+                }
 
                 if ($thumbnailConfig instanceof Asset\Image\Thumbnail\Config) {
                     $thumbnail = match(true) {
