@@ -279,10 +279,15 @@ class DownloadController extends BaseEndpointController
 
         assert($thumbnailFile instanceof Asset\Thumbnail\ThumbnailInterface);
 
+        $pathReference = $thumbnailFile->getPathReference(true);
+
         Logger::debug('CIHUB: Details about thumbnail to handle', [
-            'pathReference(defered)' => $thumbnailFile->getPathReference(true),
+            'pathReference(defered)' => $pathReference,
         ]);
-        if (!$thumbnailFile->exists()) {
+        // `type` key, will be always deferred, so instead of calling ::exists()
+        // we explicitly call ::existsOnStorage()
+        //if (!$thumbnailFile->exists()) {
+        if (!$thumbnailFile->existsOnStorage($pathReference)) {
             $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
 
             if (ThumbnailService::isMessageQueued($message)) {
