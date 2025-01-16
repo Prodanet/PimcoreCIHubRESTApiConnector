@@ -27,6 +27,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use OpenApi\Attributes as OA;
 use Pimcore\Logger;
+use Pimcore\Messenger\AssetPreviewImageMessage as PimcoreAssetPreviewMessage;
 use Pimcore\Messenger\AssetUpdateTasksMessage;
 use Pimcore\Model\Asset;
 use Pimcore\Model\Version;
@@ -271,7 +272,7 @@ class DownloadController extends BaseEndpointController
                     Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
                     $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                     $bus->dispatch($message);
-                    $bus->dispatch(new AssetPreviewImageMessage($message->getId()));
+                    $bus->dispatch(new PimcoreAssetPreviewMessage($message->getId()));
                 }
 
                 return $noThumbnailResponse;
@@ -338,7 +339,7 @@ class DownloadController extends BaseEndpointController
                 Logger::debug('CIHUB: Storage file does not exists, queue generation');
                 $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                 $bus->dispatch($message);
-                $bus->dispatch(new AssetPreviewImageMessage($message->getId()));
+                $bus->dispatch(new PimcoreAssetPreviewMessage($message->getId()));
             }
 
             return $noThumbnailResponse;
