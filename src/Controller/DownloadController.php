@@ -266,9 +266,8 @@ class DownloadController extends BaseEndpointController
                 if (ThumbnailService::isMessageQueued($message)) {
                     Logger::debug('CIHUB: No stream found yet preview generation is already queued, responding with no thumbnail');
                 }
-                else {
+                else if (ThumbnailService::lockMessage($message)) {
                     Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
-                    ThumbnailService::lockMessage($message);
                     $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                     $bus->dispatch($message);
                 }
@@ -333,9 +332,8 @@ class DownloadController extends BaseEndpointController
             if (ThumbnailService::isMessageQueued($message)) {
                 Logger::debug('CIHUB: Storage file does not exists yet preview generation is already queued, responding with no thumbnail');
             }
-            else {
+            else if (ThumbnailService::lockMessage($message)) {
                 Logger::debug('CIHUB: Storage file does not exists, queue generation');
-                ThumbnailService::lockMessage($message);
                 $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
                 $bus->dispatch($message);
             }
