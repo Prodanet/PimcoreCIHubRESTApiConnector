@@ -258,6 +258,9 @@ class DownloadController extends BaseEndpointController
                 get_class($element)
             ), [
                 'id' => $element->getId(),
+                'filename' => $element->getFilename(),
+                'realpath' => $element->getRealPath(),
+                'checksum' => $element->getChecksum(),
             ]);
 
             $this->addThumbnailCacheHeaders($noThumbnailResponse);
@@ -276,6 +279,9 @@ class DownloadController extends BaseEndpointController
 
         assert($thumbnailFile instanceof Asset\Thumbnail\ThumbnailInterface);
 
+        Logger::debug('CIHUB: Details about thumbnail to handle', [
+            'pathReference(defered)' => $thumbnailFile->getPathReference(true),
+        ]);
         if (!$thumbnailFile->exists()) {
             $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
 

@@ -104,4 +104,10 @@ class AssetPreviewImageMessageHandler implements BatchHandlerInterface
             }
         }
     }
+
+    // @phpstan-ignore-next-line
+    private function shouldFlush(): bool
+    {
+        return 1 <= \count($this->jobs);
+    }
 }
