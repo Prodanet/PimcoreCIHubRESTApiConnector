@@ -291,57 +291,6 @@ class DownloadController extends BaseEndpointController
         ]);
 
         $storage = Storage::get('thumbnail');
-
-        //if ($thumbnailFile instanceof Asset\Thumbnail\ThumbnailInterface) {
-        if (!$thumbnailFile->exists()) {
-            $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
-
-            if (ThumbnailService::isMessageQueued($message)) {
-                Logger::debug('CIHUB: No stream found yet preview generation is already queued, responding with no thumbnail');
-            }
-            else if (ThumbnailService::lockMessage($message)) {
-                Logger::debug('CIHUB: No stream found, responding with no thumbnail and queuing preview generation');
-                $bus = \Pimcore::getContainer()->get('messenger.bus.pimcore-core');
-                $bus->dispatch($message);
-                $bus->dispatch(new PimcoreAssetPreviewMessage($message->getId()));
-            }
-
-            return $noThumbnailResponse;
-        }
-
-            //$stream = null;
-            //try {
-            //    $stream = $thumbnailFile->getStream();
-            //}
-            //catch (UnableToReadFile $e) {
-            //    Logger::err($e->getMessage(), [
-            //        'id' => $element->getId(),
-            //        'filename' => $element->getFilename(),
-            //        'realpath' => $element->getRealPath(),
-            //        'checksum' => $element->getChecksum(),
-            //    ]);
-            //    return $noThumbnailResponse;
-            //}
-
-            //$mimeType = $thumbnailFile->getMimeType();
-            //$response = new StreamedResponse(function () use ($stream): void {
-            //    fpassthru($stream);
-            //}, Response::HTTP_OK, [
-            //    'Content-Type' => $mimeType,
-            //    'Access-Control-Allow-Origin' => '*',
-            //]);
-
-            //Logger::debug('CIHUB: data found for element, streaming normal response', [
-            //    'id' => $element->getId(),
-            //    'filename' => $element->getFilename(),
-            //    'realpath' => $element->getRealPath(),
-            //    'checksum' => $element->getChecksum(),
-            //]);
-
-            //$this->addThumbnailCacheHeaders($response);
-            //$response->setLastModified($storage->lastModified($storagePath));
-            //return $response;
-        //}
         if (!$storage->fileExists($storagePath)) {
             $message = new AssetPreviewImageMessage($element->getId(), $thumbnailName);
 
@@ -522,7 +471,7 @@ class DownloadController extends BaseEndpointController
         ]);
     }
 
-    public function getStoragePath(ThumbnailInterface $thumb, int $id, string $filename, string $realPlace, string $checksum): string
+    public function getStoragePath(Asset\Thumbnail\ThumbnailInterface $thumb, int $id, string $filename, string $realPlace, string $checksum): string
     {
         Logger::debug('CIHUB: Getting storage path', [
             'id' => $id,
