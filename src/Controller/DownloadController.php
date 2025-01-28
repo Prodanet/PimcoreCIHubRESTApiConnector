@@ -13,12 +13,18 @@ namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Extractor\LabelExtractorInterface;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\AuthManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Manager\IndexManager;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Messenger\AssetPreviewImageMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\AssetProvider;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Provider\DataObjectProvider;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Reader\ConfigReader;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Repository\DataHubConfigurationRepository;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Services\ThumbnailService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Traits\RestHelperTrait;
+use CIHub\Bundle\SimpleRESTAdapterBundle\Transformer\FilterFieldNameTransformerInterface;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use League\Flysystem\FilesystemException;
@@ -37,9 +43,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -49,6 +57,28 @@ use Symfony\Component\Routing\RouterInterface;
 class DownloadController extends BaseEndpointController
 {
     use RestHelperTrait;
+
+    public function __construct(
+        DataHubConfigurationRepository $dataHubConfigurationRepository,
+        LabelExtractorInterface $labelExtractor,
+        RequestStack $requestStack,
+        AuthManager $authManager,
+        AssetProvider $assetProvider,
+        DataObjectProvider $dataObjectProvider,
+        FilterFieldNameTransformerInterface $filterFieldNameTransformer,
+        private IndexManager $indexManager,
+        private MessageBusInterface $messageBus,
+    ) {
+        parent::__construct(
+            $dataHubConfigurationRepository,
+            $labelExtractor,
+            $requestStack,
+            $authManager,
+            $assetProvider,
+            $dataObjectProvider,
+            $filterFieldNameTransformer
+        );
+    }
 
     /**
      * @throws FilesystemException
@@ -154,6 +184,7 @@ class DownloadController extends BaseEndpointController
         $configReader = new ConfigReader($configuration->getConfiguration());
 
         $id = $this->request->query->getInt('id');
+        $type = $this->request->query->getString('type', 'asset');
 
         try {
             // Check if required parameters are missing
@@ -165,7 +196,30 @@ class DownloadController extends BaseEndpointController
             ]);
         }
 
-        $element = $this->getElementByIdType();
+        $element = null;
+        try {
+            $element = $this->getElementByIdType();
+        }
+        catch(NotFoundException $e) {
+            // Element requested, yet it was not found, try to auto-fix
+            // It must have been deleted. There must have been problem with indexing removal.
+            //
+            // Queue removing element from index, to avoid false-positive result
+            // of finding non-existent element again after handling message
+            //
+            // `Partial Deletions`
+            // @see https://rockset.com/articles/elasticsearch-delete-index/
+            //
+            $endpointName = $configuration->getName();
+            $indexName = $this->indexManager->getIndexName($type, $endpointName);
+
+            $this->messageBus->dispatch(
+                new DeleteIndexElementMessage($id, $type, $endpointName, $indexName)
+            );
+
+            throw $e;
+        }
+
         if ($element instanceof Version) {
             $element = $element->getData();
         }
