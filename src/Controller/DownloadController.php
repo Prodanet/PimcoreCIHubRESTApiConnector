@@ -11,6 +11,7 @@
 
 namespace CIHub\Bundle\SimpleRESTAdapterBundle\Controller;
 
+use App\Message\CIHUB\DeleteIndexElementMessage;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Elasticsearch\Index\IndexQueryService;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\InvalidParameterException;
 use CIHub\Bundle\SimpleRESTAdapterBundle\Exception\NotFoundException;
