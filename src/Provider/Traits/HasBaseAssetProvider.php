@@ -218,7 +218,14 @@ trait HasBaseAssetProvider
                     $thumbnail = $object->getImageThumbnail($this->defaultPreviewThumbnail);
                 }
 
-                $pathReference = $thumbnail->getPathReference(true);
+                $pathReference = [];
+                try {
+                    $pathReference = $thumbnail->getPathReference(true);
+                }
+                catch(\Throwable $e) {
+                    $pathReference['type'] = 'error';
+                }
+
                 if ($pathReference['type'] !== 'error') {
                     // not error, calling ::getAsset, will not throw exception
                     try {
