@@ -168,7 +168,7 @@ abstract class BaseEndpointController extends FrontendController
         $output = [];
         if ($this->request->query->has('filter')) {
             $filter = null;
-            $rawData = $this->request->query->get('filter');
+            $rawData = $this->request->query->all('filter');
             if (\is_array($rawData)) {
                 $items = $rawData;
                 $filter = [];
